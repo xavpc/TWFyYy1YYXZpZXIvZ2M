@@ -58,7 +58,7 @@ while true; do
     if [ $? -eq 0 ]; then
       
     else
-        echo "  [!] Failed to commit after deleting $FILE"
+       
     fi
 
     # --- Step 2: Add a.txt ---
