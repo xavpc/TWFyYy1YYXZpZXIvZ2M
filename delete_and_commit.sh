@@ -1,19 +1,16 @@
 
 
-# bash ./delete_and_commit.sh 1991-01-06 1991-01-07
+# bash ./delete_and_commit.sh 2026-06-28 2026-07-13 "."
 
 #!/bin/bash
 
-# Usage: ./delete_and_commit.sh <from-date> <to-date>
-# Example: ./delete_and_commit.sh 1991-01-01 1997-12-30
+# Usage: ./delete_and_commit.sh <from-date> <to-date> <commit-msg>
+# Example: ./delete_and_commit.sh 1991-01-01 1991-12-30 "a"
 
 FROM_DATE="${1:-1991-01-01}"
 TO_DATE="${2:-1991-12-31}"
+COMMIT_MSG="${3:-.}"
 FILE="a.txt"
-
-generate_random_msg() {
-    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 8
-}
 
 generate_random_time() {
     local base_date="$1"
@@ -32,7 +29,7 @@ echo "File Add/Delete Commit Loop"
 echo "========================================="
 echo "File: $FILE"
 echo "Date range: $FROM_DATE to $TO_DATE"
-echo "Commit message: random 8-char alphanumeric"
+echo "Commit message: '$COMMIT_MSG'"
 echo "Press Ctrl+C to stop."
 echo "========================================="
 echo ""
@@ -50,26 +47,32 @@ while true; do
 
     # --- Step 1: Delete a.txt ---
     COMMIT_DATE="$(generate_random_time "$CURRENT_DATE")"
-    COMMIT_MSG="$(generate_random_msg)"
     rm -f "$FILE"
     git rm --cached "$FILE" > /dev/null 2>&1
     git add -A
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
-  
-      
-  
-   
+    if [ $? -eq 0 ]; then
+        echo "  [-] Deleted $FILE and committed ($COMMIT_DATE)"
+    else
+        echo "  [!] Failed to commit after deleting $FILE"
+    fi
 
     # --- Step 2: Add a.txt ---
     COMMIT_DATE="$(generate_random_time "$CURRENT_DATE")"
-    COMMIT_MSG="$(generate_random_msg)"
     touch "$FILE"
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
-
+    if [ $? -eq 0 ]; then
+        echo "  [+] Added $FILE and committed ($COMMIT_DATE)"
+    else
+        echo "  [!] Failed to commit after adding $FILE"
+    fi
 
     # Advance date; reset to FROM_DATE when TO_DATE is reached
     CURRENT_DATE="$(advance_date "$CURRENT_DATE")"
- 
+    if [ "$(date -d "$CURRENT_DATE" +%s)" -gt "$to_epoch" ]; then
+        echo "  [~] Reached end of range, resetting to $FROM_DATE"
+        CURRENT_DATE="$FROM_DATE"
+    fi
 
 done
