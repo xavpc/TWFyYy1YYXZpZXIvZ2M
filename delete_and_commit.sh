@@ -55,11 +55,10 @@ while true; do
     git rm --cached "$FILE" > /dev/null 2>&1
     git add -A
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
+  
       
-    else
-       
-    fi
+  
+   
 
     # --- Step 2: Add a.txt ---
     COMMIT_DATE="$(generate_random_time "$CURRENT_DATE")"
@@ -67,16 +66,10 @@ while true; do
     touch "$FILE"
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-       
-    else
-     
-    fi
+
 
     # Advance date; reset to FROM_DATE when TO_DATE is reached
     CURRENT_DATE="$(advance_date "$CURRENT_DATE")"
-    if [ "$(date -d "$CURRENT_DATE" +%s)" -gt "$to_epoch" ]; then
-    
-    fi
+ 
 
 done
