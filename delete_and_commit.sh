@@ -70,7 +70,7 @@ while true; do
     if [ $? -eq 0 ]; then
        
     else
-        echo "  [!] Failed to commit after adding $FILE"
+     
     fi
 
     # Advance date; reset to FROM_DATE when TO_DATE is reached
