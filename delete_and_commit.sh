@@ -76,8 +76,7 @@ while true; do
     # Advance date; reset to FROM_DATE when TO_DATE is reached
     CURRENT_DATE="$(advance_date "$CURRENT_DATE")"
     if [ "$(date -d "$CURRENT_DATE" +%s)" -gt "$to_epoch" ]; then
-        echo "  [~] Reached end of range, resetting to $FROM_DATE"
-        CURRENT_DATE="$FROM_DATE"
+
     fi
 
 done
