@@ -10,7 +10,7 @@
 FROM_DATE="${1:-1991-01-01}"
 TO_DATE="${2:-1991-12-31}"
 COMMIT_MSG="${3:-.}"
-FILE="a.txt"
+FILE="b.txt"
 
 generate_random_time() {
     local base_date="$1"
