@@ -56,7 +56,7 @@ while true; do
     git add -A
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        echo "  [-] Deleted $FILE and committed ($COMMIT_DATE)"
+      
     else
         echo "  [!] Failed to commit after deleting $FILE"
     fi
