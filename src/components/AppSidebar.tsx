@@ -106,7 +106,7 @@ export function AppSidebar() {
                 className='w-[--radix-popper-anchor-width]'
               >
                 <DropdownMenuItem>
-                  <span>Sign out</span>
+                  <button>Sign out</button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
