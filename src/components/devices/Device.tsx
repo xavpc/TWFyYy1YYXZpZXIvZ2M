@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -12,69 +12,103 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dialog";
 
 // DEVICE INTERFACE
-import { Device } from '@/types/devices'
+import { Device } from "@/types/devices";
 
 const Devices = () => {
   // const [loading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [devices, setDevices] = useState<Devices[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [devices, setDevices] = useState<Devices[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   // Updated to use Device instead of Devices
-  const [editingDevice, setEditingDevice] = useState<Device | null>(null)
-  const [updatedDevice, setUpdatedDevice] = useState<Device | null>(null)
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [updatedDevice, setUpdatedDevice] = useState<Device | null>(null);
+
+  useEffect(() => {
+    fetchDevices();
+  }, []);
+
+  // GET EMPLOYEE
+  const fetchDevices = async () => {
+    setLoading(true); // Start loading
+
+    try {
+      const response = await fetch(
+        ` ${process.env.NEXT_PUBLIC_API_URL}/web.devices`
+      );
+      const data = await response.json();
+
+      console.log("API Response:", data); // Debugging
+
+      const employeesArray = Array.isArray(data)
+        ? data
+        : data.employees || data.data || [];
+
+      if (!Array.isArray(employeesArray)) {
+        console.error("Employees data is not an array:", employeesArray);
+        setDevices([]); // Fallback to empty array
+      } else {
+        setDevices(employeesArray);
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      setDevices([]);
+    } finally {
+      setLoading(false); // Stop loading after fetching data
+    }
+  };
 
   const filteredDevices = devices.filter(
     (device) =>
       device.device_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       device.vehicle_plate_num?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  );
 
-  const itemsPerPage = 7 // Change as needed
+  const itemsPerPage = 7; // Change as needed
 
   // Calculate paginated data
-  const indexOfLastEmployee = currentPage * itemsPerPage
-  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage
+  const indexOfLastEmployee = currentPage * itemsPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage;
   const currentDevices = filteredDevices.slice(
     indexOfFirstEmployee,
     indexOfLastEmployee
-  )
+  );
 
-  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   if (loading)
     return (
-      <div className='flex flex-col space-y-3'>
-        <Skeleton className='h-[125px] w-full rounded-xl' />
-        <div className='space-y-2'>
-          <Skeleton className='h-4 w-full' />
-          <Skeleton className='h-4 w-[90%]' />
-          <Skeleton className='h-4 w-[80%]' />
+      <div className="flex flex-col space-y-3">
+        <Skeleton className="h-[125px] w-full rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-[90%]" />
+          <Skeleton className="h-4 w-[80%]" />
         </div>
       </div>
-    )
+    );
 
   return (
-    <div className='space-y-4'>
-      <div className='flex justify-between items-center'>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
         <Input
-          placeholder='Search devices...'
-          className='max-w-sm'
+          placeholder="Search devices..."
+          className="max-w-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -83,7 +117,7 @@ const Devices = () => {
         </Button> */}
       </div>
 
-      <div className='border rounded-lg'>
+      <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -105,11 +139,11 @@ const Devices = () => {
                   {device.employee?.first_name}, {device.employee?.last_name}
                 </TableCell>
                 <TableCell>
-                  <Badge variant='outline'> {device.status}</Badge>
+                  <Badge variant="outline"> {device.status}</Badge>
                 </TableCell>
-                <TableCell className='space-x-2'>
+                <TableCell className="space-x-2">
                   <Button
-                    variant='outline'
+                    variant="outline"
                     onClick={() => setEditingDevice(device)} // Set edit device state
                   >
                     Edit
@@ -123,19 +157,19 @@ const Devices = () => {
       </div>
 
       {/* Pagination Controls */}
-      <div className='flex justify-center items-center space-x-6'>
+      <div className="flex justify-center items-center space-x-6">
         <Button
-          variant='outline'
+          variant="outline"
           disabled={currentPage === 1}
           onClick={() => handlePageChange(currentPage - 1)}
         >
           Previous
         </Button>
-        <span className='text-sm'>
+        <span className="text-sm">
           Page {currentPage} of {totalPages}
         </span>
         <Button
-          variant='outline'
+          variant="outline"
           disabled={currentPage === totalPages}
           onClick={() => handlePageChange(currentPage + 1)}
         >
@@ -143,7 +177,7 @@ const Devices = () => {
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Devices
+export default Devices;
