@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { ModeButton } from '@/components/ModeButton'
 
 export const metadata: Metadata = {
   title: 'Garbage Collection System',
@@ -27,17 +28,20 @@ export default function RootLayout({
       <body>
         <SidebarProvider>
           <AppSidebar />
-          <main className='p-5'>
+          <main className='p-5 relative w-full'>
             <ThemeProvider
               attribute='class'
-              defaultTheme='dark'
+              defaultTheme='system'
               enableSystem
               disableTransitionOnChange
             >
               {children}
+              <div className='fixed right-5 top-2'>
+                <ModeButton />
+              </div>
             </ThemeProvider>
+            {/* <SidebarTrigger className='absolute left-2 bottom-2' /> */}
           </main>
-          {/* <SidebarTrigger /> */}
         </SidebarProvider>
       </body>
     </html>

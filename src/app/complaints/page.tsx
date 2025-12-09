@@ -6,7 +6,7 @@ const ComplaintsPage = () => {
     <div>
       <h1 className='text-2xl font-bold'>Complaints</h1>
       <div className='mt-4'>
-        <Employee />
+     
       </div>
     </div>
   )
