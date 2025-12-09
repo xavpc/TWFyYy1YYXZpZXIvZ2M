@@ -1,12 +1,11 @@
 import {
-  Calendar,
-  Home,
-  Inbox,
-  Search,
-  Settings,
   Smartphone,
   LayoutDashboard,
+  MousePointer2,
   CircleUserRound,
+  ChevronUp,
+  User2,
+  NotebookText,
 } from 'lucide-react'
 
 import {
@@ -18,39 +17,42 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from '@/components/ui/sidebar'
+import Link from 'next/link'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 
 // Menu items.
 const items = [
   {
     title: 'Dashboard',
-    url: '/',
+    url: '/dashboard',
     icon: LayoutDashboard,
   },
   {
     title: 'Employees',
-    url: '/',
+    url: '/employees',
     icon: CircleUserRound,
   },
   {
     title: 'Device',
-    url: '/',
+    url: '/device',
     icon: Smartphone,
   },
   {
-    title: 'Calendar',
-    url: '/',
-    icon: Calendar,
+    title: 'Route',
+    url: '/route',
+    icon: MousePointer2,
   },
   {
-    title: 'Search',
-    url: '/',
-    icon: Search,
-  },
-  {
-    title: 'Settings',
-    url: '/',
-    icon: Settings,
+    title: 'Complaints',
+    url: '/complaints',
+    icon: NotebookText,
   },
 ]
 
@@ -65,10 +67,10 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url} className='text-lg'>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -76,6 +78,28 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton>
+                  <User2 /> Username
+                  <ChevronUp className='ml-auto' />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side='top'
+                className='w-[--radix-popper-anchor-width]'
+              >
+                <DropdownMenuItem>
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }

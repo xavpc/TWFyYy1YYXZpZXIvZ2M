@@ -1,4 +1,3 @@
-import Employee from '@/components/employees/Employee'
 import { ModeButton } from '@/components/ModeButton'
 
 export default function Home() {
@@ -6,7 +5,6 @@ export default function Home() {
     <>
       <div className='p-10'>
         <ModeButton />
-        <Employee />
       </div>
     </>
   )
