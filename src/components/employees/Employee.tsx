@@ -1,10 +1,10 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -12,112 +12,132 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog'
 
-// EMPLOYEES API
-import { Employee } from "@/types/employees";
+// EMPLOYEES INTERFACE
+import { Employee } from '@/types/employees'
 
 export default function EmployeeList() {
-  const [isLoading, setIsLoading] = useState(false); //
-  const [searchTerm, setSearchTerm] = useState("");
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
-  const [loading, setLoading] = useState(true);
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [updatedEmployee, setUpdatedEmployee] = useState<Employee | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // New state for edit modal
+  const [isLoading, setIsLoading] = useState(false) //
+  const [searchTerm, setSearchTerm] = useState('')
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const [updatedEmployee, setUpdatedEmployee] = useState<Employee | null>(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false) // New state for edit modal
   const [newEmployee, setNewEmployee] = useState<Employee>({
-    employee_id: "",
-    first_name: "",
-    middle_name: "",
-    last_name: "",
-    email: "",
-    contact_number: "",
-    address: "",
+    employee_id: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    email: '',
+    contact_number: '',
+    address: '',
     age: 18,
-    // role: 'employee',
-    // status: 'active',
-    // joinDate: new Date().toISOString(),
-  });
+  })
 
   // GET ALL EMPLOYEES
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    fetchEmployees()
+  }, [])
 
+  // GET EMPLOYEE
   const fetchEmployees = async () => {
-    setLoading(true); // Start loading
+    setLoading(true) // Start loading
 
     try {
       const response = await fetch(
         ` ${process.env.NEXT_PUBLIC_API_URL}/web.employees`
-      );
-      const data = await response.json();
+      )
+      const data = await response.json()
 
-      console.log("API Response:", data); // Debugging
+      console.log('API Response:', data) // Debugging
 
       const employeesArray = Array.isArray(data)
         ? data
-        : data.employees || data.data || [];
+        : data.employees || data.data || []
 
       if (!Array.isArray(employeesArray)) {
-        console.error("Employees data is not an array:", employeesArray);
-        setEmployees([]); // Fallback to empty array
+        console.error('Employees data is not an array:', employeesArray)
+        setEmployees([]) // Fallback to empty array
       } else {
-        setEmployees(employeesArray);
+        setEmployees(employeesArray)
       }
     } catch (error) {
-      console.error("Error fetching employees:", error);
-      setEmployees([]);
+      console.error('Error fetching employees:', error)
+      setEmployees([])
     } finally {
-      setLoading(false); // Stop loading after fetching data
+      setLoading(false) // Stop loading after fetching data
     }
-  };
+  }
 
-  const handleEditClick = (employee: Employee) => {
-    setEditingEmployee(employee);
-    setUpdatedEmployee(employee); // Load selected employee data for editing
-    setIsEditModalOpen(true); // Open the edit modal
-  };
+  // ADD EMPLOYEE
+  const addEmployee = async () => {
+    const { employee_id, ...employeeWithoutId } = newEmployee // Exclude employee_id
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!updatedEmployee) return;
-    setUpdatedEmployee({ ...updatedEmployee, [e.target.name]: e.target.value });
-  };
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/web.employees`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(employeeWithoutId),
+        }
+      )
 
-  const filteredEmployees = employees.filter(
-    (employee) =>
-      employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      if (!response.ok) {
+        const errorMessage = await response.text()
+        console.error('Failed to add employee:', errorMessage)
+        throw new Error(`Failed to add employee: ${errorMessage}`)
+      }
 
-  // EDIT EMPLOYEE
-  const handleSave = async () => {
-    if (!updatedEmployee) return;
-    setIsLoading(true); // Start loading
+      // Fetch updated employees list after adding
+      await fetchEmployees()
+
+      setIsAddModalOpen(false)
+      setNewEmployee({
+        employee_id: '',
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        email: '',
+        contact_number: '',
+        address: '',
+        age: 20,
+      })
+    } catch (error) {
+      console.error('Error adding employee:', error)
+    }
+  }
+
+  // UPDATE EMPLOYEE
+  const updateEmployee = async () => {
+    if (!updatedEmployee) return
+    setIsLoading(true) // Start loading
 
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/web.employees/${updatedEmployee.employee_id}`,
         {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedEmployee),
         }
-      );
+      )
 
       if (!response.ok) {
-        const errorMessage = await response.text(); // Get error details
-        console.error("Failed to update employee:", errorMessage);
-        throw new Error(`Failed to update employee: ${errorMessage}`);
+        const errorMessage = await response.text() // Get error details
+        console.error('Failed to update employee:', errorMessage)
+        throw new Error(`Failed to update employee: ${errorMessage}`)
       }
 
       setEmployees((prev) =>
@@ -126,93 +146,101 @@ export default function EmployeeList() {
             ? updatedEmployee
             : emp
         )
-      );
+      )
 
-      setIsEditModalOpen(false); // Close the edit modal
-      setUpdatedEmployee(null); // Clear updated employee data
+      setIsEditModalOpen(false) // Close the edit modal
+      setUpdatedEmployee(null) // Clear updated employee data
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
-  };
+  }
+
+  const handleEditClick = (employee: Employee) => {
+    setEditingEmployee(employee)
+    setUpdatedEmployee(employee) // Load selected employee data for editing
+    setIsEditModalOpen(true) // Open the edit modal
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!updatedEmployee) return
+
+    if (e.target.name === 'age') {
+      setUpdatedEmployee({
+        ...updatedEmployee,
+        [e.target.name]: parseInt(e.target.value) || 0,
+      })
+    } else {
+      setUpdatedEmployee({
+        ...updatedEmployee,
+        [e.target.name]: e.target.value,
+      })
+    }
+  }
+
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // EDIT EMPLOYEE
 
   const handleNewEmployeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
 
-    if (name === "age") {
-      setNewEmployee({ ...newEmployee, age: parseInt(value) });
+    if (name === 'age') {
+      setNewEmployee({ ...newEmployee, age: parseInt(value) })
     } else {
-      setNewEmployee({ ...newEmployee, [name]: value });
+      setNewEmployee({ ...newEmployee, [name]: value })
     }
 
     //  setNewEmployee({ ...newEmployee, [e.target.name]: e.target.value })
-  };
+  }
 
-  // ADD EMPLOYEE
-  const handleAddEmployee = async () => {
-    const { employee_id, ...employeeWithoutId } = newEmployee; // Exclude employee_id
+  const itemsPerPage = 7 // Change as needed
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/web.employees`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(employeeWithoutId),
-        }
-      );
+  // Calculate paginated data
+  const indexOfLastEmployee = currentPage * itemsPerPage
+  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage
+  const currentEmployees = filteredEmployees.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
+  )
 
-      if (!response.ok) {
-        const errorMessage = await response.text();
-        console.error("Failed to add employee:", errorMessage);
-        throw new Error(`Failed to add employee: ${errorMessage}`);
-      }
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage)
 
-      // Fetch updated employees list after adding
-      await fetchEmployees();
-
-      setIsAddModalOpen(false);
-      setNewEmployee({
-        employee_id: "",
-        first_name: "",
-        middle_name: "",
-        last_name: "",
-        email: "",
-        contact_number: "",
-        address: "",
-        age: 20,
-      });
-    } catch (error) {
-      console.error("Error adding employee:", error);
-    }
-  };
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
   if (loading)
     return (
-      <div className="flex flex-col space-y-3">
-        <Skeleton className="h-[125px] w-full rounded-xl" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-[90%]" />
-          <Skeleton className="h-4 w-[80%]" />
+      <div className='flex flex-col space-y-3'>
+        <Skeleton className='h-[125px] w-full rounded-xl' />
+        <div className='space-y-2'>
+          <Skeleton className='h-4 w-full' />
+          <Skeleton className='h-4 w-[90%]' />
+          <Skeleton className='h-4 w-[80%]' />
         </div>
       </div>
-    );
+    )
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className='space-y-4'>
+      <div className='flex justify-between items-center'>
         <Input
-          placeholder="Search employees..."
-          className="max-w-sm"
+          placeholder='Search employees...'
+          className='max-w-sm'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Button variant="outline" onClick={() => setIsAddModalOpen(true)}>
+        <Button variant='outline' onClick={() => setIsAddModalOpen(true)}>
           Add Employee
         </Button>
       </div>
 
-      <div className="border rounded-lg">
+      <div className='border rounded-lg'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -220,50 +248,57 @@ export default function EmployeeList() {
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Address</TableHead>
-              {/* <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Join Date</TableHead> */}
 
               <TableHead>Age</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredEmployees.map((employee) => (
+            {currentEmployees.map((employee) => (
               <TableRow key={employee.employee_id}>
                 <TableCell>
-                  {employee.first_name} {employee.middle_name}{" "}
+                  {employee.first_name} {employee.middle_name}{' '}
                   {employee.last_name}
                 </TableCell>
                 <TableCell>{employee.email}</TableCell>
                 <TableCell>{employee.contact_number}</TableCell>
                 <TableCell>{employee.address}</TableCell>
                 <TableCell>{employee.age}</TableCell>
-                {/* <TableCell>{employee.role}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      employee.status === 'active' ? 'default' : 'secondary'
-                    }
-                  >
-                    {employee.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(employee.joinDate).toLocaleDateString()}
-                </TableCell> */}
-                <TableCell>
+
+                <TableCell className='space-x-2'>
                   <Button
-                    variant="outline"
+                    variant='outline'
                     onClick={() => handleEditClick(employee)} // Trigger edit modal
                   >
                     Edit
                   </Button>
+                  {/* <Button variant='destructive'>Delete</Button> */}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className='flex justify-center items-center space-x-6'>
+        <Button
+          variant='outline'
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          Previous
+        </Button>
+        <span className='text-sm'>
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          variant='outline'
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          Next
+        </Button>
       </div>
 
       {/* Add Employee Modal */}
@@ -272,29 +307,29 @@ export default function EmployeeList() {
           <DialogHeader>
             <DialogTitle>Add New Employee</DialogTitle>
           </DialogHeader>
-          <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6">
+          <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6'>
             {[
               // Loop through existing fields
-              "first_name",
-              "middle_name",
-              "last_name",
-              "email",
-              "contact_number",
-              "address",
+              'first_name',
+              'middle_name',
+              'last_name',
+              'email',
+              'contact_number',
+              'address',
             ].map((field) => (
-              <div key={field} className="sm:col-span-3">
-                <label htmlFor={field} className="block text-sm font-medium">
+              <div key={field} className='sm:col-span-3'>
+                <label htmlFor={field} className='block text-sm font-medium'>
                   {field
-                    .replace("_", " ") // Replace underscores with spaces
+                    .replace('_', ' ') // Replace underscores with spaces
                     .toLowerCase() // Convert the whole string to lowercase
-                    .replace(/\b\w/g, (char) => char.toUpperCase())}{" "}
+                    .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
                 </label>
-                <div className="mt-2">
+                <div className='mt-2'>
                   <Input
                     id={field}
                     name={field}
-                    placeholder={field.replace("_", " ")}
-                    value={newEmployee[field as keyof Employee] || ""}
+                    placeholder={field.replace('_', ' ')}
+                    value={newEmployee[field as keyof Employee] || ''}
                     onChange={handleNewEmployeeChange}
                   />
                 </div>
@@ -302,25 +337,25 @@ export default function EmployeeList() {
             ))}
 
             {/* Add Age Input Field */}
-            <div className="sm:col-span-3">
-              <label htmlFor="age" className="block text-sm font-medium">
+            <div className='sm:col-span-3'>
+              <label htmlFor='age' className='block text-sm font-medium'>
                 Age
               </label>
-              <div className="mt-2">
+              <div className='mt-2'>
                 <Input
-                  type="number"
-                  id="age"
-                  name="age"
-                  placeholder="Age"
-                  value={newEmployee.age || ""}
+                  type='number'
+                  id='age'
+                  name='age'
+                  placeholder='Age'
+                  value={newEmployee.age || ''}
                   onChange={(e) => handleNewEmployeeChange(e)}
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAddEmployee}>Save</Button>
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+            <Button onClick={addEmployee}>Save</Button>
+            <Button variant='outline' onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>
           </DialogFooter>
@@ -333,32 +368,32 @@ export default function EmployeeList() {
           <DialogHeader>
             <DialogTitle>Edit Employee</DialogTitle>
           </DialogHeader>
-          <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6">
+          <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6'>
             {[
-              "first_name",
-              "middle_name",
-              "last_name",
-              "email",
-              "age",
-              "contact_number",
-              "address",
+              'first_name',
+              'middle_name',
+              'last_name',
+              'email',
+              'age',
+              'contact_number',
+              'address',
             ].map((field) => (
-              <div key={field} className="sm:col-span-3">
+              <div key={field} className='sm:col-span-3'>
                 <label
                   htmlFor={field}
-                  className="block text-sm font-medium text-white"
+                  className='block text-sm font-medium text-white'
                 >
                   {field
-                    .replace("_", " ") // Replace underscores with spaces
+                    .replace('_', ' ') // Replace underscores with spaces
                     .toLowerCase() // Convert the whole string to lowercase
-                    .replace(/\b\w/g, (char) => char.toUpperCase())}{" "}
+                    .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
                 </label>
-                <div className="mt-2">
+                <div className='mt-2'>
                   <Input
                     id={field}
                     name={field}
-                    placeholder={field.replace("_", " ")}
-                    value={updatedEmployee?.[field as keyof Employee] || ""}
+                    placeholder={field.replace('_', ' ')}
+                    value={updatedEmployee?.[field as keyof Employee] || ''}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -367,13 +402,13 @@ export default function EmployeeList() {
           </div>
 
           <DialogFooter>
-            <Button onClick={handleSave}>Save</Button>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+            <Button onClick={updateEmployee}>Save</Button>
+            <Button variant='outline' onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
