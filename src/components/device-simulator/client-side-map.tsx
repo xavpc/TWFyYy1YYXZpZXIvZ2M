@@ -140,18 +140,24 @@ const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) =
   return null;
 };
 
-const MarkerManager = ({ sessionActive, onAddMarker, routeLoading, loading }: MapProps & { 
+const MarkerManager = ({ 
+  sessionActive, 
+  onAddMarker, 
+  routeLoading,
+  ignoreClicks 
+}: MapProps & { 
   routeLoading: boolean,
-  loading: boolean 
+  ignoreClicks: boolean
 }) => {
-  const [ignoreClicks, setIgnoreClicks] = useState(false);
   
-  // Update cursor based on both sessionActive, routeLoading and loading
+  // Update cursor based on sessionActive, routeLoading, and ignoreClicks
   useEffect(() => {
     const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
     if (mapContainer) {
-      if (routeLoading || loading) {
+      if (routeLoading) {
         mapContainer.style.cursor = 'wait'; // Show loading cursor during route calculation
+      } else if (ignoreClicks) {
+        mapContainer.style.cursor = 'not-allowed'; // Show not-allowed cursor when clicks are disabled
       } else {
         mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
       }
@@ -172,34 +178,11 @@ const MarkerManager = ({ sessionActive, onAddMarker, routeLoading, loading }: Ma
         document.head.removeChild(styleElement);
       };
     }
-  }, [sessionActive, routeLoading, loading]);
-  
-  // Function to temporarily disable clicking
-  const disableClicks = useCallback((duration: number) => {
-    setIgnoreClicks(true);
-    // Change cursor to indicate clicks are disabled
-    const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
-    if (mapContainer) {
-      mapContainer.style.cursor = 'not-allowed';
-    }
-    
-    setTimeout(() => {
-      setIgnoreClicks(false);
-      // Restore cursor based on current states
-      if (mapContainer) {
-        if (routeLoading || loading) {
-          mapContainer.style.cursor = 'wait';
-        } else {
-          mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
-        }
-      }
-      console.log("Clicks re-enabled, sessionActive:", sessionActive);
-    }, duration);
-  }, [sessionActive, routeLoading, loading]);
+  }, [sessionActive, routeLoading, ignoreClicks]);
   
   const map = useMapEvents({
     click: (e) => {
-      if (sessionActive && !ignoreClicks && !routeLoading && !loading) {
+      if (sessionActive && !ignoreClicks && !routeLoading) {
         const newPosition = {
           lat: e.latlng.lat,
           lng: e.latlng.lng
@@ -222,11 +205,6 @@ const MarkerManager = ({ sessionActive, onAddMarker, routeLoading, loading }: Ma
     };
   }, []);
 
-  // Expose the disableClicks function to parent component
-  useEffect(() => {
-    (window as any).disableMapClicks = disableClicks;
-  }, [disableClicks]);
-  
   return null;
 };
 
@@ -244,11 +222,17 @@ const ClientSideMap = ({
   const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
   const [presetRoutePath, setPresetRoutePath] = useState<[number, number][]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [editableTimestamps, setEditableTimestamps] = useState<{ [index: number]: string }>({});
   const [routeLoading, setRouteLoading] = useState<boolean>(false);
-  const [markerRemovalInProgress, setMarkerRemovalInProgress] = useState<boolean>(false);
+  const [ignoreClicks, setIgnoreClicks] = useState<boolean>(false);
 
+  // Add a function to disable clicks temporarily
+  const disableClicks = useCallback((duration: number) => {
+    setIgnoreClicks(true);
+    setTimeout(() => {
+      setIgnoreClicks(false);
+    }, duration);
+  }, []);
   // Update center when selectedRoute changes
   useEffect(() => {
     if (selectedRoute && selectedRoute.center_latitude && selectedRoute.center_longitude) {
@@ -278,6 +262,19 @@ const ClientSideMap = ({
       setPresetRoutePath([]);
     }
   }, [routeCoordinates]);
+
+  useEffect(() => {
+    const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
+    if (mapContainer) {
+      mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab'; // Change to a crosshair when active
+    }
+  
+    return () => {
+      if (mapContainer) {
+        mapContainer.style.cursor = 'grab'; // Reset cursor when session is inactive
+      }
+    };
+  }, [sessionActive]);
 
   // Keep editableTimestamps in sync with markers
   useEffect(() => {
@@ -355,29 +352,20 @@ const ClientSideMap = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Set all loading states to true
-    setRouteLoading(true);
-    setLoading(true);
-    setMarkerRemovalInProgress(true);
-    
     // Close the popup before removing the marker
     const popupCloseButton = document.querySelector('.leaflet-popup-close-button') as HTMLElement;
     if (popupCloseButton) {
       popupCloseButton.click();
     }
     
-    // Disable map clicks for 300ms and change cursor
-    if ((window as any).disableMapClicks) {
-      (window as any).disableMapClicks(300);
-    }
+    // Disable map clicks directly with our local function
+    disableClicks(300);
     
-    // Remove the marker with a small delay to ensure cursor gets updated first
-    setTimeout(() => {
-      if (onRemoveMarker) {
-        onRemoveMarker(index);
-      }
-    }, 50);
-  }, [onRemoveMarker]);
+    // Remove the marker
+    if (onRemoveMarker) {
+      onRemoveMarker(index);
+    }
+  }, [onRemoveMarker, disableClicks]);
   
   // Fetch route when we have at least 2 markers
   useEffect(() => {
@@ -385,10 +373,7 @@ const ClientSideMap = ({
       // Check if we have at least 2 markers to calculate a route
       if (markers.length >= 2) {
         try {
-          // Make sure we keep loading states true if we were already loading
-          // (this ensures consistency if a marker was just removed)
-          setLoading(true);
-          setRouteLoading(true);
+          setRouteLoading(true); // Set route loading state to true
           
           // Clear previous route path
           setRoutePath([]);
@@ -423,18 +408,13 @@ const ClientSideMap = ({
           // If there's an error fetching the route, fall back to a direct line between markers
           setRoutePath(markers.map(pos => [pos.lat, pos.lng] as [number, number]));
         } finally {
-          // Clear all loading states
-          setLoading(false);
-          setRouteLoading(false);
-          setMarkerRemovalInProgress(false);
+          setRouteLoading(false); // Set route loading state back to false
         }
       } else {
         // Reset route when we have fewer than 2 markers
         setRoutePath([]);
-        // Make sure to reset all loading states
-        setLoading(false);
+        // Make sure to reset loading states when we don't have enough markers
         setRouteLoading(false);
-        setMarkerRemovalInProgress(false);
       }
     };
     
@@ -455,9 +435,6 @@ const ClientSideMap = ({
     return midIcon;
   };
   
-  // Determine if we should show the loading indicator in UI
-  const showLoadingIndicator = loading || routeLoading || markerRemovalInProgress;
-  
   return (
     <MapContainer 
       center={center} 
@@ -474,7 +451,7 @@ const ClientSideMap = ({
         sessionActive={sessionActive} 
         onAddMarker={onAddMarker} 
         routeLoading={routeLoading}
-        loading={loading || markerRemovalInProgress}
+        ignoreClicks={ignoreClicks} 
       />
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
@@ -580,7 +557,6 @@ const ClientSideMap = ({
                 <button 
                   onClick={(e) => handleRemoveMarkerClick(e, index)}
                   className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded-md transition-colors"
-                  disabled={showLoadingIndicator}
                 >
                   Remove Waypoint
                 </button>
@@ -590,13 +566,7 @@ const ClientSideMap = ({
         </Marker>
       ))}
       
-      {/* Loading indicator for route fetching */}
-      {showLoadingIndicator && (
-        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-md text-sm z-1000">
-          {markerRemovalInProgress ? "Removing waypoint..." : "Calculating route..."}
-        </div>
-      )}
-      
+
       {/* Legend for the map */}
       <div className="absolute bottom-6 right-2 bg-black bg-opacity-70 text-white p-2 rounded-md text-xs z-1000">
         <div className="font-bold mb-1">Map Legend</div>
