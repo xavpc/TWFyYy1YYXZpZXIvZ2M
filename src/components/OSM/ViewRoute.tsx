@@ -21,11 +21,7 @@ interface CenterCoordinates {
   longitude: number
 }
 
-interface Coordinate {
-  latitude: number;
-  longitude: number;
-  sequence: number;
-}
+
 
 
 import { useTranslations } from 'next-intl' // Import
@@ -213,12 +209,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         })
 
         // Add sequence number as a separate icon
-        L.marker([(latitude), (longitude)], {
+        L.marker([parseFloat(latitude), parseFloat(longitude)], {
           icon: sequenceIcon,
         }).addTo(mapInstanceRef.current!)
 
         // Add actual marker
-        L.marker([(latitude), (longitude)], {
+        L.marker([parseFloat(latitude), parseFloat(longitude)], {
           icon: markerIcon,
         }).addTo(mapInstanceRef.current!)
       })
