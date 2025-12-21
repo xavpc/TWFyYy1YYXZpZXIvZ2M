@@ -12,6 +12,29 @@ const RoutePage = ({ route_id }: { route_id: string }) => {
     fetchRouteDetails()
   }, [])
 
+  const fetchRouteDetails = async () => {
+    setLoading(true) // Start loading
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/mobile.route-coordinates/route/${route_id}`
+    )
+    const data = await response.json()
+
+    console.log('API Response:', data) // Debugging
+
+    // Extract route data similar to how employees were handled
+    const routeArray = Array.isArray(data)
+      ? data
+      : data.routes || data.data || []
+
+    if (!Array.isArray(routeArray) || routeArray.length === 0) {
+      console.error('Route data is not an array or is empty:', routeArray)
+      setRouteData(null) // Fallback to null
+    } else {
+      setRouteData(routeArray[0]) // Assuming the first item contains the route details
+    }
+  }
+
   if (loading) return <p>Loading route...</p>
   if (error) return <p className='text-red-500'>{error}</p>
   if (!routeData) return <p>Route not found.</p>
