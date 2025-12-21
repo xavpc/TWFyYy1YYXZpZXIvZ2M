@@ -504,14 +504,37 @@ const DeviceSimulatorMap = (): JSX.Element => {
                             {/* Timestamp editor in left panel */}
                             <div className='mt-1 flex flex-col'>
                               <label className='text-gray-500 text-xs mb-1'>Timestamp:</label>
-                              <div className='flex space-x-1'>
-                                <input
-                                  type='datetime-local'
-                                  value={new Date(marker.timestamp).toISOString().slice(0, 16)}
-                                  onChange={(e) => handleUpdateMarkerTimestamp(index, new Date(e.target.value).toISOString())}
-                                  className='bg-gray-800 border border-gray-700 text-gray-300 rounded-sm text-xs px-1 py-0.5 w-full'
-                                />
-                              </div>
+                              <input
+                                type='datetime-local'
+                                value={new Date(marker.timestamp).toISOString().slice(0, 16)}
+                                onChange={(e) => {
+                                  // Store the datetime value temporarily
+                                  const tempDateTime = e.target.value;
+                                  const date = new Date(tempDateTime);
+                                  const tzOffset = date.getTimezoneOffset() * 60000; // offset in milliseconds
+                                  const localISOTime = new Date(date.getTime() - tzOffset).toISOString();
+                                  handleUpdateMarkerTimestamp(index, localISOTime);
+                                }}
+                                className='bg-gray-800 border border-gray-700 text-gray-300 rounded-sm text-xs px-1 py-0.5 w-full mb-2'
+                              />
+                              
+                              {/* Save button at the bottom of each waypoint card */}
+                              <button
+                                onClick={() => {
+                                  // Visual confirmation that timestamp was saved
+                                  const button = document.activeElement as HTMLElement;
+                                  const originalText = button.textContent;
+                                  button.textContent = '✓ Saved';
+                                  button.classList.add('bg-green-600');
+                                  setTimeout(() => {
+                                    button.textContent = originalText;
+                                    button.classList.remove('bg-green-600');
+                                  }, 1000);
+                                }}
+                                className='bg-green-700 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded-sm transition-colors w-full mt-1'
+                              >
+                                Save Timestamp
+                              </button>
                             </div>
                           </div>
                         ))}

@@ -204,9 +204,17 @@ const ClientSideMap = ({
   
   // Save timestamp changes
   const saveTimestampChanges = (index: number) => {
-    const newTimestamp = new Date(editableTimestamps[index]).toISOString();
+    // Get the input value
+    const inputValue = editableTimestamps[index];
+    
+    // Create a timestamp that preserves the exact time the user entered
+    // by adding the timezone offset to the ISO string
+    const date = new Date(inputValue);
+    const tzOffset = date.getTimezoneOffset() * 60000; // offset in milliseconds
+    const localISOTime = new Date(date.getTime() - tzOffset).toISOString();
+    
     if (onUpdateMarkerTimestamp) {
-      onUpdateMarkerTimestamp(index, newTimestamp);
+      onUpdateMarkerTimestamp(index, localISOTime);
       // Close the popup after saving
       const popupCloseButton = document.querySelector('.leaflet-popup-close-button') as HTMLElement;
       if (popupCloseButton) {
@@ -339,6 +347,7 @@ const ClientSideMap = ({
           position={[position.lat, position.lng]} 
           icon={getMarkerIcon(index, markers.length)} // Pass the total length
         >
+
           <Popup className="dark-theme-popup">
             {index === 0 ? 'Start Point' : 
             index === markers.length - 1 ? 'End Point' : 
@@ -347,23 +356,18 @@ const ClientSideMap = ({
             Lat: {position.lat.toFixed(6)}, Lng: {position.lng.toFixed(6)}
             
             {sessionActive && editableTimestamps[index] !== undefined && (
-              <div className="mt-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Timestamp:
-                </label>
-                <div className="flex space-x-1">
-                  <input 
-                    type="datetime-local"
-                    value={editableTimestamps[index]}
-                    onChange={(e) => handleTimestampChange(e, index)}
-                    className="flex-grow text-xs p-1 border border-gray-300 rounded-sm bg-white text-black"
-                  />
-                </div>
+              <div>
+                <input 
+                  type="datetime-local"
+                  value={editableTimestamps[index]}
+                  onChange={(e) => handleTimestampChange(e, index)}
+                  className="w-full text-xs p-1 border border-gray-700 rounded-sm bg-gray-900 text-gray-300 mb-1"
+                />
                 <button 
                   onClick={() => saveTimestampChanges(index)}
-                  className="mt-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-1"
                 >
-                  Update Time
+                  Save Timestamp
                 </button>
               </div>
             )}
