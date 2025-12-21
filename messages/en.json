@@ -93,7 +93,10 @@
   },
   "Device Simulator":{
     "Hello there": "Hello there!",
-    "Start Session": "Start Session"
+    "Start Session": "Start Session",
+    "Starting": "Starting...",
+    "Session Active": "Session Active",
+    "Active Session": "Active Session"
   },
   
   "Dialog": {
