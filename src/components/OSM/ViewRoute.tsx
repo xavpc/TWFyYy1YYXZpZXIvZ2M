@@ -339,6 +339,32 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
+  //^ TOGGLE MARKER
+  const toggleMarkers = () => {
+    if (showMarkers) {
+      markersRef.current.forEach((marker) => marker.remove())
+    } else {
+      markersRef.current.forEach((marker) =>
+        marker.addTo(mapInstanceRef.current!)
+      )
+    }
+    setShowMarkers(!showMarkers)
+  }
+
+  //^ TOGGLE ROUTES
+  const toggleRoutes = () => {
+    if (showRoutes) {
+      routesRef.current.forEach((route) => route.remove())
+      routesMarkerRef.current.forEach((marker) => marker.remove())
+    } else {
+      routesRef.current.forEach((route) => route.addTo(mapInstanceRef.current!))
+      routesMarkerRef.current.forEach((route) =>
+        route.addTo(mapInstanceRef.current!)
+      )
+    }
+    setShowRoutes(!showRoutes)
+  }
+
   return (
     <div className='relative'>
       <div>
