@@ -17,8 +17,9 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
   const markersRef = useRef<L.Marker[]>([])
   const routesRef = useRef<L.Polyline[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [clickCoords, setClickCoords] = useState<string>('No clicks yet')
+  const [clickCoords, setClickCoords] = useState('')
   const [isLoading, setIsLoading] = useState(false) // Add loading state
+  const [noData, setNoData] = useState(false) // Add state for tracking no data
 
   const t = useTranslations('Route') // Ensure
   const router = useRouter()
@@ -224,6 +225,21 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
     }
   }
 
+  //^ DELETE ROUTE
+  const handleDeleteRoute = () => {
+    // Remove all markers
+    markersRef.current.forEach((marker) => marker.remove())
+    markersRef.current = []
+
+    // Remove all routes
+    clearRoutes()
+
+    // Reset click coordinates display
+    setClickCoords('No clicks yet')
+
+    console.log('Route and markers cleared!')
+  }
+
   return (
     <div>
       <div>
@@ -265,7 +281,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
             {isLoading ? 'Loading' : t('Create Route')}
           </button>
           <button
-            // onClick={handleCreateRoute}
+            onClick={handleDeleteRoute} // Add the function here
             className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
             disabled={isLoading}
           >

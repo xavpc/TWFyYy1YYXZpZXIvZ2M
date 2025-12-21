@@ -9,6 +9,9 @@
     "Username": "ユーザー名",
     "SignOut": "ログアウト"
   },
+  "Dashboard": {
+    "Hello there": "こんにちは!"
+  },
   "Layout": {
     "Dashboard": "ダッシュボード",
     "Employees": "従業員",

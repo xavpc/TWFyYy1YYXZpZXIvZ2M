@@ -121,6 +121,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   }
 
   //^ FETCHES AND DISPLAY ROUTE
+  //^ FETCHES AND DISPLAY ROUTE
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
 
@@ -136,10 +137,10 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       const response = await fetch(
         `${API_URL}/route-coordinates/route/${route_id}`
       )
-
       const { data } = await response.json()
+
       if (!data?.length) {
-        setNoData(true) // Indicate no data found
+        setNoData(true)
         return
       }
 
@@ -173,8 +174,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       }).addTo(mapInstanceRef.current)
       routesRef.current.push(route)
 
-      // Define marker icon
-       // Add markers for each coordinate with sequence number
+      // Add markers for each coordinate with sequence number
       sortedCoordinates.forEach(({ latitude, longitude, sequence }) => {
         // Create a custom div icon to show the sequence number above the marker
         const sequenceIcon = L.divIcon({
@@ -265,15 +265,15 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
           <div>
             <div
               ref={mapContainerRef}
-              className='h-[500px] w-full relative -z-50'
+              className='h-[500px] w-full relative z-10'
             />
 
             <button
               onClick={() => setIsDialogOpen(true)}
-              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
+              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
               disabled={isLoading}
             >
-              {isLoading ? 'Loading...' : t('Delete Route')}
+              {t('Delete Route')}
             </button>
           </div>
 

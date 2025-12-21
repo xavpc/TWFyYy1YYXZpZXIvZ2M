@@ -212,7 +212,7 @@ const Route = () => {
                       {t('View')}
                     </Button>
                     <Button
-                      className='bg-blue-500 text-white hover:bg-blue-800'
+                      className='bg-green-500 text-white hover:bg-green-800'
                       size='sm'
                       onClick={() => {
                         console.log(

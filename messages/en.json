@@ -9,6 +9,9 @@
     "Username": "Username",
     "SignOut": "Sign Out"
   },
+  "Dashboard": {
+    "Hello there": "Hello there!"
+  },
   "Layout": {
     "Dashboard": "Dashboard",
     "Employees": "Employees",
