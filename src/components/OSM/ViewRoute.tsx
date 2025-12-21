@@ -35,8 +35,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const routesRef = useRef<L.Polyline[]>([])
-  const markersRef = useRef<L.Marker<any>[]>([])
-
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [center, setCenter] = useState<CenterCoordinates>({
@@ -249,7 +247,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       setCollectionPoints(data) // Store in state
-
+      const routesRef = useRef<L.Marker[]>([])
       // Add markers to the map
       data.forEach(
         ({ latitude, longitude, collection_point_name }: CollectionPoint) => {

@@ -7,7 +7,8 @@
     "Route": "Route",
     "Complaints": "Complaints",
     "Username": "Username",
-    "SignOut": "Sign Out"
+    "SignOut": "Sign Out",
+    "Device Simulator": "Device Simulator"
   },
   "Dashboard": {
     "Hello there": "Hello there!"
@@ -17,7 +18,8 @@
     "Employees": "Employees",
     "Device": "Device",
     "Route": "Route",
-    "Complaints": "Complaints"
+    "Complaints": "Complaints",
+    "Device Simulator": "Device Simulator"
   },
   "Pagination": {
     "Next": "Next",
@@ -34,7 +36,8 @@
     "Actions": "Actions",
     "Add Employee": "Add Employee",
     "Edit Employee": "Edit Employee",
-    "Edit": "Edit"
+    "Edit": "Edit",
+    "Search employees": "Search employees... "
   },
   "Add Employee": {
     "first_name": "First Name",
@@ -73,7 +76,12 @@
     "Phone": "Phone",
     "Employee": "Employee",
     "Status": "Status",
-    "Action": "Action"
+    "Action": "Action",
+    "Search devices": "Search devices... ",
+    "active": "active",
+    "inactive": "inactive",
+    "Edit": "Edit"
+    
   },
   "Complaints": {
     "Mark as in progress": "Mark as In Progress",
@@ -83,6 +91,16 @@
     "No complaints found": "No complaints found.",
     "Select a complaint to view details": "Select a complaint to view details"
   },
+  "Device Simulator":{
+    "Hello there": "Hello there!",
+    "Start Session": "Start Session",
+    "Starting": "Starting...",
+    "Session Active": "Session Active",
+    "Active Session": "Active Session",
+    "Device Simulator": "Device Simulator",
+    "Select a Device":"Select a Device"
+  },
+  
   "Dialog": {
     "Cancel": "Cancel",
     "Delete Paragraph": " This action cannot be undone. This will permanently delete this route.",
