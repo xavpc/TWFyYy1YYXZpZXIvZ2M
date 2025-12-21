@@ -3,7 +3,7 @@ import React, { JSX, useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import dynamic from 'next/dynamic'
 import axios from 'axios'
-
+import { Toaster, toast } from 'react-hot-toast';
 // Dynamically import the map component with SSR disabled
 const Map = dynamic(() => import('./client-side-map'), { ssr: false })
 
@@ -70,10 +70,27 @@ const DeviceSimulatorMap = (): JSX.Element => {
 
   const handleSendLocations = async () => {
     if (!sessionId || !selectedDevice || markers.length < 2) {
-      alert('You need an active session with at least 2 waypoints to send locations');
+      toast.error('You need an active session with at least 2 waypoints to send locations', {
+        duration: 4000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      });
       return;
     }
   
+    const loadingToastId = toast.loading('Sending location data...', {
+      style: {
+        background: '#1F2937',
+        color: '#FFF',
+        border: '1px solid #374151',
+        borderRadius: '6px',
+      },
+    });
+    
     try {
       setIsSendingLocations(true);
       setSendingProgress(0);
@@ -93,17 +110,52 @@ const DeviceSimulatorMap = (): JSX.Element => {
         
         await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/device-locations`, payload);
         
-        setSendingProgress(Math.round(((i + 1) / markers.length) * 100));
+        const progress = Math.round(((i + 1) / markers.length) * 100);
+        setSendingProgress(progress);
+        
+        // Update loading toast with progress
+        toast.loading(`Sending locations: ${progress}%`, {
+          id: loadingToastId,
+          style: {
+            background: '#1F2937',
+            color: '#FFF',
+            border: '1px solid #374151',
+            borderRadius: '6px',
+          },
+        });
         
         if (i < markers.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
       
-      alert('All locations sent successfully!');
+      // Success toast
+      toast.success('All locations sent successfully!', {
+        id: loadingToastId,
+        duration: 4000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+        icon: '✅',
+      });
     } catch (error) {
       console.error('Error sending locations:', error);
-      alert('Error sending locations. See console for details.');
+      
+      // Error toast
+      toast.error('Error sending locations. See console for details.', {
+        id: loadingToastId,
+        duration: 5000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+        icon: '❌',
+      });
     } finally {
       setIsSendingLocations(false);
     }
@@ -300,6 +352,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
   
   return (
     <div className='flex flex-col h-[calc(100vh-64px)]'>
+
+      <Toaster position="top-right" />
       {/* Header Bar */}
       <div className='bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center'>
         <h1 className='text-xl font-bold text-white'>
