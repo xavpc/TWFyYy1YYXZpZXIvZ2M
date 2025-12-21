@@ -34,7 +34,9 @@ import { useRouter } from 'next/navigation'
 const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
-  const routesRef = useRef<(L.Polyline | L.Marker)[]>([])
+  const routesRef = useRef<L.Polyline[]>([])
+  const markersRef = useRef<L.Marker<any>[]>([])
+
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [center, setCenter] = useState<CenterCoordinates>({
@@ -43,6 +45,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   })
   const [noData, setNoData] = useState(false) // Add state for tracking no data
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isCollectionOpen, setIsCollectionOpen] = useState(false)
   const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>(
     []
   )
@@ -120,7 +123,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         longitude: parseFloat(data.center_longitude),
       })
       console.log(`route data`, data)
-      console.log(`centerzzzz: ${center.latitude}, ${center.longitude}`)
     } catch (error) {
       console.error('Error fetching center coordinates:', error)
     }
@@ -130,9 +132,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
 
-    setIsLoading(true)
-    setError(null)
-    setNoData(false) // Reset no data state
+    setIsLoading(false)
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
     const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving/'
@@ -234,10 +234,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const fetchCollectionPoints = async () => {
     if (!route_id || !mapInstanceRef.current) return
 
-    setIsLoading(true)
-    setError(null)
-    setNoData(false) // Reset no data state
-
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
     try {
@@ -253,7 +249,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       setCollectionPoints(data) // Store in state
-    
+
       // Add markers to the map
       data.forEach(
         ({ latitude, longitude, collection_point_name }: CollectionPoint) => {
@@ -265,14 +261,13 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             popupAnchor: [1, -34],
           })
 
-          const marker = L.marker(
-            [(latitude), (longitude)],
-            { icon: markerIcon }
-          )
+          const marker = L.marker([Number(latitude), Number(longitude)], {
+            icon: markerIcon,
+          })
             .addTo(mapInstanceRef.current!)
             .bindPopup(`<b>${collection_point_name}</b>`)
 
-          routesRef.current.push(marker) // Store markers for potential cleanup
+          markersRef.current.push(marker) // Store markers for potential cleanup
         }
       )
     } catch (error) {
@@ -314,20 +309,48 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
+  //^ DELETE COLLECTION
+  const handleDeleteCollection = async () => {
+    if (!route_id) return
+
+    setIsLoading(true)
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+    try {
+      const response = await fetch(
+        `${API_URL}/collection-points/route/${route_id}`,
+        {
+          method: 'DELETE',
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete collection: ${await response.text()}`)
+      }
+
+      console.log('Collection deleted successfully')
+
+      // Remove all markers from the map
+      markersRef.current.forEach((marker) => marker.remove())
+      markersRef.current = []
+    } catch (error) {
+      console.error('Error deleting collection:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className='relative'>
-      {noData ? (
-        // Show "No Route Found" if there is no data
-        <div className='text-center text-gray-500 mt-4'>No Route Found</div>
-      ) : (
-        // Otherwise, display the map and button
+      <div>
         <div>
-          <div>
-            <div
-              ref={mapContainerRef}
-              className='h-[500px] w-full relative z-10'
-            />
+          <div
+            ref={mapContainerRef}
+            className='h-[500px] w-full relative z-10'
+          />
 
+          <div className='flex gap-2'>
             <button
               onClick={() => setIsDialogOpen(true)}
               className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
@@ -335,37 +358,71 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             >
               {t('Delete Route')}
             </button>
-          </div>
-
-          <div className='relative z-50'>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{dialog('Sure')}</DialogTitle>
-                  <DialogDescription className='my-5'>
-                    {dialog('Delete Paragraph')}
-                  </DialogDescription>
-                  <div className='flex gap-2 mt-4 items-center justify-center'>
-                    <button
-                      onClick={handleDeleteRoute}
-                      className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Loading...' : t('Delete Route')}
-                    </button>
-                    <button
-                      onClick={() => setIsDialogOpen(false)}
-                      className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
-                    >
-                      {dialog('Cancel')}
-                    </button>
-                  </div>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
+            <button
+              onClick={() => setIsCollectionOpen(true)}
+              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
+              disabled={isLoading}
+            >
+              {t('Delete Collection')}
+            </button>
           </div>
         </div>
-      )}
+
+        <div className='relative z-50'>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{dialog('Sure')}</DialogTitle>
+                <DialogDescription>
+                  <div className='my-5'>{dialog('Delete Paragraph')}</div>
+                </DialogDescription>
+                <div className='flex gap-2 mt-4 items-center justify-center'>
+                  <button
+                    onClick={handleDeleteRoute}
+                    className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Loading...' : t('Delete Route')}
+                  </button>
+                  <button
+                    onClick={() => setIsDialogOpen(false)}
+                    className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
+                  >
+                    {dialog('Cancel')}
+                  </button>
+                </div>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className='relative z-50'>
+          <Dialog open={isCollectionOpen} onOpenChange={setIsCollectionOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{dialog('Sure')}</DialogTitle>
+                <DialogDescription>
+                  <div className='my-5'>{dialog('Delete Paragraph')}</div>
+                </DialogDescription>
+                <div className='flex gap-2 mt-4 items-center justify-center'>
+                  <button
+                    onClick={handleDeleteCollection} // Add the function here
+                    className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Loading' : t('Delete Collection')}
+                  </button>
+                  <button
+                    onClick={() => setIsCollectionOpen(false)}
+                    className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
+                  >
+                    {dialog('Cancel')}
+                  </button>
+                </div>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
     </div>
   )
 }

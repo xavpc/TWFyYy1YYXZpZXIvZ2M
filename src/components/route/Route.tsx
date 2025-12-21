@@ -192,10 +192,10 @@ const Route = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-1/3'> {t('Route Name')}</TableHead>
-              <TableHead className='w-1/3'>{t('View')}</TableHead>
-              <TableHead className='w-1/2'>{t('Add')}</TableHead>
-              <TableHead className='w-1/2'>{t('Delete')}</TableHead>
+              <TableHead className='w-1/2'> {t('Route Name')}</TableHead>
+              <TableHead>{t('View')}</TableHead>
+              <TableHead>{t('Add')}</TableHead>
+              <TableHead>{t('Delete')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

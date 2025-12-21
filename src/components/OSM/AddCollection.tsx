@@ -110,14 +110,12 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
 
       const { data } = await response.json()
       console.log(`route data`, data)
-      console.log(
-        `centerzzzz: ${data.center_latitude}, ${data.center_longitude}`
-      )
     } catch (error) {
       console.error('Error fetching center coordinates:', error)
     }
   }
 
+  //^ FETCH AND DISPLAY ROUTE
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
 
@@ -208,30 +206,31 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
 
     setIsLoading(true)
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
     try {
       for (let index = 0; index < markersRef.current.length; index++) {
         const marker = markersRef.current[index]
         const { lat, lng } = marker.getLatLng()
 
-        const response = await fetch(`${API_URL}/collection-points`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            latitude: lat,
-            longitude: lng,
-            collection_point_name: `Collection Point ${index + 1}`, // Change if needed
-            route_id,
-          }),
-        })
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/collection-points`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              latitude: lat,
+              longitude: lng,
+              collection_point_name: `Collection Point ${index + 1}, ${route_id}`,
+              route_id,
+            }),
+          }
+        )
+
+        const responseText = await response.text() // Get raw response
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to create collection: ${await response.text()}`
-          )
+          throw new Error(`Failed to create collection: ${responseText}`)
         }
       }
 
@@ -239,35 +238,6 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       router.push(`/route/view/${route_id}`)
     } catch (error) {
       console.error('Error creating collection:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  //^ DELETE COLLECTION
-  const handleDeleteCollection = async () => {
-    if (!route_id) return
-
-    setIsLoading(true)
-
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
-    try {
-      const response = await fetch(`${API_URL}/collection-points/${route_id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete collection: ${await response.text()}`)
-      }
-
-      console.log('Collection deleted successfully')
-
-      // Remove all markers from the map
-      markersRef.current.forEach((marker) => marker.remove())
-      markersRef.current = []
-    } catch (error) {
-      console.error('Error deleting collection:', error)
     } finally {
       setIsLoading(false)
     }
@@ -303,13 +273,13 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
         >
           {isLoading ? 'Loading' : t('Create Collection')}
         </button>
-        <button
+        {/* <button
           onClick={handleDeleteCollection} // Add the function here
           className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
           disabled={isLoading}
         >
           {isLoading ? 'Loading' : t('Remove Collection')}
-        </button>
+        </button> */}
       </div>
     </div>
   )
