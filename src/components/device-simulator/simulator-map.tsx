@@ -56,7 +56,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       if (markers.length >= 2) {
         try {
           // Get start and end points
-          const startPoint = markers[0];
+          const startPoint = markers[markers.length - 2];
           const endPoint = markers[markers.length - 1];
           
           // Build the URL with query parameters
@@ -66,9 +66,11 @@ const DeviceSimulatorMap = (): JSX.Element => {
           
           if (response.data && response.data.routes && response.data.routes.length > 0) {
             const route = response.data.routes[0];
+
+
             setRouteInfo({
-              distance: route.distance,
-              duration: route.duration
+              distance: route.distance + routeInfo.distance,
+              duration: route.duration + routeInfo.duration,
             });
             console.log('Route info updated:', route);
           }
