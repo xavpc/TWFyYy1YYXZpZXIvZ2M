@@ -845,10 +845,6 @@ const ClientSideMap = ({
             <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
             <span>Collection Point</span>
           </div>
-          <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
-            <span>Collection Point</span>
-          </div>
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
             <span>Collected Point</span>

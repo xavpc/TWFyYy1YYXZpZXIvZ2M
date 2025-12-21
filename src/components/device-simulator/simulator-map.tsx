@@ -75,6 +75,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false);
   const [routesLoading, setRoutesLoading] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  const [deviceSearchQuery, setDeviceSearchQuery] = useState<string>('');
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{
     route_coordinates_id: string;
     latitude: string;
@@ -166,6 +167,17 @@ const DeviceSimulatorMap = (): JSX.Element => {
       setDeviceRoutesLoading(false);
     }
   };
+
+  const filteredDevices = devices.filter(device => {
+    const searchTerm = deviceSearchQuery.toLowerCase();
+    const deviceName = device.device_name.toLowerCase();
+    const plateNumber = device.vehicle_plate_num.toLowerCase();
+    const employeeName = `${device.employee.first_name} ${device.employee.last_name}`.toLowerCase();
+    
+    return deviceName.includes(searchTerm) || 
+           plateNumber.includes(searchTerm) || 
+           employeeName.includes(searchTerm);
+  });
 
   const fetchCollectionPoints = async (routeId: string) => {
     if (!routeId) return;
@@ -933,6 +945,25 @@ const DeviceSimulatorMap = (): JSX.Element => {
             {/* Dropdown Panel */}
             {isDropdownOpen && (
               <div className='absolute z-10 mt-1 w-full bg-gray-900 shadow-lg rounded-md py-1 max-h-60 overflow-auto'>
+                {/* Search input */}
+                <div className="px-3 py-2 sticky top-0 bg-gray-900 border-b border-gray-700 z-10">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-700 rounded-md leading-5 bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="Search devices..."
+                      value={deviceSearchQuery}
+                      onChange={(e) => setDeviceSearchQuery(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
                 {devicesLoading ? (
                   <div className='px-3 py-2 text-sm text-gray-400 flex items-center justify-center'>
                     <svg
@@ -957,12 +988,12 @@ const DeviceSimulatorMap = (): JSX.Element => {
                     </svg>
                     Loading devices...
                   </div>
-                ) : devices.length === 0 ? (
+                ) : filteredDevices.length === 0 ? (
                   <div className='px-3 py-2 text-sm text-gray-400'>
-                    No devices available
+                    No devices found
                   </div>
                 ) : (
-                  devices.map((device) => (
+                  filteredDevices.map((device) => (
                     <button
                       key={device.device_id}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-800 ${
@@ -974,7 +1005,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
                         setSelectedDevice(device)
                         setIsDropdownOpen(false)
                         setSelectedRoute(null) 
-                        fetchDeviceRoutes(device.device_id) 
+                        fetchDeviceRoutes(device.device_id)
+                        setDeviceSearchQuery('') // Reset search query
                       }}
                     >
                       <div className='flex flex-col'>
