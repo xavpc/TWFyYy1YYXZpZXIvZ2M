@@ -34,7 +34,8 @@
       "Actions": "操作",
       "Add Employee": "従業員を追加",
       "Edit Employee": "従業員を編集",
-      "Edit": "編集"
+      "Edit": "編集",
+      "Search employees": "従業員を検索... "
     },
     "Add Employee": {
       "first_name": "名",
@@ -73,7 +74,11 @@
       "Phone": "電話番号",
       "Employee": "従業員",
       "Status": "ステータス",
-      "Action": "操作"
+      "Action": "操作",
+      "Search devices": "デバイスを検索... ",
+      "active": "稼働中",
+      "inactive": "オフライン",
+      "Edit": "編集"
     },
     "Complaints": {
       "Mark as in progress": "進行中としてマーク",

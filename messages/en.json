@@ -34,7 +34,8 @@
     "Actions": "Actions",
     "Add Employee": "Add Employee",
     "Edit Employee": "Edit Employee",
-    "Edit": "Edit"
+    "Edit": "Edit",
+    "Search employees": "Search employees... "
   },
   "Add Employee": {
     "first_name": "First Name",
@@ -73,7 +74,12 @@
     "Phone": "Phone",
     "Employee": "Employee",
     "Status": "Status",
-    "Action": "Action"
+    "Action": "Action",
+    "Search devices": "Search devices... ",
+    "active": "active",
+    "inactive": "inactive",
+    "Edit": "Edit"
+    
   },
   "Complaints": {
     "Mark as in progress": "Mark as In Progress",

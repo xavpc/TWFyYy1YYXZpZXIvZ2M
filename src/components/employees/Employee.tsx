@@ -238,7 +238,7 @@ export default function EmployeeList() {
     <div className='space-y-4'>
       <div className='flex justify-between items-center'>
         <Input
-          placeholder='Search employees...'
+          placeholder= {t('Search employees')}
           className='max-w-sm'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

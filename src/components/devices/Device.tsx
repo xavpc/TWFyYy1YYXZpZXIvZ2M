@@ -163,7 +163,7 @@ const DevicesComponent = () => {
     <div className='space-y-4'>
       <div className='flex justify-between items-center'>
         <Input
-          placeholder='Search devices...'
+          placeholder={t('Search devices')}
           className='max-w-sm'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -195,9 +195,10 @@ const DevicesComponent = () => {
                   {device.employee?.first_name}, {device.employee?.last_name}
                 </TableCell>
                 <TableCell>
-                  <Badge className='bg-green-500 text-white hover:bg-green-600 py-1 px-2'>
+                <Badge className={`text-white px-3 text-center ${device.status === 'active' ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17' : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17' } `}>
+
                     {' '}
-                    {device.status}
+                    {device.status === 'active' ? t('active') : t('inactive')}
                   </Badge>
                 </TableCell>
                 <TableCell className='space-x-2'>
@@ -205,7 +206,7 @@ const DevicesComponent = () => {
                     variant='outline'
                     onClick={() => handleEditClick(device)} // Set edit device state
                   >
-                    Edit
+                    {t('Edit')}
                   </Button>
                   {/* <Button variant='destructive'>Delete</Button> */}
                 </TableCell>
