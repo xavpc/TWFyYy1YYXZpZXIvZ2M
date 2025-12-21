@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import axios from 'axios'
 
 // Fix the marker icons - create actual different colored icons
 const startIcon = new L.Icon({
@@ -37,6 +38,11 @@ interface Position {
   lng: number;
 }
 
+interface RouteGeometry {
+  coordinates: number[][];
+  type: string;
+}
+
 interface MapProps {
   sessionActive: boolean;
   onAddMarker?: (position: Position) => void;
@@ -63,6 +69,8 @@ const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
 const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [center] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
+  const [routePath, setRoutePath] = useState<[number, number][]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   
   // Handle marker additions
   const handleAddMarker = useCallback((position: Position) => {
@@ -72,10 +80,52 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
     }
   }, [onAddMarker]);
   
+  // Fetch route when we have at least 2 markers
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (positions.length >= 2) {
+        try {
+          setLoading(true);
+          
+          // Get start and end points
+          const startPoint = positions[0];
+          const endPoint = positions[positions.length - 1];
+          
+          // Build the URL with query parameters
+          const routeUrl = `http://localhost:3001/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+          
+          const response = await axios.get(routeUrl);
+          
+          if (response.data && response.data.routes && response.data.routes.length > 0) {
+            // OSRM returns coordinates as [lng, lat], but Leaflet expects [lat, lng]
+            const routeCoordinates = response.data.routes[0].geometry.coordinates.map(
+              (coord: number[]) => [coord[1], coord[0]] as [number, number]
+            );
+            
+            setRoutePath(routeCoordinates);
+            console.log('Route fetched:', routeCoordinates);
+          }
+        } catch (error) {
+          console.error('Error fetching route:', error);
+          // If there's an error fetching the route, fall back to a direct line between markers
+          setRoutePath(positions.map(pos => [pos.lat, pos.lng] as [number, number]));
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Reset route when we have fewer than 2 markers
+        setRoutePath([]);
+      }
+    };
+    
+    fetchRoute();
+  }, [positions]);
+  
   // Reset markers when session becomes inactive
   useEffect(() => {
     if (!sessionActive) {
       setPositions([]);
+      setRoutePath([]);
     }
   }, [sessionActive]);
   
@@ -99,18 +149,17 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
       
       <MarkerManager sessionActive={sessionActive} onAddMarker={handleAddMarker} />
       
-      {/* Draw connecting lines */}
-      {positions.length > 1 && (
+      {/* Draw the route using OSRM data */}
+      {routePath.length > 0 && (
         <Polyline 
-          positions={positions.map(pos => [pos.lat, pos.lng])} 
+          positions={routePath} 
           color="#3388ff"
           weight={4}
-          opacity={0.7}
-          dashArray="5, 10"
+          opacity={0.8}
         />
       )}
       
-      {/* Draw markers */}
+      {/* Draw markers for user-clicked points only */}
       {positions.map((position, index) => (
         <Marker 
           key={`marker-${index}`} 
@@ -121,9 +170,18 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
             {index === 0 ? 'Start Point' : 
              index === positions.length - 1 ? 'End Point' : 
              `Waypoint ${index}`}
+            <br />
+            Lat: {position.lat.toFixed(6)}, Lng: {position.lng.toFixed(6)}
           </Popup>
         </Marker>
       ))}
+      
+      {/* Loading indicator for route fetching */}
+      {loading && positions.length >= 2 && (
+        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-md text-sm z-1000">
+          Calculating route...
+        </div>
+      )}
     </MapContainer>
   )
 }

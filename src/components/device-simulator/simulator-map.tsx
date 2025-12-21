@@ -1,5 +1,5 @@
 'use client'
-import React, { JSX, useState } from 'react'
+import React, { JSX, useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import dynamic from 'next/dynamic'
 import axios from 'axios'
@@ -17,6 +17,10 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionStartTime, setSessionStartTime] = useState<string | null>(null)
   const [markers, setMarkers] = useState<Array<{lat: number, lng: number}>>([])
+  const [routeInfo, setRouteInfo] = useState<{
+    distance: number | null,
+    duration: number | null
+  }>({ distance: null, duration: null })
   
   const handleStartSession = async () => {
     try {
@@ -31,6 +35,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
         setSessionId(response.data.data.session_id)
         setSessionStartTime(response.data.data.start)
         setMarkers([]) // Clear any previous markers
+        setRouteInfo({ distance: null, duration: null }) // Reset route info
       }
       
     } catch (error) {
@@ -45,9 +50,66 @@ const DeviceSimulatorMap = (): JSX.Element => {
     console.log('Added marker at:', position)
   }
   
+  // Fetch route information when we have at least 2 markers
+  useEffect(() => {
+    const fetchRouteInfo = async () => {
+      if (markers.length >= 2) {
+        try {
+          // Get start and end points
+          const startPoint = markers[0];
+          const endPoint = markers[markers.length - 1];
+          
+          // Build the URL with query parameters
+          const routeUrl = `http://localhost:3001/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+          
+          const response = await axios.get(routeUrl);
+          
+          if (response.data && response.data.routes && response.data.routes.length > 0) {
+            const route = response.data.routes[0];
+            setRouteInfo({
+              distance: route.distance,
+              duration: route.duration
+            });
+            console.log('Route info updated:', route);
+          }
+        } catch (error) {
+          console.error('Error fetching route info:', error);
+        }
+      } else {
+        // Reset route info when we have fewer than 2 markers
+        setRouteInfo({ distance: null, duration: null });
+      }
+    };
+    
+    fetchRouteInfo();
+  }, [markers]);
+  
   // Format the session start time for display
   const formatTime = (timeString: string) => {
     return new Date(timeString).toLocaleString()
+  }
+  
+  // Format the distance in meters to a more readable format
+  const formatDistance = (meters: number | null) => {
+    if (meters === null) return '-';
+    return meters < 1000 
+      ? `${meters.toFixed(1)} m` 
+      : `${(meters / 1000).toFixed(2)} km`;
+  }
+  
+  // Format the duration in seconds to a more readable format
+  const formatDuration = (seconds: number | null) => {
+    if (seconds === null) return '-';
+    
+    if (seconds < 60) {
+      return `${seconds.toFixed(0)} sec`;
+    } else if (seconds < 3600) {
+      const minutes = seconds / 60;
+      return `${minutes.toFixed(0)} min`;
+    } else {
+      const hours = seconds / 3600;
+      return `${hours.toFixed(1)} hr`;
+    }
   }
   
   return (
@@ -112,7 +174,24 @@ const DeviceSimulatorMap = (): JSX.Element => {
                   <p className="bg-gray-900 px-2 py-1 rounded text-yellow-300 text-xs">{markers.length}</p>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-700">
+                {/* Route Information */}
+                {markers.length >= 2 && (
+                  <div className="pt-3 pb-3 border-t border-b border-gray-700">
+                    <h4 className="text-sm font-semibold text-white mb-2">Route Information</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Distance</p>
+                        <p className="bg-gray-900 px-2 py-1 rounded text-purple-300 text-xs">{formatDistance(routeInfo.distance)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Duration</p>
+                        <p className="bg-gray-900 px-2 py-1 rounded text-orange-300 text-xs">{formatDuration(routeInfo.duration)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="pt-3">
                   <h4 className="text-sm font-semibold text-white mb-2">Instructions</h4>
                   <ul className="text-sm text-gray-400 space-y-2">
                     <li className="flex items-start gap-2">
@@ -129,6 +208,38 @@ const DeviceSimulatorMap = (): JSX.Element => {
                     </li>
                   </ul>
                 </div>
+                
+                {/* Marker Coordinates List */}
+                {markers.length > 0 && (
+                  <div className="pt-3 border-t border-gray-700">
+                    <h4 className="text-sm font-semibold text-white mb-2">Waypoints</h4>
+                    <div className="max-h-48 overflow-y-auto pr-2">
+                      {markers.map((marker, index) => (
+                        <div 
+                          key={`coord-${index}`} 
+                          className="text-xs mb-2 p-2 rounded bg-gray-900 flex items-center"
+                        >
+                          <div 
+                            className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
+                              index === 0 ? 'bg-green-500' : 
+                              index === markers.length - 1 ? 'bg-red-500' : 'bg-blue-500'
+                            }`}
+                          ></div>
+                          <div>
+                            <span className="text-gray-400 mr-1">
+                              {index === 0 ? 'Start:' : 
+                               index === markers.length - 1 ? 'End:' : 
+                               `Point ${index}:`}
+                            </span>
+                            <span className="font-mono">
+                              {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
