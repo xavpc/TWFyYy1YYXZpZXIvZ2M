@@ -275,6 +275,7 @@ const ClientSideMap = ({
   collectionPoints = [],
   selectedRoute = null,
   sessionId,
+  selectedDevice,
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
@@ -285,6 +286,7 @@ const ClientSideMap = ({
   const [ignoreClicks, setIgnoreClicks] = useState<boolean>(false);
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [collectedPointsMap, setCollectedPointsMap] = useState<{[key: string]: boolean}>({});
+  const [isCollecting, setIsCollecting] = useState<{[key: string]: boolean}>({});
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -293,6 +295,16 @@ const ClientSideMap = ({
     }, duration);
   }, []);
   // Update center when selectedRoute changes
+
+    // Reset markers when session becomes inactive
+    useEffect(() => {
+      if (!sessionActive) {
+        setPositions([]);
+        setCollectedPointsMap({});
+        setIsCollecting({});
+      }
+    }, [sessionActive]);
+
   useEffect(() => {
     if (selectedRoute && selectedRoute.center_latitude && selectedRoute.center_longitude) {
       const lat = parseFloat(selectedRoute.center_latitude);
@@ -524,13 +536,57 @@ const ClientSideMap = ({
     fetchRoute();
   }, [markers]);
 
-  // Reset markers when session becomes inactive
-  useEffect(() => {
-    if (!sessionActive) {
-      setPositions([]);
-      // Don't reset the routePath here, as we want to display it regardless of session state
+
+  const collectPoint = async (collectionPointId: string) => {
+    if (!sessionId || !selectedDevice) {
+      console.error("Session ID or device not selected");
+      return;
     }
-  }, [sessionActive]);
+    
+    // Set collecting state for this point
+    setIsCollecting(prev => ({
+      ...prev,
+      [collectionPointId]: true
+    }));
+    
+    try {
+      const payload = {
+        device_id: selectedDevice.device_id,
+        collection_point_id: collectionPointId,
+        collected_timestamp: new Date().toISOString(),
+        session_id: sessionId
+      };
+      
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/collected-points`,
+        payload
+      );
+      
+      if (response.data && response.data.success) {
+        // Update the collected points map
+        setCollectedPointsMap(prev => ({
+          ...prev,
+          [collectionPointId]: true
+        }));
+        
+        // Show a success notification (you can use a toast library here)
+        console.log('Collection point collected successfully');
+      } else {
+        console.error('Failed to collect point:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error collecting point:', error);
+    } finally {
+      // Reset collecting state
+      setIsCollecting(prev => ({
+        ...prev,
+        [collectionPointId]: false
+      }));
+    }
+  };
+
+
   
   const getMarkerIcon = (index: number, total: number) => {
     if (index === 0) return startIcon;
@@ -559,62 +615,65 @@ const ClientSideMap = ({
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
       {/* Display collection points markers */}
-{/* Display collection points markers */}
-{collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
-  // Check if we have markers and if the last marker is close enough to this collection point
-  const hasEndMarker = markers.length > 0;
-  const endMarker = hasEndMarker ? markers[markers.length - 1] : null;
-  const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
-    endMarker.lat, endMarker.lng, 
-    point.latitude, point.longitude
-  ) < 0.03; // 100 meters threshold (0.03 km)
-  
-  // Check if this point has been collected
-  const isCollected = collectedPointsMap[point.collection_point_id] === true;
-  
-  return (
-    <Marker 
-      key={`collection-point-${point.collection_point_id || index}`}
-      position={[point.latitude, point.longitude]} 
-      icon={createTrashCanIcon(isCollected)} 
-    >
-      <Popup className="dark-theme-popup">
-        <div className="font-semibold">Collection Point</div>
-        {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
-        <div className="text-xs mt-2">
-          Lat: {point.latitude}, Lng: {point.longitude}
-        </div>
+      {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
+        // Check if we have markers and if the last marker is close enough to this collection point
+        const hasEndMarker = markers.length > 0;
+        const endMarker = hasEndMarker ? markers[markers.length - 1] : null;
+        const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
+          endMarker.lat, endMarker.lng, 
+          point.latitude, point.longitude
+        ) < 0.03; // 100 meters threshold (0.03 km)
         
-        {isCollected ? (
-          <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-3 text-center">
-            ✓ Already Collected
-          </div>
-        ) : (
-          // Show collect button only when end marker is near and not already collected
-          isNearCollectionPoint && (
-            <button 
-              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3"
-              onClick={async () => {
-                try {
-                  // Your API call to mark this point as collected would go here
-                  // After successful collection, update the state
-                  setCollectedPointsMap(prev => ({
-                    ...prev,
-                    [point.collection_point_id]: true
-                  }));
-                } catch (error) {
-                  console.error('Error collecting point:', error);
-                }
-              }}
-            >
-              Collect Point
-            </button>
-          )
-        )}
-      </Popup>
-    </Marker>
-  );
-})}
+        // Check if this point has been collected
+        const isCollected = collectedPointsMap[point.collection_point_id] === true;
+        // Check if this point is currently being collected
+        const isCollectingPoint = isCollecting[point.collection_point_id] === true;
+        
+        return (
+          <Marker 
+            key={`collection-point-${point.collection_point_id || index}`}
+            position={[point.latitude, point.longitude]} 
+            icon={createTrashCanIcon(isCollected)} 
+          >
+            <Popup className="dark-theme-popup">
+              <div className="font-semibold">Collection Point</div>
+              {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
+              <div className="text-xs mt-2">
+                Lat: {point.latitude}, Lng: {point.longitude}
+              </div>
+              
+              {isCollected ? (
+                <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-3 text-center">
+                  ✓ Already Collected
+                </div>
+              ) : (
+                // Show collect button only when end marker is near and not already collected
+                isNearCollectionPoint && (
+                  <button 
+                    className={`${isCollectingPoint ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3 flex justify-center items-center`}
+                    onClick={() => collectPoint(point.collection_point_id)}
+                    disabled={isCollectingPoint || !selectedDevice}
+                  >
+                    {isCollectingPoint ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : !selectedDevice ? (
+                      'Select a device first'
+                    ) : (
+                      'Collect Point'
+                    )}
+                  </button>
+                )
+              )}
+            </Popup>
+          </Marker>
+        );
+      })}      
       {/* Draw the preset route coordinates */}
       {presetRoutePath.length > 0 && (
         <Polyline 
@@ -786,7 +845,14 @@ const ClientSideMap = ({
             <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
             <span>Collection Point</span>
           </div>
-
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+            <span>Collection Point</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+            <span>Collected Point</span>
+          </div>
         </div>
       )}    
 
