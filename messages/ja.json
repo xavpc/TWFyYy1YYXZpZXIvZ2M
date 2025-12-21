@@ -52,7 +52,11 @@
     "View": "表示",
     "Invalid Route": "無効なルート",
     "Save": "保存",
-    "Cancel": "キャンセル"
+    "Cancel": "キャンセル",
+    "Delete Route": "ルートの削除",
+    "Remove Route": "ルートを削除する",
+    "Create Route": "ルートを作成する",
+    "Click Points": "地図上の点をクリックして、接続されたルートを作成します。すべてのポイント間のルートが順番に計算されます。"
   },
   "Device": {
     "Device Name": "デバイス名",
