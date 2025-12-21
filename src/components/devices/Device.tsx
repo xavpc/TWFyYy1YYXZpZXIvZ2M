@@ -239,7 +239,7 @@ const DevicesComponent = () => {
         </Button>
       </div>
 
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      {/* <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Device</DialogTitle>
@@ -258,7 +258,7 @@ const DevicesComponent = () => {
                       .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
                   </label>
                   <div className='mt-2'>
-                    {/* <Input
+                    <Input
                       id={field}
                       name={field}
                       placeholder={field.replace('_', ' ')}
@@ -268,7 +268,7 @@ const DevicesComponent = () => {
                           : updatedDevice?.[field as keyof Devices] || ''
                       }
                       onChange={handleInputChange}
-                    /> */}
+                    />
                   </div>
                 </div>
               )
@@ -282,7 +282,7 @@ const DevicesComponent = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   )
 }
