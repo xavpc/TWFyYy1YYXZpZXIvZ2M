@@ -108,6 +108,73 @@ const Route = () => {
     }
   }
 
+   //^ GET DEVICE
+  const fetchDevices = async () => {
+    setLoading(true) // Start loading
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/devices`)
+      const data = await response.json()
+
+      const deviceArray = Array.isArray(data)
+        ? data
+        : data.posts || data.data || []
+
+      if (!Array.isArray(deviceArray)) {
+        console.error('Posts data is not an array:', deviceArray)
+        setDevices([]) // Fallback to empty array
+      } else {
+        setDevices(deviceArray)
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+      setDevices([])
+    } finally {
+      setLoading(false) // Stop loading after fetching data
+    }
+  }
+
+  //^ ASSIGN DEVICE TO ROUTE
+  const addDeviceToRoute = async (deviceId: string, routeId: string) => {
+    if (!deviceId || !routeId) {
+      console.error('Device ID and Route ID are required')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/device-routes`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            device_id: deviceId,
+            route_id: routeId,
+            day_assigned: 'monday',
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorMessage = await response.text()
+        throw new Error(`Failed to add device: ${errorMessage}`)
+      }
+
+      console.log('Device successfully assigned to route')
+
+      setIsAddDeviceOpen(false) // Close the modal
+    } catch (error) {
+      console.error('Error adding device to route:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
   const filteredRoutes = routes.filter(
     (route) =>
       route.route_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
