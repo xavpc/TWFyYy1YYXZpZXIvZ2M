@@ -14,14 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-
 import { useTranslations } from 'next-intl' // Import
 
 // DEVICE INTERFACE

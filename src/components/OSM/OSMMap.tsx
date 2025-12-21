@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react' // Add this import for the loading spinner
 
 interface OSMMapProps {
   className?: string
   route_id?: string
 }
+
+import { useTranslations } from 'next-intl' // Import
 
 const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -18,6 +19,9 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
   const [error, setError] = useState<string | null>(null)
   const [clickCoords, setClickCoords] = useState<string>('No clicks yet')
   const [isLoading, setIsLoading] = useState(false) // Add loading state
+
+  const t = useTranslations('Route') // Ensure
+  const router = useRouter()
 
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return
@@ -123,7 +127,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
     }
   }
 
-  // GET ROUTE
+  //^ GET ROUTE
   const getRoute = async (start: L.LatLng, end: L.LatLng) => {
     const map = mapInstanceRef.current
     if (!map) return
@@ -165,7 +169,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
     }
   }
 
-  //   CREATE ROUTE SAVE
+  //^   CREATE ROUTE SAVE
   const handleCreateRoute = async () => {
     if (markersRef.current.length === 0) {
       setError('No markers to save.')
@@ -211,6 +215,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
       }
 
       console.log('All markers saved successfully!')
+      router.push('/route')
     } catch (error) {
       console.error('Error saving markers:', error)
       setError(`Failed to save markers: ${error}`)
@@ -220,22 +225,21 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
   }
 
   return (
-    <Card className={className}>
-      <CardContent>
+    <div>
+      <div>
         {error && (
-          <Alert variant='destructive' className='mb-4'>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className='mb-4'>
+            <div>{error}</div>
+          </div>
         )}
         <div className='mb-4'>
-          <Alert>
-            <AlertDescription>
-              Click points on the map to create a connected route. Routes will
-              be calculated between all points in order.
+          <div className='bg-blue-500 p-4 text-sm rounded'>
+            <div>
+              {t('Click Points')}
               <br />
-              Last click: {clickCoords}
-            </AlertDescription>
-          </Alert>
+              {t('Last Click')}: {clickCoords}
+            </div>
+          </div>
         </div>
         <div className='relative'>
           <div
@@ -252,15 +256,24 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
             </div>
           )}
         </div>
-        <button
-          onClick={handleCreateRoute}
-          className='bg-blue-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50'
-          disabled={isLoading}
-        >
-          {isLoading ? 'Creating Route...' : 'Create Route'}
-        </button>
-      </CardContent>
-    </Card>
+        <div className='flex gap-2'>
+          <button
+            onClick={handleCreateRoute}
+            className='bg-blue-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating Route...' : t('Create Route')}
+          </button>
+          <button
+            // onClick={handleCreateRoute}
+            className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
+            disabled={isLoading}
+          >
+            {isLoading ? 'Removing Route...' : t('Remove Route')}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 

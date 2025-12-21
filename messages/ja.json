@@ -56,7 +56,8 @@
     "Delete Route": "ルートの削除",
     "Remove Route": "ルートを削除する",
     "Create Route": "ルートを作成する",
-    "Click Points": "地図上の点をクリックして、接続されたルートを作成します。すべてのポイント間のルートが順番に計算されます。"
+    "Click Points": "地図上の点をクリックして、接続されたルートを作成します。すべてのポイント間のルートが順番に計算されます。",
+    "Last Click": "ラストクリック"
   },
   "Device": {
     "Device Name": "デバイス名",
@@ -73,5 +74,10 @@
     "Lang": "経度",
     "No complaints found": "苦情は見つかりませんでした",
     "Select a complaint to view details": "苦情を選択して詳細を表示"
+  },
+  "Dialog": {
+    "Cancel": "キャンセル",
+    "Delete Paragraph": "この操作は元に戻すことができません。これにより、このルートは完全に削除されます。",
+    "Sure": "絶対に間違いありませんか？"
   }
 }

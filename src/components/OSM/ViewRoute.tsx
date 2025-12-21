@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Loader2 } from 'lucide-react'
 
 interface OSMMapProps {
@@ -13,7 +20,6 @@ interface CenterCoordinates {
   latitude: number
   longitude: number
 }
-
 
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
@@ -29,8 +35,11 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     longitude: 123.8854,
   })
 
-    const [noData, setNoData] = useState(false) // Add state for tracking no data
+  const [noData, setNoData] = useState(false) // Add state for tracking no data
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const t = useTranslations('Route')
+  const dialog = useTranslations('Dialog')
 
   const fetchCenterCoordinates = async () => {
     if (!route_id) return
@@ -111,6 +120,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     routesRef.current = []
   }
 
+  //^ FETCHES AND DISPLAY ROUTE
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
 
@@ -219,23 +229,55 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-
   return (
-    <div>
-      {/* <div>
-        <h1>View Route {route_name}</h1>
-      </div> */}
-      <div>
-        {error && (
-          <Alert variant='destructive' className='mb-4'>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        {isLoading && <Loader2 className='animate-spin mx-auto mb-4' />}
+    <div className='relative'>
+      {noData ? (
+        // Show "No Route Found" if there is no data
+        <div className='text-center text-gray-500 mt-4'>No Route Found</div>
+      ) : (
+        // Otherwise, display the map and button
         <div>
-          <div ref={mapContainerRef} className='h-[500px] w-full  disabled' />
+          <div>
+            <div ref={mapContainerRef} className='h-[500px] w-full relative' />
+
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
+              disabled={isLoading}
+            >
+              {isLoading ? 'Loading...' : t('Delete Route')}
+            </button>
+          </div>
+
+          <div className='relative z-50'>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{dialog('Sure')}</DialogTitle>
+                  <DialogDescription className='my-5'>
+                    {dialog('Delete Paragraph')}
+                  </DialogDescription>
+                  <div className='flex gap-2 mt-4 items-center justify-center'>
+                    <button
+                      onClick={handleDeleteRoute}
+                      className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Loading...' : t('Delete Route')}
+                    </button>
+                    <button
+                      onClick={() => setIsDialogOpen(false)}
+                      className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
+                    >
+                      {dialog('Cancel')}
+                    </button>
+                  </div>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

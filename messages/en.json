@@ -54,7 +54,8 @@
     "Delete Route": "Delete Route",
     "Remove Route": "Remove Route",
     "Create Route": "Create Route",
-    "Click Points": "Click points on the map to create a connected route. Routes will be calculated between all points in order."
+    "Click Points": "Click points on the map to create a connected route. Routes will be calculated between all points in order.",
+    "Last Click": "Last Click"
   },
   "Device": {
     "Device Name": "Device Name",
@@ -71,5 +72,10 @@
     "Lang": "Lang",
     "No complaints found": "No complaints found.",
     "Select a complaint to view details": "Select a complaint to view details"
+  },
+  "Dialog": {
+    "Cancel": "Cancel",
+    "Delete Paragraph": " This action cannot be undone. This will permanently delete this route.",
+    "Sure": "Are you absolutely sure?"
   }
 }
