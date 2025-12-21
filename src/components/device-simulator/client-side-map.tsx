@@ -36,6 +36,7 @@ const endIcon = new L.Icon({
 interface Position {
   lat: number;
   lng: number;
+  timestamp?: string; 
 }
 
 interface RouteGeometry {
@@ -242,10 +243,15 @@ const ClientSideMap = ({
         >
           <Popup>
             {index === 0 ? 'Start Point' : 
-             index === markers.length - 1 ? 'End Point' : 
-             `Waypoint ${index}`}
+            index === markers.length - 1 ? 'End Point' : 
+            `Waypoint ${index}`}
             <br />
             Lat: {position.lat.toFixed(6)}, Lng: {position.lng.toFixed(6)}
+            {position.timestamp && (
+              <div className="text-xs mt-1">
+                Time: {new Date(position.timestamp).toLocaleTimeString()}
+              </div>
+            )}
             {sessionActive && (
               <div className="mt-2">
                 <button 

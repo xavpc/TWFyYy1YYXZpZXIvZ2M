@@ -34,7 +34,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [devicesLoading, setDevicesLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionStartTime, setSessionStartTime] = useState<string | null>(null)
-  const [markers, setMarkers] = useState<Array<{ lat: number; lng: number }>>(
+  const [markers, setMarkers] = useState<Array<{ lat: number; lng: number; timestamp: string; }>>(
     []
   )
   const [routeInfo, setRouteInfo] = useState<{
@@ -97,9 +97,13 @@ const DeviceSimulatorMap = (): JSX.Element => {
   }
 
   const handleAddMarker = (position: { lat: number; lng: number }) => {
-    setMarkers((prev) => [...prev, position])
-    console.log('Added marker at:', position)
-  }
+    const now = new Date();
+    setMarkers((prev) => [...prev, {
+      ...position,
+      timestamp: now.toISOString()
+    }]);
+    console.log('Added marker at:', position);
+  };
 
   const handleRemoveMarker = (index: number) => {
     setMarkers((prev) => {
@@ -171,6 +175,11 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const formatTime = (timeString: string) => {
     return new Date(timeString).toLocaleString()
   }
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+  };
 
   // Format the distance in meters to a more readable format
   const formatDistance = (meters: number | null) => {
@@ -458,9 +467,11 @@ const DeviceSimulatorMap = (): JSX.Element => {
                                     : `Point ${index}:`}
                                 </span>
                                 <span className='font-mono'>
-                                  {marker.lat.toFixed(6)},{' '}
-                                  {marker.lng.toFixed(6)}
+                                  {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
                                 </span>
+                                <div className='text-gray-500 text-xs mt-1'>
+                                  {new Date(marker.timestamp).toLocaleTimeString()}
+                                </div>
                               </div>
                             </div>
                             <button
