@@ -9,6 +9,11 @@ interface OSMMapProps {
   route_id?: string
   route_name: string
 }
+interface CenterCoordinates {
+  latitude: number
+  longitude: number
+}
+
 
 const ViewRoute: React.FC<OSMMapProps> = ({ route_id, route_name }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -16,6 +21,44 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id, route_name }) => {
   const routesRef = useRef<L.Polyline[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [center, setCenter] = useState<CenterCoordinates>({
+    latitude: 10.3157,
+    longitude: 123.8854,
+  })
+
+
+
+  const fetchCenterCoordinates = async () => {
+    if (!route_id) return
+
+    try {
+      const apiUrl = `${
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      }/routes/${route_id}`
+      
+      const response = await fetch(apiUrl)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch route details: ${await response.text()}`)
+      }
+
+      const { data } = await response.json()
+      
+      setCenter({
+        latitude: parseFloat(data.center_latitude),
+        longitude: parseFloat(data.center_longitude)
+      })
+      console.log(`route data`, data)
+      console.log(`centerzzzz: ${center.latitude}, ${center.longitude}`)
+    } catch (error) {
+      console.error('Error fetching center coordinates:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchCenterCoordinates()
+  }, [route_id])
+
 
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return
@@ -32,7 +75,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id, route_name }) => {
       })
 
       const map = L.map(mapContainerRef.current, {
-        center: [10.3157, 123.8854],
+        center: [center.latitude, center.longitude],
         zoom: 15,
       })
 
@@ -51,7 +94,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id, route_name }) => {
       console.error('Error initializing map:', error)
       setError('Failed to initialize map')
     }
-  }, [])
+  }, [center])
 
   const clearRoutes = () => {
     routesRef.current.forEach((route) => route.remove())
