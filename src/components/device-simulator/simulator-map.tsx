@@ -50,30 +50,56 @@ const DeviceSimulatorMap = (): JSX.Element => {
     console.log('Added marker at:', position)
   }
   
-  // Fetch route information when we have at least 2 markers
+  const handleRemoveMarker = (index: number) => {
+    setMarkers(prev => {
+      const newMarkers = [...prev];
+      newMarkers.splice(index, 1);
+      return newMarkers;
+    });
+    console.log('Removed marker at index:', index);
+    
+    // Reset route info to recalculate after marker removal
+    setRouteInfo({ distance: null, duration: null });
+  }
+  
+  const handleClearAllWaypoints = () => {
+    if (sessionId) {
+      setMarkers([]);
+      setRouteInfo({ distance: null, duration: null });
+      console.log('Cleared all waypoints');
+    }
+  }
+  
+  // Fetch route information when markers change
   useEffect(() => {
     const fetchRouteInfo = async () => {
       if (markers.length >= 2) {
         try {
-          // Get start and end points
-          const startPoint = markers[markers.length - 2];
-          const endPoint = markers[markers.length - 1];
+          let totalDistance = 0;
+          let totalDuration = 0;
           
-          // Build the URL with query parameters
-          const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
-          
-          const response = await axios.get(routeUrl);
-          
-          if (response.data && response.data.routes && response.data.routes.length > 0) {
-            const route = response.data.routes[0];
-
-
-            setRouteInfo({
-              distance: route.distance + routeInfo.distance,
-              duration: route.duration + routeInfo.duration,
-            });
-            console.log('Route info updated:', route);
+          // Calculate route info for each segment
+          for (let i = 0; i < markers.length - 1; i++) {
+            const startPoint = markers[i];
+            const endPoint = markers[i + 1];
+            
+            // Build the URL with query parameters
+            const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+            
+            const response = await axios.get(routeUrl);
+            
+            if (response.data && response.data.routes && response.data.routes.length > 0) {
+              const route = response.data.routes[0];
+              totalDistance += route.distance;
+              totalDuration += route.duration;
+            }
           }
+          
+          setRouteInfo({
+            distance: totalDistance,
+            duration: totalDuration,
+          });
+          console.log('Route info updated, total distance:', totalDistance);
         } catch (error) {
           console.error('Error fetching route info:', error);
         }
@@ -208,8 +234,25 @@ const DeviceSimulatorMap = (): JSX.Element => {
                       <div className="mt-1 h-2 w-2 rounded-full bg-red-500 flex-shrink-0"></div>
                       <span>Last point marks the destination</span>
                     </li>
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-2 w-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
+                      <span>Click a marker and use popup to remove it</span>
+                    </li>
                   </ul>
                 </div>
+                
+                {/* Clear All Waypoints Button */}
+                {markers.length > 0 && (
+                  <button
+                    onClick={handleClearAllWaypoints}
+                    className="w-full mt-2 bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded-md transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Clear All Waypoints
+                  </button>
+                )}
                 
                 {/* Marker Coordinates List */}
                 {markers.length > 0 && (
@@ -219,24 +262,35 @@ const DeviceSimulatorMap = (): JSX.Element => {
                       {markers.map((marker, index) => (
                         <div 
                           key={`coord-${index}`} 
-                          className="text-xs mb-2 p-2 rounded bg-gray-900 flex items-center"
+                          className="text-xs mb-2 p-2 rounded bg-gray-900 flex items-center justify-between"
                         >
-                          <div 
-                            className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
-                              index === 0 ? 'bg-green-500' : 
-                              index === markers.length - 1 ? 'bg-red-500' : 'bg-blue-500'
-                            }`}
-                          ></div>
-                          <div>
-                            <span className="text-gray-400 mr-1">
-                              {index === 0 ? 'Start:' : 
-                               index === markers.length - 1 ? 'End:' : 
-                               `Point ${index}:`}
-                            </span>
-                            <span className="font-mono">
-                              {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
-                            </span>
+                          <div className="flex items-center">
+                            <div 
+                              className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
+                                index === 0 ? 'bg-green-500' : 
+                                index === markers.length - 1 ? 'bg-red-500' : 'bg-blue-500'
+                              }`}
+                            ></div>
+                            <div>
+                              <span className="text-gray-400 mr-1">
+                                {index === 0 ? 'Start:' : 
+                                 index === markers.length - 1 ? 'End:' : 
+                                 `Point ${index}:`}
+                              </span>
+                              <span className="font-mono">
+                                {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                              </span>
+                            </div>
                           </div>
+                          <button
+                            onClick={() => handleRemoveMarker(index)}
+                            className="text-red-400 hover:text-red-300 p-1"
+                            title="Remove waypoint"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -257,7 +311,13 @@ const DeviceSimulatorMap = (): JSX.Element => {
         
         {/* Right Panel - Map */}
         <div className="lg:col-span-3 h-[600px] bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden">
-          <Map sessionActive={!!sessionId} onAddMarker={handleAddMarker} />
+        <Map 
+          sessionActive={!!sessionId} 
+          onAddMarker={handleAddMarker} 
+          onRemoveMarker={handleRemoveMarker}
+          markers={markers}  // Add this line to pass markers down
+          onClearMarkers={handleClearAllWaypoints}  // Add this line for clear function
+        />
         </div>
       </div>
     </div>
