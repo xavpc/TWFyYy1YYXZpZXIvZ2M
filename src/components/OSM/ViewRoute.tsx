@@ -21,6 +21,13 @@ interface CenterCoordinates {
   longitude: number
 }
 
+interface Coordinate {
+  latitude: number;
+  longitude: number;
+  sequence: number;
+}
+
+
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
 
@@ -175,7 +182,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       routesRef.current.push(route)
 
       // Add markers for each coordinate with sequence number
-      sortedCoordinates.forEach(({ latitude, longitude, sequence }) => {
+      sortedCoordinates.forEach(({ latitude, longitude, sequence } :Coordinate) => {
         // Create a custom div icon to show the sequence number above the marker
         const sequenceIcon = L.divIcon({
           html: `<div style="
@@ -206,14 +213,14 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         })
 
         // Add sequence number as a separate icon
-        L.marker([parseFloat(latitude), parseFloat(longitude)], {
+        L.marker([(latitude), (longitude)], {
           icon: sequenceIcon,
-        }).addTo(mapInstanceRef.current)
+        }).addTo(mapInstanceRef.current!)
 
         // Add actual marker
-        L.marker([parseFloat(latitude), parseFloat(longitude)], {
+        L.marker([(latitude), (longitude)], {
           icon: markerIcon,
-        }).addTo(mapInstanceRef.current)
+        }).addTo(mapInstanceRef.current!)
       })
     } catch (error) {
       console.error('Error fetching route:', error)
