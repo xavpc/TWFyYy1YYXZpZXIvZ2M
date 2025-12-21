@@ -5,6 +5,34 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
 
+
+// Custom CSS for dark theme popups
+const darkPopupStyle = `
+  .dark-theme-popup .leaflet-popup-content-wrapper {
+    background-color: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+  }
+  .dark-theme-popup .leaflet-popup-tip {
+    background-color: #1f2937;
+    border-left: 1px solid #374151;
+    border-top: 1px solid #374151;
+  }
+  .dark-theme-popup input {
+    background-color: #111827;
+    border: 1px solid #374151;
+    color: #e5e7eb;
+  }
+  .dark-theme-popup button {
+    background-color: #1d4ed8;
+  }
+  .dark-theme-popup button:hover {
+    background-color: #1e40af;
+  }
+`;
+
+
+
 // Fix the marker icons - create actual different colored icons
 const startIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
@@ -50,6 +78,7 @@ interface MapProps {
   onAddMarker?: (position: Position) => void;
   onRemoveMarker?: (index: number) => void;
   onClearMarkers?: () => void;
+  onUpdateMarkerTimestamp?: (index: number, newTimestamp: string) => void;
 }
 
 const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
@@ -70,7 +99,18 @@ const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
       setIgnoreNextClick(false);
     }
   });
-  
+
+  // Add style to head
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = darkPopupStyle;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   // Function to set ignore flag when clicking on popups or markers
   useEffect(() => {
     const handlePopupOrMarkerClick = () => {
@@ -92,17 +132,20 @@ const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
   
   return null;
 };
+
 const ClientSideMap = ({ 
   sessionActive = false, 
   markers = [], // Add default value
   onAddMarker, 
   onRemoveMarker,
-  onClearMarkers
+  onClearMarkers,
+  onUpdateMarkerTimestamp
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [center] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [editableTimestamps, setEditableTimestamps] = useState<{ [index: number]: string }>({});
   
   useEffect(() => {
     const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
@@ -116,6 +159,61 @@ const ClientSideMap = ({
       }
     };
   }, [sessionActive]);
+
+  // Keep editableTimestamps in sync with markers
+  useEffect(() => {
+    const updatedTimestamps: { [index: number]: string } = {};
+    markers.forEach((marker, index) => {
+      if (marker.timestamp) {
+        const dateObj = new Date(marker.timestamp);
+        updatedTimestamps[index] = formatDateTimeForInput(dateObj);
+      } else {
+        updatedTimestamps[index] = formatDateTimeForInput(new Date());
+      }
+    });
+    setEditableTimestamps(updatedTimestamps);
+  }, [markers]);
+  
+  // Initialize editable timestamps from markers
+  useEffect(() => {
+    const initialTimestamps: { [index: number]: string } = {};
+    markers.forEach((marker, index) => {
+      if (marker.timestamp) {
+        const dateObj = new Date(marker.timestamp);
+        initialTimestamps[index] = formatDateTimeForInput(dateObj);
+      } else {
+        initialTimestamps[index] = formatDateTimeForInput(new Date());
+      }
+    });
+    setEditableTimestamps(initialTimestamps);
+  }, [markers.length]);
+  
+  // Format date for datetime-local input
+  const formatDateTimeForInput = (date: Date) => {
+    return date.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:MM
+  };
+  
+  // Handle timestamp change
+  const handleTimestampChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const newValue = e.target.value;
+    setEditableTimestamps(prev => ({
+      ...prev,
+      [index]: newValue
+    }));
+  };
+  
+  // Save timestamp changes
+  const saveTimestampChanges = (index: number) => {
+    const newTimestamp = new Date(editableTimestamps[index]).toISOString();
+    if (onUpdateMarkerTimestamp) {
+      onUpdateMarkerTimestamp(index, newTimestamp);
+      // Close the popup after saving
+      const popupCloseButton = document.querySelector('.leaflet-popup-close-button') as HTMLElement;
+      if (popupCloseButton) {
+        popupCloseButton.click();
+      }
+    }
+  };
   
   // Handle marker additions
   const handleAddMarker = useCallback((position: Position) => {
@@ -237,21 +335,45 @@ const ClientSideMap = ({
       {/* Draw markers for user-clicked points only */}
       {markers.map((position, index) => (
         <Marker 
-        key={`marker-${index}-${position.lat}-${position.lng}`}
-        position={[position.lat, position.lng]} 
-        icon={getMarkerIcon(index, markers.length)} // Pass the total length
+          key={`marker-${index}-${position.lat}-${position.lng}`}
+          position={[position.lat, position.lng]} 
+          icon={getMarkerIcon(index, markers.length)} // Pass the total length
         >
-          <Popup>
+          <Popup className="dark-theme-popup">
             {index === 0 ? 'Start Point' : 
             index === markers.length - 1 ? 'End Point' : 
             `Waypoint ${index}`}
             <br />
             Lat: {position.lat.toFixed(6)}, Lng: {position.lng.toFixed(6)}
-            {position.timestamp && (
-              <div className="text-xs mt-1">
-                Time: {new Date(position.timestamp).toLocaleTimeString()}
+            
+            {sessionActive && editableTimestamps[index] !== undefined && (
+              <div className="mt-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Timestamp:
+                </label>
+                <div className="flex space-x-1">
+                  <input 
+                    type="datetime-local"
+                    value={editableTimestamps[index]}
+                    onChange={(e) => handleTimestampChange(e, index)}
+                    className="flex-grow text-xs p-1 border border-gray-300 rounded-sm bg-white text-black"
+                  />
+                </div>
+                <button 
+                  onClick={() => saveTimestampChanges(index)}
+                  className="mt-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full"
+                >
+                  Update Time
+                </button>
               </div>
             )}
+            
+            {!sessionActive && position.timestamp && (
+              <div className="text-xs mt-1">
+                Time: {new Date(position.timestamp).toLocaleString()}
+              </div>
+            )}
+            
             {sessionActive && (
               <div className="mt-2">
                 <button 

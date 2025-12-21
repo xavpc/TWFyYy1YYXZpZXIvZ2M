@@ -117,6 +117,20 @@ const DeviceSimulatorMap = (): JSX.Element => {
     setRouteInfo({ distance: null, duration: null })
   }
 
+  const handleUpdateMarkerTimestamp = (index: number, newTimestamp: string) => {
+    setMarkers((prev) => {
+      const newMarkers = [...prev];
+      if (newMarkers[index]) {
+        newMarkers[index] = {
+          ...newMarkers[index],
+          timestamp: newTimestamp
+        };
+      }
+      return newMarkers;
+    });
+    console.log(`Updated timestamp for marker ${index} to ${newTimestamp}`);
+  };
+
   const handleClearAllWaypoints = () => {
     if (sessionId) {
       setMarkers([])
@@ -175,11 +189,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const formatTime = (timeString: string) => {
     return new Date(timeString).toLocaleString()
   }
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
-  };
 
   // Format the distance in meters to a more readable format
   const formatDistance = (meters: number | null) => {
@@ -407,7 +416,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
                       </li>
                       <li className='flex items-start gap-2'>
                         <div className='mt-1 h-2 w-2 rounded-full bg-yellow-500 flex-shrink-0'></div>
-                        <span>Click a marker and use popup to remove it</span>
+                        <span>Click a marker to edit its timestamp or remove it</span>
                       </li>
                     </ul>
                   </div>
@@ -422,7 +431,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
                         xmlns='http://www.w3.org/2000/svg'
                         className='h-4 w-4'
                         fill='none'
-                        viewBox='0 0 24 24'
+                        viewBox='0 0 24'
                         stroke='currentColor'
                       >
                         <path
@@ -446,19 +455,19 @@ const DeviceSimulatorMap = (): JSX.Element => {
                         {markers.map((marker, index) => (
                           <div
                             key={`coord-${index}`}
-                            className='text-xs mb-2 p-2 rounded bg-gray-900 flex items-center justify-between'
+                            className='text-xs mb-2 p-2 rounded bg-gray-900'
                           >
-                            <div className='flex items-center'>
-                              <div
-                                className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
-                                  index === 0
-                                    ? 'bg-green-500'
-                                    : index === markers.length - 1
-                                    ? 'bg-red-500'
-                                    : 'bg-blue-500'
-                                }`}
-                              ></div>
-                              <div>
+                            <div className='flex items-center justify-between mb-1'>
+                              <div className='flex items-center'>
+                                <div
+                                  className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
+                                    index === 0
+                                      ? 'bg-green-500'
+                                      : index === markers.length - 1
+                                      ? 'bg-red-500'
+                                      : 'bg-blue-500'
+                                  }`}
+                                ></div>
                                 <span className='text-gray-400 mr-1'>
                                   {index === 0
                                     ? 'Start:'
@@ -466,34 +475,44 @@ const DeviceSimulatorMap = (): JSX.Element => {
                                     ? 'End:'
                                     : `Point ${index}:`}
                                 </span>
-                                <span className='font-mono'>
-                                  {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
-                                </span>
-                                <div className='text-gray-500 text-xs mt-1'>
-                                  {new Date(marker.timestamp).toLocaleTimeString()}
-                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveMarker(index)}
+                                className='text-red-400 hover:text-red-300 p-1'
+                                title='Remove waypoint'
+                              >
+                                <svg
+                                  xmlns='http://www.w3.org/2000/svg'
+                                  className='h-4 w-4'
+                                  fill='none'
+                                  viewBox='0 0 24 24'
+                                  stroke='currentColor'
+                                >
+                                  <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth={2}
+                                    d='M6 18L18 6M6 6l12 12'
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                            <div className='font-mono mb-1.5'>
+                              {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                            </div>
+                            
+                            {/* Timestamp editor in left panel */}
+                            <div className='mt-1 flex flex-col'>
+                              <label className='text-gray-500 text-xs mb-1'>Timestamp:</label>
+                              <div className='flex space-x-1'>
+                                <input
+                                  type='datetime-local'
+                                  value={new Date(marker.timestamp).toISOString().slice(0, 16)}
+                                  onChange={(e) => handleUpdateMarkerTimestamp(index, new Date(e.target.value).toISOString())}
+                                  className='bg-gray-800 border border-gray-700 text-gray-300 rounded-sm text-xs px-1 py-0.5 w-full'
+                                />
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleRemoveMarker(index)}
-                              className='text-red-400 hover:text-red-300 p-1'
-                              title='Remove waypoint'
-                            >
-                              <svg
-                                xmlns='http://www.w3.org/2000/svg'
-                                className='h-4 w-4'
-                                fill='none'
-                                viewBox='0 0 24 24'
-                                stroke='currentColor'
-                              >
-                                <path
-                                  strokeLinecap='round'
-                                  strokeLinejoin='round'
-                                  strokeWidth={2}
-                                  d='M6 18L18 6M6 6l12 12'
-                                />
-                              </svg>
-                            </button>
                           </div>
                         ))}
                       </div>
@@ -654,6 +673,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
             sessionActive={!!sessionId}
             onAddMarker={handleAddMarker}
             onRemoveMarker={handleRemoveMarker}
+            onUpdateMarkerTimestamp={handleUpdateMarkerTimestamp}
             markers={markers}
             onClearMarkers={handleClearAllWaypoints}
           />

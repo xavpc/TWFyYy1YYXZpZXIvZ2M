@@ -5,6 +5,22 @@
 /* body {
   font-family: Arial, Helvetica, sans-serif;
 } */
+.leaflet-popup-content-wrapper {
+  background-color: white;
+  color: #333;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.leaflet-popup-content {
+  margin: 13px 19px;
+  line-height: 1.4;
+  min-width: 250px;
+}
+
+.leaflet-popup-tip {
+  background-color: white;
+}
 
 @layer base {
   :root {
