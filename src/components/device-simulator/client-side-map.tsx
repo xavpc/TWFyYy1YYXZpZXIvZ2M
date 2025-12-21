@@ -71,6 +71,18 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
   const [center] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  useEffect(() => {
+    const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
+    if (mapContainer) {
+      mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab'; // Change to a crosshair when active
+    }
+  
+    return () => {
+      if (mapContainer) {
+        mapContainer.style.cursor = 'grab'; // Reset cursor when session is inactive
+      }
+    };
+  }, [sessionActive]);
   
   // Handle marker additions
   const handleAddMarker = useCallback((position: Position) => {
