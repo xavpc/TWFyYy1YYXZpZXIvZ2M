@@ -4,49 +4,33 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from '
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
-// Custom marker icons
-const startIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+// Fix the marker icons - create actual different colored icons
+const startIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  className: 'marker-start' // We'll use this for styling
-})
+  shadowSize: [41, 41]
+});
 
-const midIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+const midIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  className: 'marker-mid'
-})
+  shadowSize: [41, 41]
+});
 
-const endIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+const endIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  className: 'marker-end'
-})
-
-// Custom CSS to override the marker colors
-const customStyles = `
-  .marker-start .leaflet-marker-icon {
-    filter: hue-rotate(120deg); /* Green */
-  }
-  .marker-mid .leaflet-marker-icon {
-    filter: hue-rotate(200deg); /* Blue */
-  }
-  .marker-end .leaflet-marker-icon {
-    filter: hue-rotate(0deg); /* Red */
-  }
-`;
+  shadowSize: [41, 41]
+});
 
 interface Position {
   lat: number;
@@ -102,47 +86,45 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
   };
   
   return (
-    <div className='border rounded-lg overflow-hidden' style={{ height: '500px' }}>
-      <style>{customStyles}</style>
-      <MapContainer 
-        center={center} 
-        zoom={13} 
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <MapContainer 
+      center={center} 
+      zoom={13} 
+      style={{ height: '100%', width: '100%' }}
+      className="z-0"
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      
+      <MarkerManager sessionActive={sessionActive} onAddMarker={handleAddMarker} />
+      
+      {/* Draw connecting lines */}
+      {positions.length > 1 && (
+        <Polyline 
+          positions={positions.map(pos => [pos.lat, pos.lng])} 
+          color="#3388ff"
+          weight={4}
+          opacity={0.7}
+          dashArray="5, 10"
         />
-        
-        <MarkerManager sessionActive={sessionActive} onAddMarker={handleAddMarker} />
-        
-        {/* Draw markers */}
-        {positions.map((position, index) => (
-          <Marker 
-            key={`marker-${index}`} 
-            position={[position.lat, position.lng]} 
-            icon={getMarkerIcon(index)}
-          >
-            <Popup>
-              {index === 0 ? 'Start Point' : 
-               index === positions.length - 1 ? 'End Point' : 
-               `Waypoint ${index}`}
-            </Popup>
-          </Marker>
-        ))}
-        
-        {/* Draw connecting lines */}
-        {positions.length > 1 && (
-          <Polyline 
-            positions={positions.map(pos => [pos.lat, pos.lng])} 
-            color="#3388ff"
-            weight={4}
-            opacity={0.7}
-            dashArray="5, 10"
-          />
-        )}
-      </MapContainer>
-    </div>
+      )}
+      
+      {/* Draw markers */}
+      {positions.map((position, index) => (
+        <Marker 
+          key={`marker-${index}`} 
+          position={[position.lat, position.lng]} 
+          icon={getMarkerIcon(index)}
+        >
+          <Popup>
+            {index === 0 ? 'Start Point' : 
+             index === positions.length - 1 ? 'End Point' : 
+             `Waypoint ${index}`}
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   )
 }
 
