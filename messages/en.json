@@ -97,7 +97,8 @@
     "Starting": "Starting...",
     "Session Active": "Session Active",
     "Active Session": "Active Session",
-    "Device Simulator": "Device Simulator"
+    "Device Simulator": "Device Simulator",
+    "Select a Device":"Select a Device"
   },
   
   "Dialog": {

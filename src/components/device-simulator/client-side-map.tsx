@@ -45,40 +45,14 @@ interface RouteGeometry {
 
 interface MapProps {
   sessionActive: boolean;
-  markers?: Position[];  // Add this line
+  markers?: Position[];
   onAddMarker?: (position: Position) => void;
   onRemoveMarker?: (index: number) => void;
-  onClearMarkers?: () => void;  // Add this line
+  onClearMarkers?: () => void;
 }
 
 const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
   const [ignoreNextClick, setIgnoreNextClick] = useState(false);
-  
-  useEffect(() => {
-    // Get access to the map instance
-    const map = L.DomUtil.get('map') as HTMLElement;
-    
-    // Add listeners to markers and popups
-    if (map) {
-      const popups = document.querySelectorAll('.leaflet-popup, .leaflet-marker-icon');
-      popups.forEach(popup => {
-        popup.addEventListener('click', () => {
-          setIgnoreNextClick(true);
-          // Reset after a short delay to allow the map click event to be processed
-          setTimeout(() => setIgnoreNextClick(false), 100);
-        });
-      });
-    }
-    
-    return () => {
-      if (map) {
-        const popups = document.querySelectorAll('.leaflet-popup, .leaflet-marker-icon');
-        popups.forEach(popup => {
-          popup.removeEventListener('click', () => {});
-        });
-      }
-    };
-  }, []);
   
   const map = useMapEvents({
     click: (e) => {
@@ -91,12 +65,32 @@ const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
           onAddMarker(newPosition);
         }
       }
+      // Reset ignore flag after handling the event
+      setIgnoreNextClick(false);
     }
   });
   
+  // Function to set ignore flag when clicking on popups or markers
+  useEffect(() => {
+    const handlePopupOrMarkerClick = () => {
+      setIgnoreNextClick(true);
+    };
+    
+    // Add event listeners to any popup or marker
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.leaflet-popup') || target.closest('.leaflet-marker-icon')) {
+        handlePopupOrMarkerClick();
+      }
+    });
+    
+    return () => {
+      document.removeEventListener('click', () => {});
+    };
+  }, []);
+  
   return null;
 };
-
 const ClientSideMap = ({ 
   sessionActive = false, 
   markers = [], // Add default value
@@ -136,15 +130,12 @@ const ClientSideMap = ({
     e.stopPropagation();
     
     // Close the popup before removing the marker
-    const map = document.querySelector('.leaflet-container');
-    if (map) {
-      const popupCloseButton = document.querySelector('.leaflet-popup-close-button');
-      if (popupCloseButton) {
-        (popupCloseButton as HTMLElement).click();
-      }
+    const popupCloseButton = document.querySelector('.leaflet-popup-close-button') as HTMLElement;
+    if (popupCloseButton) {
+      popupCloseButton.click();
     }
     
-    // Add a small delay before removing the marker
+    // Small delay to prevent immediate map click
     setTimeout(() => {
       if (onRemoveMarker) {
         onRemoveMarker(index);
