@@ -34,6 +34,40 @@ const Devices = () => {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null)
   const [updatedDevice, setUpdatedDevice] = useState<Device | null>(null)
 
+   useEffect(() => {
+    fetchDevices()
+  }, [])
+
+  // GET EMPLOYEE
+  const fetchDevices = async () => {
+    setLoading(true) // Start loading
+
+    try {
+      const response = await fetch(
+        ` ${process.env.NEXT_PUBLIC_API_URL}/web.devices`
+      )
+      const data = await response.json()
+
+      console.log('API Response:', data) // Debugging
+
+      const employeesArray = Array.isArray(data)
+        ? data
+        : data.employees || data.data || []
+
+      if (!Array.isArray(employeesArray)) {
+        console.error('Employees data is not an array:', employeesArray)
+        setDevices([]) // Fallback to empty array
+      } else {
+        setDevices(employeesArray)
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+      setDevices([])
+    } finally {
+      setLoading(false) // Stop loading after fetching data
+    }
+  }
+  
   const filteredDevices = devices.filter(
     (device) =>
       device.device_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
