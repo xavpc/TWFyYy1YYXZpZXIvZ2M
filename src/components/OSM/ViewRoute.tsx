@@ -174,16 +174,43 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       routesRef.current.push(route)
 
       // Define marker icon
-      const markerIcon = L.icon({
-        iconUrl:
-          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-      })
+       // Add markers for each coordinate with sequence number
+      sortedCoordinates.forEach(({ latitude, longitude, sequence }) => {
+        // Create a custom div icon to show the sequence number above the marker
+        const sequenceIcon = L.divIcon({
+          html: `<div style="
+      background-color: white;
+      border: 2px solid blue;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      line-height: 24px;
+      color: black;">
+      ${sequence}
+    </div>`,
+          className: 'sequence-label',
+          iconSize: [20, 20],
+          iconAnchor: [10, -10], // Position above the marker
+        })
 
-      // Add markers for each coordinate
-      sortedCoordinates.forEach(({ latitude, longitude }) => {
+        // Create a marker icon
+        const markerIcon = L.icon({
+          iconUrl:
+            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+        })
+
+        // Add sequence number as a separate icon
+        L.marker([parseFloat(latitude), parseFloat(longitude)], {
+          icon: sequenceIcon,
+        }).addTo(mapInstanceRef.current)
+
+        // Add actual marker
         L.marker([parseFloat(latitude), parseFloat(longitude)], {
           icon: markerIcon,
         }).addTo(mapInstanceRef.current)
