@@ -145,7 +145,7 @@ export default function ComplaintsList() {
                 </div>
 
                 <div className='mt-4 space-x-2'>
-                  <Button variant='outline'>Mark as In Progress</Button>
+                  <Button variant='outline'>Mark as in Progress</Button>
                   <Button>Mark as Resolved</Button>
                 </div>
               </div>

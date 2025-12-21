@@ -43,5 +43,29 @@
     "address": "Address",
     "Save": "Save",
     "Cancel": "Cancel"
+  },
+  "Route": {
+    "View Route": "View Route",
+    "Route Name": "Route Name",
+    "Action": "Action",
+    "Add Route": "Add Route",
+    "View": "View",
+    "Invalid Route": "Invalid Route"
+  },
+  "Device": {
+    "Device Name": "Device Name",
+    "Vehicle Plate Number": "Vehicle Plate Number",
+    "Phone": "Phone",
+    "Employee": "Employee",
+    "Status": "Status",
+    "Action": "Action"
+  },
+  "Complaints": {
+    "Mark as in progress": "Mark as In Progress",
+    "Mark as complete": "Mark as complete",
+    "Lat": "Lat",
+    "Lang": "Lang",
+    "No complaints found": "No complaints found.",
+    "Select a complaint to view details": "Select a complaint to view details"
   }
 }

@@ -22,6 +22,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
+import { useTranslations } from 'next-intl' // Import
+
 // DEVICE INTERFACE
 import { Devices } from '@/types/devices'
 
@@ -150,6 +152,9 @@ const DevicesComponent = () => {
     setCurrentPage(page)
   }
 
+  const t = useTranslations('Device') // Ensure
+  const pagination = useTranslations('Pagination') // Ensure
+
   if (loading)
     return (
       <div className='flex flex-col space-y-3'>
@@ -180,12 +185,12 @@ const DevicesComponent = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Device Name</TableHead>
-              <TableHead>Vehicle Plate Number</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t('Device Name')}</TableHead>
+              <TableHead>{t('Vehicle Plate Number')}</TableHead>
+              <TableHead>{t('Phone')}</TableHead>
+              <TableHead>{t('Employee')}</TableHead>
+              <TableHead>{t('Status')}</TableHead>
+              <TableHead>{t('Action')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -225,17 +230,17 @@ const DevicesComponent = () => {
           disabled={currentPage === 1}
           onClick={() => handlePageChange(currentPage - 1)}
         >
-          Previous
+          {pagination('Previous')}
         </Button>
         <span className='text-sm'>
-          Page {currentPage} of {totalPages}
+          {pagination('Page')} {currentPage} {pagination('of')} {totalPages}
         </span>
         <Button
           variant='outline'
           disabled={currentPage === totalPages}
           onClick={() => handlePageChange(currentPage + 1)}
         >
-          Next
+          {pagination('Next')}
         </Button>
       </div>
 

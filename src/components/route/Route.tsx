@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTranslations } from 'next-intl' // Import useTranslations
 
 const Route = () => {
   const [routes, setRoutes] = useState<RouteName[]>([])
@@ -125,6 +126,9 @@ const Route = () => {
     setCurrentPage(page)
   }
 
+  const t = useTranslations('Route') // Ensure
+  const pagination = useTranslations('Pagination') // Ensure
+
   if (loading)
     return (
       <div className='flex flex-col space-y-3 mt-4'>
@@ -141,13 +145,13 @@ const Route = () => {
     <>
       <div className='flex justify-between items-center mt-4'>
         <Input
-          placeholder='Search employees...'
+          placeholder='Search Route Name...'
           className='max-w-sm'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <Button variant='outline' onClick={() => setIsAddModalOpen(true)}>
-          Add Route
+          {t('Add Route')}
         </Button>
       </div>
 
@@ -155,8 +159,8 @@ const Route = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Route Name</TableHead>
-              <TableHead>Action</TableHead>
+              <TableHead className='w-1/2'> {t('Route Name')}</TableHead>
+              <TableHead className='w-1/2'>{t('Action')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -172,7 +176,7 @@ const Route = () => {
                         router.push(`/route/view/${route.route_id}`)
                       }}
                     >
-                      View
+                      {t('View')}
                     </Button>
                     <Button
                       className='bg-blue-500 text-white hover:bg-blue-800'
@@ -185,7 +189,7 @@ const Route = () => {
                         router.push(`/route/${route.route_id}`)
                       }}
                     >
-                      Add Route
+                      {t('Add Route')}
                     </Button>
                   </div>
                 </TableCell>
@@ -200,17 +204,17 @@ const Route = () => {
           disabled={currentPage === 1}
           onClick={() => handlePageChange(currentPage - 1)}
         >
-          Previous
+          {pagination('Previous')}
         </Button>
         <span className='text-sm'>
-          Page {currentPage} of {totalPages}
+          {pagination('Page')} {currentPage} {pagination('of')} {totalPages}
         </span>
         <Button
           variant='outline'
           disabled={currentPage >= totalPages} // ✅ Fixed edge case when `totalPages` is 0
           onClick={() => handlePageChange(currentPage + 1)}
         >
-          Next
+          {pagination('Next')}
         </Button>
       </div>
 
@@ -218,10 +222,10 @@ const Route = () => {
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Route</DialogTitle>
+            <DialogTitle>{t('Add Route')}</DialogTitle>
           </DialogHeader>
           <div>
-            <label htmlFor='route'>Route Name:</label>
+            <label htmlFor='route'>{t('Route Name')}:</label>
             <Input
               placeholder='Route name...'
               className='mt-2'
@@ -230,9 +234,9 @@ const Route = () => {
             />
           </div>
           <DialogFooter>
-            <Button onClick={addRouteName}>Save</Button>
+            <Button onClick={addRouteName}> {t('Save')}</Button>
             <Button variant='outline' onClick={() => setIsAddModalOpen(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
           </DialogFooter>
         </DialogContent>
