@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
+
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,11 +25,13 @@ import {
 import { Employee } from '@/types/employees'
 
 export default function EmployeeList() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoading, setIsLoading] = useState(false) //
   const [searchTerm, setSearchTerm] = useState('')
   const [employees, setEmployees] = useState<Employee[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [updatedEmployee, setUpdatedEmployee] = useState<Employee | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -82,6 +84,7 @@ export default function EmployeeList() {
 
   // ADD EMPLOYEE
   const addEmployee = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { employee_id, ...employeeWithoutId } = newEmployee // Exclude employee_id
 
     try {

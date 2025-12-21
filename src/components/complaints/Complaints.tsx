@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { MapPin, Calendar, User } from 'lucide-react'
-import dynamic from 'next/dynamic'
 import Image from 'next/image'
 
 const categoryLabels = {
@@ -35,6 +34,7 @@ export default function ComplaintsList() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null
   )
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filter, setFilter] = useState<string>('all')
 
   return (

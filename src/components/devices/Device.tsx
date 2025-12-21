@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ const DevicesComponent = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   // Updated to use Device instead of Devices
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editingDevice, setEditingDevice] = useState<Devices | null>(null)
   const [updatedDevice, setUpdatedDevice] = useState<Devices | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false) // New state for edit modal
