@@ -122,6 +122,7 @@ const MarkerManager = ({ sessionActive, onAddMarker, routeLoading }: MapProps & 
       if (mapContainer) {
         mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
       }
+      console.log("Clicks re-enabled, sessionActive:", sessionActive);
     }, duration);
   }, [sessionActive]);
   
@@ -281,6 +282,7 @@ const ClientSideMap = ({
   // Fetch route when we have at least 2 markers
   useEffect(() => {
     const fetchRoute = async () => {
+      // Check if we have at least 2 markers to calculate a route
       if (markers.length >= 2) {
         try {
           setLoading(true);
@@ -325,11 +327,14 @@ const ClientSideMap = ({
       } else {
         // Reset route when we have fewer than 2 markers
         setRoutePath([]);
+        // Make sure to reset loading states when we don't have enough markers
+        setLoading(false);
+        setRouteLoading(false);
       }
     };
     
     fetchRoute();
-  }, [markers]);  
+  }, [markers]);
   // Reset markers when session becomes inactive
   useEffect(() => {
     if (!sessionActive) {
