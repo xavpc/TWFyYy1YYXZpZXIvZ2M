@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
 import { CollectionPoints } from '@/types/collection-points'
+import { CollectedPoints } from '@/types/collected-points'
 
 // Custom CSS for dark theme popups
 const darkPopupStyle = `
@@ -124,6 +125,28 @@ interface RouteCoordinate {
   }
 }
 
+
+interface Employee {
+  employee_id: string
+  first_name: string
+  middle_name: string | null
+  last_name: string
+  email: string
+  contact_number: string
+  address: string
+  age: number
+  status: string
+}
+
+interface Device {
+  device_id: string
+  device_name: string
+  vehicle_plate_num: string
+  status: string
+  employee: Employee
+}
+
+
 interface MapProps {
   sessionActive: boolean;
   markers?: Position[];
@@ -134,6 +157,7 @@ interface MapProps {
   routeCoordinates?: RouteCoordinate[];
   selectedRoute?: Route | null;
   collectionPoints?: CollectionPoints[];
+  collectedPoints?:CollectedPoints[];
 }
 
 const createTrashCanIcon = () => {
@@ -349,6 +373,20 @@ const ClientSideMap = ({
     }));
   };
   
+
+  const calculateDistance = (lat1:number, lon1:number, lat2 :number, lon2:number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const d = R * c; // Distance in km
+    return d;
+  };
+
   
 
   // Save timestamp changes
@@ -489,22 +527,40 @@ const ClientSideMap = ({
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
       {/* Display collection points markers */}
-      {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => (
-        <Marker 
-          key={`collection-point-${point.collection_point_id || index}`}
-          position={[point.latitude, point.longitude]} 
-          icon={createTrashCanIcon()} 
-        >
-          <Popup className="dark-theme-popup">
-            <div className="font-semibold">Collection Point</div>
-            {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
-            {/* {point.description && <div className="text-sm mt-1">{point.description}</div>} */}
-            <div className="text-xs mt-2">
-              Lat: {point.latitude}, Lng: {point.longitude}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
+        // Check if we have markers and if the last marker is close enough to this collection point
+        const hasEndMarker = markers.length > 0;
+        const endMarker = hasEndMarker ? markers[markers.length - 1] : null;
+        const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
+          endMarker.lat, endMarker.lng, 
+          point.latitude, point.longitude
+        ) < 0.03; // 100 meters threshold (0.1 km)
+        
+        return (
+          <Marker 
+            key={`collection-point-${point.collection_point_id || index}`}
+            position={[point.latitude, point.longitude]} 
+            icon={createTrashCanIcon()} 
+          >
+            <Popup className="dark-theme-popup">
+              <div className="font-semibold">Collection Point</div>
+              {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
+              <div className="text-xs mt-2">
+                Lat: {point.latitude}, Lng: {point.longitude}
+              </div>
+              
+              {/* Show collect button only when end marker is near */}
+              {isNearCollectionPoint && (
+                <button 
+                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3"
+                >
+                  Collect Point
+                </button>
+              )}
+            </Popup>
+          </Marker>
+        );
+      })}
       {/* Draw the preset route coordinates */}
       {presetRoutePath.length > 0 && (
         <Polyline 

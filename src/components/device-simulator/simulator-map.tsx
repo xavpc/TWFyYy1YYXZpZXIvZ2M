@@ -6,6 +6,7 @@ import axios from 'axios'
 import { Toaster, toast } from 'react-hot-toast';
 import { useRef } from 'react'
 import { CollectionPoints } from '@/types/collection-points'
+import { CollectedPoints } from '@/types/collected-points'
 // Dynamically import the map component with SSR disabled
 const Map = dynamic(() => import('./client-side-map'), { ssr: false })
 
@@ -71,7 +72,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [sendingProgress, setSendingProgress] = useState(0)
   const [routes, setRoutes] = useState<Array<Route>>([]);
   const [collectionPoints, setCollectionPoints] = useState<Array<CollectionPoints>>([])
-
+  const [collectedPoints, setCollectedPoints] = useState<Array<CollectedPoints>>([])
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([]);
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false);
   const [routesLoading, setRoutesLoading] = useState(false);
@@ -92,14 +93,15 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
 
   useEffect(() => {
-    if (selectedRoute && selectedRoute.route_id) {
+    if (selectedRoute && selectedRoute.route_id && sessionId) {
       fetchCollectionPoints(selectedRoute.route_id);
+      fetchCollectedPoints(sessionId)
     } else {
       // Clear collection points if no route is selected
-      
+      setCollectedPoints([]);
       setCollectionPoints([]);
     }
-  }, [selectedRoute]);
+  }, [selectedRoute, sessionId]);
 
   useEffect(() => {
     const fetchRoutes = async () => {
@@ -183,6 +185,31 @@ const DeviceSimulatorMap = (): JSX.Element => {
     } catch (error) {
       console.error('Error fetching collection points:', error);
       toast.error('Failed to load collection points for this route', {
+        duration: 3000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      });
+    }
+  };
+
+  const fetchCollectedPoints = async (sessionId: string | null) => {
+    if (!sessionId) return;
+    
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/collected-points/session/${sessionId}`;
+      const response = await axios.get(apiUrl);
+      
+      if (response.data.success && response.data.data) {
+        setCollectedPoints(response.data.data);
+      }
+      console.log(`collected point fetched: ${response.data.data}`)
+    } catch (error) {
+      console.error('Error fetching collected points:', error);
+      toast.error('Failed to load collected points for this session', {
         duration: 3000,
         style: {
           background: '#1F2937',
@@ -876,7 +903,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
                             button.textContent = originalText;
                             button.classList.remove('bg-green-600');
                           }, 1000);
-                        }}
+                        }}  
                         className='bg-green-700 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded-sm transition-colors w-full mt-1'
                       >
                         Save Timestamp
@@ -1133,6 +1160,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
           routeCoordinates={routeCoordinates} 
           selectedRoute={selectedRoute}
           collectionPoints={collectionPoints}
+          collectedPoints={collectedPoints}
         />
         </div>
       </div>
