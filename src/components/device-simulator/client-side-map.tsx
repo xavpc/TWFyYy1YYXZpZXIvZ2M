@@ -79,6 +79,19 @@ interface MapProps {
   onRemoveMarker?: (index: number) => void;
   onClearMarkers?: () => void;
   onUpdateMarkerTimestamp?: (index: number, newTimestamp: string) => void;
+  routeCoordinates?: Array<{
+    route_coordinates_id: string;
+    latitude: string;
+    longitude: string;
+    sequence: number;
+    route: {
+      route_id: string;
+      route_name: string;
+      center_latitude: string;
+      center_longitude: string;
+    }
+  }>;
+  isPreviewMode?: boolean;
 }
 
 const MarkerManager = ({ sessionActive, onAddMarker, routeLoading }: MapProps & { 
@@ -161,11 +174,13 @@ const MarkerManager = ({ sessionActive, onAddMarker, routeLoading }: MapProps & 
 
 const ClientSideMap = ({ 
   sessionActive = false, 
-  markers = [], // Add default value
+  markers = [],
   onAddMarker, 
   onRemoveMarker,
   onClearMarkers,
-  onUpdateMarkerTimestamp
+  onUpdateMarkerTimestamp,
+  routeCoordinates = [], 
+  isPreviewMode = false, 
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [center] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
