@@ -14,6 +14,10 @@ interface CenterCoordinates {
   longitude: number
 }
 
+
+import { useTranslations } from 'next-intl' // Import
+import { useRouter } from 'next/navigation'
+
 const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
@@ -24,6 +28,9 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     latitude: 10.3157,
     longitude: 123.8854,
   })
+
+    const [noData, setNoData] = useState(false) // Add state for tracking no data
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const fetchCenterCoordinates = async () => {
     if (!route_id) return
@@ -176,6 +183,40 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       setIsLoading(false)
     }
   }
+
+  const router = useRouter()
+
+  //^ DELETES ROUTE
+  const handleDeleteRoute = async () => {
+    if (!route_id) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const apiUrl = `${
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+      }/route-coordinates/route/${route_id}`
+
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete route: ${await response.text()}`)
+      }
+
+      // Clear routes and redirect
+      setIsDialogOpen(false)
+      router.push('/route')
+    } catch (error) {
+      console.error('Error deleting route:', error)
+      setError('Error deleting route')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
 
   return (
     <div>
