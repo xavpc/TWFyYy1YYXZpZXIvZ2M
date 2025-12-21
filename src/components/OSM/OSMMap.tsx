@@ -215,7 +215,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
       }
 
       console.log('All markers saved successfully!')
-      router.push('/route')
+      router.push(`/route/view/${route_id}`)
     } catch (error) {
       console.error('Error saving markers:', error)
       setError(`Failed to save markers: ${error}`)
@@ -262,14 +262,14 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
             className='bg-blue-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
             disabled={isLoading}
           >
-            {isLoading ? 'Creating Route...' : t('Create Route')}
+            {isLoading ? 'Loading' : t('Create Route')}
           </button>
           <button
             // onClick={handleCreateRoute}
             className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
             disabled={isLoading}
           >
-            {isLoading ? 'Removing Route...' : t('Remove Route')}
+            {isLoading ? 'Loading' : t('Remove Route')}
           </button>
         </div>
       </div>

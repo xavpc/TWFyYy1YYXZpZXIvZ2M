@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 
 import { Input } from '@/components/ui/input'
@@ -34,8 +35,15 @@ const Route = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [newRouteName, setNewRouteName] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null) // Track selected route
+
+  const t = useTranslations('Route') // Ensure
+  const pagination = useTranslations('Pagination') // Ensure
   const router = useRouter()
+  const dialog = useTranslations('Dialog')
 
   useEffect(() => {
     fetchRoutes()
@@ -126,10 +134,7 @@ const Route = () => {
     setCurrentPage(page)
   }
 
-  const t = useTranslations('Route') // Ensure
-  const pagination = useTranslations('Pagination') // Ensure
-
-    //^ DELETE ROUTE
+  //^ DELETE ROUTE
   const handleDeleteRoute = async () => {
     if (!selectedRouteId) return // Ensure a route is selected
 
@@ -219,6 +224,16 @@ const Route = () => {
                     >
                       {t('Add Route')}
                     </Button>
+                    <Button
+                      className='bg-red-500 text-white hover:bg-red-800'
+                      size='sm'
+                      onClick={() => {
+                        setSelectedRouteId(route.route_id) // Set route ID before opening dialog
+                        setIsDialogOpen(true)
+                      }}
+                    >
+                      {t('Delete Route')}
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -244,6 +259,34 @@ const Route = () => {
         >
           {pagination('Next')}
         </Button>
+      </div>
+
+      <div className='relative z-50'>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{dialog('Sure')}</DialogTitle>
+              <DialogDescription className='my-5'>
+                {dialog('Delete Paragraph')}
+              </DialogDescription>
+              <div className='flex gap-2 mt-4 items-center justify-center'>
+                <button
+                  onClick={handleDeleteRoute}
+                  className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Loading...' : t('Delete Route')}
+                </button>
+                <button
+                  onClick={() => setIsDialogOpen(false)}
+                  className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
+                >
+                  {dialog('Cancel')}
+                </button>
+              </div>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* ADD ROUTE DIALOG */}

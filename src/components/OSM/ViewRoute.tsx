@@ -34,41 +34,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     latitude: 10.3157,
     longitude: 123.8854,
   })
-
   const [noData, setNoData] = useState(false) // Add state for tracking no data
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const router = useRouter()
 
   const t = useTranslations('Route')
   const dialog = useTranslations('Dialog')
-
-  const fetchCenterCoordinates = async () => {
-    if (!route_id) return
-
-    try {
-      const apiUrl = `${
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-      }/routes/${route_id}`
-
-      const response = await fetch(apiUrl)
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch route details: ${await response.text()}`
-        )
-      }
-
-      const { data } = await response.json()
-
-      setCenter({
-        latitude: parseFloat(data.center_latitude),
-        longitude: parseFloat(data.center_longitude),
-      })
-      console.log(`route data`, data)
-      console.log(`centerzzzz: ${center.latitude}, ${center.longitude}`)
-    } catch (error) {
-      console.error('Error fetching center coordinates:', error)
-    }
-  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,6 +85,35 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       setError('Failed to initialize map')
     }
   }, [center, route_id])
+
+  const fetchCenterCoordinates = async () => {
+    if (!route_id) return
+
+    try {
+      const apiUrl = `${
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+      }/routes/${route_id}`
+
+      const response = await fetch(apiUrl)
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch route details: ${await response.text()}`
+        )
+      }
+
+      const { data } = await response.json()
+
+      setCenter({
+        latitude: parseFloat(data.center_latitude),
+        longitude: parseFloat(data.center_longitude),
+      })
+      console.log(`route data`, data)
+      console.log(`centerzzzz: ${center.latitude}, ${center.longitude}`)
+    } catch (error) {
+      console.error('Error fetching center coordinates:', error)
+    }
+  }
 
   const clearRoutes = () => {
     routesRef.current.forEach((route) => route.remove())
@@ -196,8 +196,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-  const router = useRouter()
-
   //^ DELETES ROUTE
   const handleDeleteRoute = async () => {
     if (!route_id) return
@@ -238,7 +236,10 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         // Otherwise, display the map and button
         <div>
           <div>
-            <div ref={mapContainerRef} className='h-[500px] w-full relative' />
+            <div
+              ref={mapContainerRef}
+              className='h-[500px] w-full relative -z-50'
+            />
 
             <button
               onClick={() => setIsDialogOpen(true)}
