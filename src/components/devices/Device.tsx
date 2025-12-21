@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog'
 
 // DEVICE INTERFACE
-import { Device } from '@/types/devices'
+import { Devices } from '@/types/devices'
 
 const Devices = () => {
   // const [loading] = useState(true)
@@ -31,10 +31,10 @@ const Devices = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   // Updated to use Device instead of Devices
-  const [editingDevice, setEditingDevice] = useState<Device | null>(null)
-  const [updatedDevice, setUpdatedDevice] = useState<Device | null>(null)
+  const [editingDevice, setEditingDevice] = useState<Devices | null>(null)
+  const [updatedDevice, setUpdatedDevice] = useState<Devices | null>(null)
 
-   useEffect(() => {
+  useEffect(() => {
     fetchDevices()
   }, [])
 
@@ -67,7 +67,7 @@ const Devices = () => {
       setLoading(false) // Stop loading after fetching data
     }
   }
-  
+
   const filteredDevices = devices.filter(
     (device) =>
       device.device_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,7 +139,10 @@ const Devices = () => {
                   {device.employee?.first_name}, {device.employee?.last_name}
                 </TableCell>
                 <TableCell>
-                  <Badge variant='outline'> {device.status}</Badge>
+                  <Badge className='bg-green-500 text-white hover:bg-green-600 py-1 px-2'>
+                    {' '}
+                    {device.status}
+                  </Badge>
                 </TableCell>
                 <TableCell className='space-x-2'>
                   <Button
