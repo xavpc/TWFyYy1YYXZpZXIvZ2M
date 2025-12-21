@@ -107,77 +107,67 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
 
+    setIsLoading(true)
+    setError(null)
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving/'
+
     try {
-      setIsLoading(true)
-      setError(null)
-
-      const apiUrl = `${
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-      }/route-coordinates/route/${route_id}`
-      const response = await fetch(apiUrl)
-
-      if (!response.ok) {
+      // Fetch route coordinates
+      const response = await fetch(
+        `${API_URL}/route-coordinates/route/${route_id}`
+      )
+      if (!response.ok)
         throw new Error(`Failed to fetch route: ${await response.text()}`)
-      }
 
       const { data } = await response.json()
-      if (!data || data.length === 0) {
-        throw new Error('No route data found')
-      }
+      if (!data?.length) throw new Error('No route data found')
 
-      // Sort the data by sequence
+      // Sort by sequence and format for OSRM
       const sortedCoordinates = data.sort(
         (a: any, b: any) => a.sequence - b.sequence
       )
-
-      const osrmBaseUrl = 'https://router.project-osrm.org/route/v1/driving/'
-
-      // Convert coordinates to an OSRM query string
       const waypoints = sortedCoordinates
         .map((coord: any) => `${coord.longitude},${coord.latitude}`)
         .join(';')
 
-      const osrmUrl = `${osrmBaseUrl}${waypoints}?overview=full&geometries=geojson`
-
-      const osrmResponse = await fetch(osrmUrl)
+      // Fetch optimized route from OSRM
+      const osrmResponse = await fetch(
+        `${OSRM_BASE_URL}${waypoints}?overview=full&geometries=geojson`
+      )
       const osrmData = await osrmResponse.json()
 
-      if (!osrmData.routes || osrmData.routes.length === 0) {
+      if (!osrmData.routes?.length)
         throw new Error('OSRM did not return a valid route')
-      }
 
       // Convert OSRM response to Leaflet-compatible coordinates
       const routeCoordinates = osrmData.routes[0].geometry.coordinates.map(
-        (coord: [number, number]) => [coord[1], coord[0]] // Swap [lng, lat] -> [lat, lng]
+        ([lng, lat]: [number, number]) => [lat, lng]
       )
 
-      // Create polyline using OSRM-generated route
+      // Add polyline route to the map
       const route = L.polyline(routeCoordinates, {
         color: 'blue',
         weight: 3,
         opacity: 0.7,
       }).addTo(mapInstanceRef.current)
-
       routesRef.current.push(route)
 
-      route.addTo(mapInstanceRef.current)
-      routesRef.current.push(route)
-
-      // Add markers to each coordinate
+      // Define marker icon
       const markerIcon = L.icon({
         iconUrl:
           'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        iconSize: [25, 41], // Default Leaflet icon size
-        iconAnchor: [12, 41], // Ensures marker bottom aligns with location
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
         popupAnchor: [1, -34],
       })
 
-      sortedCoordinates.forEach((coord: any) => {
-        const marker = L.marker(
-          [parseFloat(coord.latitude), parseFloat(coord.longitude)],
-          { icon: markerIcon }
-        )
-        marker.addTo(mapInstanceRef.current)
+      // Add markers for each coordinate
+      sortedCoordinates.forEach(({ latitude, longitude }) => {
+        L.marker([parseFloat(latitude), parseFloat(longitude)], {
+          icon: markerIcon,
+        }).addTo(mapInstanceRef.current)
       })
     } catch (error) {
       console.error('Error fetching route:', error)
