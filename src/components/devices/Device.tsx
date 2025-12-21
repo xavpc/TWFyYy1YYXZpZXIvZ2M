@@ -24,7 +24,7 @@ import {
 // DEVICE INTERFACE
 import { Devices } from '@/types/devices'
 
-const Devices = () => {
+const DevicesComponent = () => {
   // const [loading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [devices, setDevices] = useState<Devices[]>([])
@@ -33,6 +33,7 @@ const Devices = () => {
   // Updated to use Device instead of Devices
   const [editingDevice, setEditingDevice] = useState<Devices | null>(null)
   const [updatedDevice, setUpdatedDevice] = useState<Devices | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false) // New state for edit modal
 
   useEffect(() => {
     fetchDevices()
@@ -66,6 +67,62 @@ const Devices = () => {
     } finally {
       setLoading(false) // Stop loading after fetching data
     }
+  }
+
+  // UPDATE EMPLOYEE
+  const updateDevices = async () => {
+    if (!updatedDevice) return
+    setLoading(true) // Start loading
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/web.devices/${updatedDevice.device_id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedDevice),
+        }
+      )
+
+      if (!response.ok) {
+        const errorMessage = await response.text() // Get error details
+        console.error('Failed to update employee:', errorMessage)
+        throw new Error(`Failed to update employee: ${errorMessage}`)
+      }
+
+      setDevices((prev) =>
+        prev.map((emp) =>
+          emp.device_id === updatedDevice.device_id ? updatedDevice : emp
+        )
+      )
+
+      setIsEditModalOpen(false) // Close the edit modal
+      setUpdatedDevice(null) // Clear updated employee data
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!updatedDevice) return
+
+    if (e.target.name === 'age') {
+      setUpdatedDevice({
+        ...updatedDevice,
+        [e.target.name]: parseInt(e.target.value) || 0,
+      })
+    } else {
+      setUpdatedDevice({
+        ...updatedDevice,
+        [e.target.name]: e.target.value,
+      })
+    }
+  }
+
+  const handleEditClick = (devices: Devices) => {
+    setEditingDevice(devices)
+    setUpdatedDevice(devices) // Load selected employee data for editing
+    setIsEditModalOpen(true) // Open the edit modal
   }
 
   const filteredDevices = devices.filter(
@@ -147,7 +204,7 @@ const Devices = () => {
                 <TableCell className='space-x-2'>
                   <Button
                     variant='outline'
-                    onClick={() => setEditingDevice(device)} // Set edit device state
+                    onClick={() => handleEditClick(device)} // Set edit device state
                   >
                     Edit
                   </Button>
@@ -179,8 +236,53 @@ const Devices = () => {
           Next
         </Button>
       </div>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Device</DialogTitle>
+          </DialogHeader>
+          <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6'>
+            {['device_id', 'vehicle_plate_num', 'status', 'employee_id'].map(
+              (field) => (
+                <div key={field} className='sm:col-span-3'>
+                  <label
+                    htmlFor={field}
+                    className='block text-sm font-medium text-white'
+                  >
+                    {field
+                      .replace('_', ' ') // Replace underscores with spaces
+                      .toLowerCase() // Convert the whole string to lowercase
+                      .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
+                  </label>
+                  <div className='mt-2'>
+                    <Input
+                      id={field}
+                      name={field}
+                      placeholder={field.replace('_', ' ')}
+                      value={
+                        field === 'employee'
+                          ? updatedDevice?.employee?.employee_id || '' // Extract a specific property
+                          : updatedDevice?.[field as keyof Devices] || ''
+                      }
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button onClick={updateDevices}>Save</Button>
+            <Button variant='outline' onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
-export default Devices
+export default DevicesComponent

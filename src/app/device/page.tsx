@@ -1,12 +1,12 @@
 import React from 'react'
-import Devices from '@/components/devices/Device'
+import DevicesComponent from '@/components/devices/Device'
 
 const DevicePage = () => {
   return (
-    <div>
+    <div className='p-5'>
       <h1 className='text-2xl font-bold'>Device</h1>
       <div className='mt-4'>
-        <Devices />
+        <DevicesComponent />
       </div>
     </div>
   )
