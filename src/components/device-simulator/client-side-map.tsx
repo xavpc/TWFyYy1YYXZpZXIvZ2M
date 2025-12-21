@@ -5,7 +5,6 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
 import { CollectionPoints } from '@/types/collection-points'
-import { CollectedPoints } from '@/types/collected-points'
 
 // Custom CSS for dark theme popups
 const darkPopupStyle = `
@@ -145,8 +144,6 @@ interface Device {
   status: string
   employee: Employee
 }
-
-
 interface MapProps {
   sessionActive: boolean;
   markers?: Position[];
@@ -157,17 +154,20 @@ interface MapProps {
   routeCoordinates?: RouteCoordinate[];
   selectedRoute?: Route | null;
   collectionPoints?: CollectionPoints[];
-  collectedPoints?:CollectedPoints[];
+  sessionId?:string | null;
+  selectedDevice?: Device | null;
 }
 
-const createTrashCanIcon = () => {
+const createTrashCanIcon = (isCollected: boolean) => {
   // Create a custom divIcon with an embedded SVG trash can
   return L.divIcon({
     className: 'custom-trash-icon',
-    html: `<div style="display: flex; justify-content: center; align-items: center; width: 28px; height: 38px; background-color: #8B5CF6; border-radius: 50% 50% 0 50%; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid #ffffff;">
+    html: `<div style="display: flex; justify-content: center; align-items: center; width: 28px; height: 38px; background-color: ${isCollected ? '#34D399' : '#8B5CF6'}; border-radius: 50% 50% 0 50%; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid #ffffff;">
              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18" height="18" style="transform: rotate(45deg);">
-               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/>
-               <path d="M10 11v6M14 11v6"/>
+               ${isCollected 
+                 ? `<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>` 
+                 : `<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/>
+                    <path d="M10 11v6M14 11v6"/>`}
              </svg>
            </div>`,
     iconSize: [28, 38],
@@ -175,6 +175,8 @@ const createTrashCanIcon = () => {
     popupAnchor: [0, -38]
   });
 };
+
+
 
 // Component to update map center when selected route changes
 const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) => {
@@ -271,7 +273,8 @@ const ClientSideMap = ({
   onUpdateMarkerTimestamp,
   routeCoordinates = [],
   collectionPoints = [],
-  selectedRoute = null
+  selectedRoute = null,
+  sessionId,
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
@@ -281,6 +284,7 @@ const ClientSideMap = ({
   const [routeLoading, setRouteLoading] = useState<boolean>(false);
   const [ignoreClicks, setIgnoreClicks] = useState<boolean>(false);
   const [showLegend, setShowLegend] = useState<boolean>(false);
+  const [collectedPointsMap, setCollectedPointsMap] = useState<{[key: string]: boolean}>({});
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -299,6 +303,34 @@ const ClientSideMap = ({
       }
     }
   }, [selectedRoute]);
+
+  useEffect(() => {
+    const checkCollectionPointStatus = async () => {
+      if (!collectionPoints || collectionPoints.length === 0 || !sessionId) return;
+      
+      // Create a map to store collection status
+      const statusMap: {[key: string]: boolean} = {};
+      
+      // Check each collection point
+      for (const point of collectionPoints) {
+        try {
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/collected-points/collection-point/${point.collection_point_id}/${sessionId}`
+          );
+          
+          if (response.data && response.data.success) {
+            statusMap[point.collection_point_id] = response.data.isCollected;
+          }
+        } catch (error) {
+          console.error(`Error checking collection point ${point.collection_point_id} status:`, error);
+        }
+      }
+      
+      setCollectedPointsMap(statusMap);
+    };
+    
+    checkCollectionPointStatus();
+  }, [collectionPoints, sessionId]);
 
   // Process route coordinates
   useEffect(() => {
@@ -527,40 +559,62 @@ const ClientSideMap = ({
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
       {/* Display collection points markers */}
-      {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
-        // Check if we have markers and if the last marker is close enough to this collection point
-        const hasEndMarker = markers.length > 0;
-        const endMarker = hasEndMarker ? markers[markers.length - 1] : null;
-        const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
-          endMarker.lat, endMarker.lng, 
-          point.latitude, point.longitude
-        ) < 0.03; // 100 meters threshold (0.1 km)
+{/* Display collection points markers */}
+{collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
+  // Check if we have markers and if the last marker is close enough to this collection point
+  const hasEndMarker = markers.length > 0;
+  const endMarker = hasEndMarker ? markers[markers.length - 1] : null;
+  const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
+    endMarker.lat, endMarker.lng, 
+    point.latitude, point.longitude
+  ) < 0.03; // 100 meters threshold (0.03 km)
+  
+  // Check if this point has been collected
+  const isCollected = collectedPointsMap[point.collection_point_id] === true;
+  
+  return (
+    <Marker 
+      key={`collection-point-${point.collection_point_id || index}`}
+      position={[point.latitude, point.longitude]} 
+      icon={createTrashCanIcon(isCollected)} 
+    >
+      <Popup className="dark-theme-popup">
+        <div className="font-semibold">Collection Point</div>
+        {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
+        <div className="text-xs mt-2">
+          Lat: {point.latitude}, Lng: {point.longitude}
+        </div>
         
-        return (
-          <Marker 
-            key={`collection-point-${point.collection_point_id || index}`}
-            position={[point.latitude, point.longitude]} 
-            icon={createTrashCanIcon()} 
-          >
-            <Popup className="dark-theme-popup">
-              <div className="font-semibold">Collection Point</div>
-              {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
-              <div className="text-xs mt-2">
-                Lat: {point.latitude}, Lng: {point.longitude}
-              </div>
-              
-              {/* Show collect button only when end marker is near */}
-              {isNearCollectionPoint && (
-                <button 
-                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3"
-                >
-                  Collect Point
-                </button>
-              )}
-            </Popup>
-          </Marker>
-        );
-      })}
+        {isCollected ? (
+          <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-3 text-center">
+            ✓ Already Collected
+          </div>
+        ) : (
+          // Show collect button only when end marker is near and not already collected
+          isNearCollectionPoint && (
+            <button 
+              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3"
+              onClick={async () => {
+                try {
+                  // Your API call to mark this point as collected would go here
+                  // After successful collection, update the state
+                  setCollectedPointsMap(prev => ({
+                    ...prev,
+                    [point.collection_point_id]: true
+                  }));
+                } catch (error) {
+                  console.error('Error collecting point:', error);
+                }
+              }}
+            >
+              Collect Point
+            </button>
+          )
+        )}
+      </Popup>
+    </Marker>
+  );
+})}
       {/* Draw the preset route coordinates */}
       {presetRoutePath.length > 0 && (
         <Polyline 
