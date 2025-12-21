@@ -37,6 +37,25 @@ interface CollectionPoint {
   collection_point_name: string
 }
 
+interface Route {
+  route_id: string;
+  route_name: string;
+  center_latitude: string;
+  center_longitude: string;
+}
+
+
+interface DeviceRoute {
+  device_route_id: string;
+  day_assigned: string;
+  device: {
+    device_id: string;
+    device_name: string;
+    vehicle_plate_num: string;
+    status: string;
+  };
+  route: Route;
+}
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
 import { Devices } from '@/types/devices'
@@ -64,7 +83,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
   const [showMarkers, setShowMarkers] = useState(true)
   const [showRoutes, setShowRoutes] = useState(true)
-  const [deviceRoutes, setDeviceRoutes] = useState<Devices[]>([])
+  const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([])
 
   const router = useRouter()
 
@@ -394,7 +413,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     setShowRoutes(!showRoutes)
   }
 
-  //^ FETCH DEVICE ROUTE
+ //^ FETCH DEVICE ROUTE
   const fetchDeviceRoute = async () => {
     setIsLoading(true) // Start loading
 
@@ -430,6 +449,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       setIsLoading(false) // Stop loading
     }
   }
+
 
   return (
     <div className='relative'>
