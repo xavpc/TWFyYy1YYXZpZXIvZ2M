@@ -88,11 +88,11 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
           setLoading(true);
           
           // Get start and end points
-          const startPoint = positions[0];
+          const startPoint = positions[positions.length - 2];
           const endPoint = positions[positions.length - 1];
           
           // Build the URL with query parameters
-          const routeUrl = `http://localhost:3001/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+          const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
           
           const response = await axios.get(routeUrl);
           
@@ -102,7 +102,7 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
               (coord: number[]) => [coord[1], coord[0]] as [number, number]
             );
             
-            setRoutePath(routeCoordinates);
+            setRoutePath(prevRoute => [...prevRoute, ...routeCoordinates]);
             console.log('Route fetched:', routeCoordinates);
           }
         } catch (error) {
@@ -156,6 +156,7 @@ const ClientSideMap = ({ sessionActive = false, onAddMarker }: MapProps) => {
           color="#3388ff"
           weight={4}
           opacity={0.8}
+          dashArray="5, 10"
         />
       )}
       

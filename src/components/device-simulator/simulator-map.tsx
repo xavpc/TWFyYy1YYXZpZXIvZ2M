@@ -60,7 +60,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
           const endPoint = markers[markers.length - 1];
           
           // Build the URL with query parameters
-          const routeUrl = `http://localhost:3001/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+          const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
           
           const response = await axios.get(routeUrl);
           
