@@ -49,7 +49,7 @@ export default function EmployeeList() {
   })
 
   const t = useTranslations('Employees') // Ensure
-  const y = useTranslations('AddEmployee') // Ensure
+  const y = useTranslations('Add Employee') // Ensure
   const u = useTranslations('Pagination') // Ensure
 
   // GET ALL EMPLOYEES
@@ -257,7 +257,7 @@ export default function EmployeeList() {
               <TableHead>{t('Phone')}</TableHead>
               <TableHead>{t('Address')}</TableHead>
 
-              <TableHead>{t('age')}</TableHead>
+              <TableHead>{t('Age')}</TableHead>
               <TableHead>{t('Actions')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -344,7 +344,7 @@ export default function EmployeeList() {
             {/* Add Age Input Field */}
             <div className='sm:col-span-3'>
               <label htmlFor='age' className='block text-sm font-medium'>
-                {t('age')}
+                {t('Age')}
               </label>
               <div className='mt-2'>
                 <Input

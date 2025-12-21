@@ -23,7 +23,7 @@
     "Next": "Next",
     "Previous": "Previous",
     "Page": "Page",
-    "no": "of"
+    "of": "/"
   },
   "Employees": {
     "Name": "Name",
@@ -52,13 +52,20 @@
     "Route Name": "Route Name",
     "Action": "Action",
     "Add Route": "Add Route",
+    "Add": "Add",
+    "Delete": "Delete ",
     "View": "View",
     "Invalid Route": "Invalid Route",
+    "Save": "Save",
+    "Cancel": "Cancel",
     "Delete Route": "Delete Route",
     "Remove Route": "Remove Route",
     "Create Route": "Create Route",
     "Click Points": "Click points on the map to create a connected route. Routes will be calculated between all points in order.",
-    "Last Click": "Last Click"
+    "Last Click": "Last Click",
+    "Add Collection Point": "Add Collection Point",
+    "Create Collection": "Create Collection",
+    "Remove Collection": "Remove Collection"
   },
   "Device": {
     "Device Name": "Device Name",

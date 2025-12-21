@@ -21,8 +21,12 @@ interface CenterCoordinates {
   longitude: number
 }
 
-
-
+interface CollectionPoint {
+  id: string
+  latitude: number
+  longitude: number
+  collection_point_name: string
+}
 
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
@@ -39,6 +43,9 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   })
   const [noData, setNoData] = useState(false) // Add state for tracking no data
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>(
+    []
+  )
   const router = useRouter()
 
   const t = useTranslations('Route')
@@ -48,6 +55,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     const fetchData = async () => {
       await fetchCenterCoordinates()
       await fetchAndDisplayRoute()
+      await fetchCollectionPoints()
     }
 
     fetchData()
@@ -118,12 +126,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-  const clearRoutes = () => {
-    routesRef.current.forEach((route) => route.remove())
-    routesRef.current = []
-  }
-
-  //^ FETCHES AND DISPLAY ROUTE
   //^ FETCHES AND DISPLAY ROUTE
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
@@ -178,10 +180,11 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       routesRef.current.push(route)
 
       // Add markers for each coordinate with sequence number
-      sortedCoordinates.forEach(({ latitude, longitude, sequence } :Coordinate) => {
-        // Create a custom div icon to show the sequence number above the marker
-        const sequenceIcon = L.divIcon({
-          html: `<div style="
+      sortedCoordinates.forEach(
+        ({ latitude, longitude, sequence }: Coordinate) => {
+          // Create a custom div icon to show the sequence number above the marker
+          const sequenceIcon = L.divIcon({
+            html: `<div style="
       background-color: white;
       border: 2px solid blue;
       border-radius: 50%;
@@ -194,33 +197,87 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       color: black;">
       ${sequence}
     </div>`,
-          className: 'sequence-label',
-          iconSize: [20, 20],
-          iconAnchor: [10, -10], // Position above the marker
-        })
+            className: 'sequence-label',
+            iconSize: [20, 20],
+            iconAnchor: [10, -10], // Position above the marker
+          })
 
-        // Create a marker icon
-        const markerIcon = L.icon({
-          iconUrl:
-            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-        })
+          // Create a marker icon
+          const markerIcon = L.icon({
+            iconUrl:
+              'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+          })
 
-        // Add sequence number as a separate icon
-        L.marker([parseFloat(latitude), parseFloat(longitude)], {
-          icon: sequenceIcon,
-        }).addTo(mapInstanceRef.current!)
+          // Add sequence number as a separate icon
+          L.marker([parseFloat(latitude), parseFloat(longitude)], {
+            icon: sequenceIcon,
+          }).addTo(mapInstanceRef.current!)
 
-        // Add actual marker
-        L.marker([parseFloat(latitude), parseFloat(longitude)], {
-          icon: markerIcon,
-        }).addTo(mapInstanceRef.current!)
-      })
+          // Add actual marker
+          L.marker([parseFloat(latitude), parseFloat(longitude)], {
+            icon: markerIcon,
+          }).addTo(mapInstanceRef.current!)
+        }
+      )
     } catch (error) {
       console.error('Error fetching route:', error)
       setError('Error fetching route')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  //^ FETCHES COLLECTION POINTS
+  const fetchCollectionPoints = async () => {
+    if (!route_id || !mapInstanceRef.current) return
+
+    setIsLoading(true)
+    setError(null)
+    setNoData(false) // Reset no data state
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+    try {
+      // Fetch collection points
+      const response = await fetch(
+        `${API_URL}/collection-points/route/${route_id}`
+      )
+      const { data } = await response.json()
+
+      if (!Array.isArray(data) || !data.length) {
+        setNoData(true)
+        return
+      }
+
+      setCollectionPoints(data) // Store in state
+
+      // Add markers to the map
+      data.forEach(
+        ({ latitude, longitude, collection_point_name }: CollectionPoint) => {
+          const markerIcon = L.icon({
+            iconUrl:
+              '/images/trash-can-with-cover-from-side-view-svgrepo-com.svg',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+          })
+
+          const marker = L.marker(
+            [parseFloat(latitude), parseFloat(longitude)],
+            { icon: markerIcon }
+          )
+            .addTo(mapInstanceRef.current!)
+            .bindPopup(`<b>${collection_point_name}</b>`)
+
+          routesRef.current.push(marker) // Store markers for potential cleanup
+        }
+      )
+    } catch (error) {
+      console.error('Error fetching collection points:', error)
+      setError('Error fetching collection points')
     } finally {
       setIsLoading(false)
     }

@@ -36,7 +36,7 @@
     "Edit Employee": "従業員を編集",
     "Edit": "編集"
   },
-  "AddEmployee": {
+  "Add Employee": {
     "first_name": "名",
     "last_name": "姓",
     "middle_name": "ミドルネーム",
@@ -52,6 +52,8 @@
     "Route Name": "ルート名",
     "Action": "操作",
     "Add Route": "ルートを追加",
+    "Add": "追加",
+    "Delete ": "消去",
     "View": "表示",
     "Invalid Route": "無効なルート",
     "Save": "保存",
@@ -60,7 +62,10 @@
     "Remove Route": "ルートを削除する",
     "Create Route": "ルートを作成する",
     "Click Points": "地図上の点をクリックして、接続されたルートを作成します。すべてのポイント間のルートが順番に計算されます。",
-    "Last Click": "ラストクリック"
+    "Last Click": "ラストクリック",
+    "Add Collection Point": "収集ポイントの追加",
+    "Create Collection": "コレクションを作成する",
+    "Remove Collection": "コレクションを削除する"
   },
   "Device": {
     "Device Name": "デバイス名",

@@ -11,7 +11,7 @@ interface OSMMapProps {
 
 import { useTranslations } from 'next-intl' // Import
 
-const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
+const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
@@ -75,7 +75,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
     routesRef.current = []
   }
 
-    const handleMapClick = async (e: L.LeafletMouseEvent) => {
+  const handleMapClick = async (e: L.LeafletMouseEvent) => {
     if (isLoading) return
 
     const map = mapInstanceRef.current

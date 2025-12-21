@@ -31,10 +31,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import LanguageSwitcher from './LanguageSwitcher'
 
+import { logout } from '@/lib/auth'
+
 // Menu items.
 export function AppSidebar() {
   const pathname = usePathname()
   const t = useTranslations('Sidebar') // Ensure translations work
+
+  if (pathname === '/login') return null
 
   const items = [
     {
@@ -108,7 +112,12 @@ export function AppSidebar() {
                 className='w-[--radix-popper-anchor-width]'
               >
                 <DropdownMenuItem>
-                  <button>{t('SignOut')}</button>
+                  <button
+                    onClick={logout}
+                    className='bg-red-500 text-white px-4 py-2'
+                  >
+                    {t('SignOut')}
+                  </button>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <LanguageSwitcher />

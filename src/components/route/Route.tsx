@@ -192,8 +192,10 @@ const Route = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-1/2'> {t('Route Name')}</TableHead>
-              <TableHead className='w-1/2'>{t('Action')}</TableHead>
+              <TableHead className='w-1/3'> {t('Route Name')}</TableHead>
+              <TableHead className='w-1/3'>{t('View')}</TableHead>
+              <TableHead className='w-1/2'>{t('Add')}</TableHead>
+              <TableHead className='w-1/2'>{t('Delete')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -201,16 +203,18 @@ const Route = () => {
               <TableRow key={route.route_id}>
                 <TableCell>{route.route_name}</TableCell>
                 <TableCell>
+                  <Button
+                    className='bg-blue-500 text-white hover:bg-blue-800'
+                    size='sm'
+                    onClick={() => {
+                      router.push(`/route/view/${route.route_id}`)
+                    }}
+                  >
+                    {t('View')}
+                  </Button>
+                </TableCell>
+                <TableCell>
                   <div className='flex gap-2'>
-                    <Button
-                      className='bg-blue-500 text-white hover:bg-blue-800'
-                      size='sm'
-                      onClick={() => {
-                        router.push(`/route/view/${route.route_id}`)
-                      }}
-                    >
-                      {t('View')}
-                    </Button>
                     <Button
                       className='bg-green-500 text-white hover:bg-green-800'
                       size='sm'
@@ -225,16 +229,27 @@ const Route = () => {
                       {t('Add Route')}
                     </Button>
                     <Button
-                      className='bg-red-500 text-white hover:bg-red-800'
+                      className='bg-green-500 text-white hover:bg-green-800'
                       size='sm'
                       onClick={() => {
-                        setSelectedRouteId(route.route_id) // Set route ID before opening dialog
-                        setIsDialogOpen(true)
+                        router.push(`/route/add_collection/${route.route_id}`)
                       }}
                     >
-                      {t('Delete Route')}
+                      {t('Add Collection Point')}
                     </Button>
                   </div>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    className='bg-red-500 text-white hover:bg-red-800'
+                    size='sm'
+                    onClick={() => {
+                      setSelectedRouteId(route.route_id) // Set route ID before opening dialog
+                      setIsDialogOpen(true)
+                    }}
+                  >
+                    {t('Delete Route')}
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -266,10 +281,10 @@ const Route = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{dialog('Sure')}</DialogTitle>
-              <DialogDescription className='my-5'>
-                {dialog('Delete Paragraph')}
+              <DialogDescription>
+                <div className='my-5'>{dialog('Delete Paragraph')}</div>
               </DialogDescription>
-              <div className='flex gap-2 mt-4 items-center justify-center'>
+              <div className='flex gap-2 mt-8 items-center justify-center'>
                 <button
                   onClick={handleDeleteRoute}
                   className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
@@ -295,8 +310,10 @@ const Route = () => {
           <DialogHeader>
             <DialogTitle>{t('Add Route')}</DialogTitle>
           </DialogHeader>
-          <div>
-            <label htmlFor='route'>{t('Route Name')}:</label>
+          <div className='mt-2'>
+            <label htmlFor='route' className='text-sm'>
+              {t('Route Name')}:
+            </label>
             <Input
               placeholder='Route name...'
               className='mt-2'
