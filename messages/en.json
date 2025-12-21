@@ -50,7 +50,11 @@
     "Action": "Action",
     "Add Route": "Add Route",
     "View": "View",
-    "Invalid Route": "Invalid Route"
+    "Invalid Route": "Invalid Route",
+    "Delete Route": "Delete Route",
+    "Remove Route": "Remove Route",
+    "Create Route": "Create Route",
+    "Click Points": "Click points on the map to create a connected route. Routes will be calculated between all points in order."
   },
   "Device": {
     "Device Name": "Device Name",
