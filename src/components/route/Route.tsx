@@ -129,6 +129,34 @@ const Route = () => {
   const t = useTranslations('Route') // Ensure
   const pagination = useTranslations('Pagination') // Ensure
 
+    //^ DELETE ROUTE
+  const handleDeleteRoute = async () => {
+    if (!selectedRouteId) return // Ensure a route is selected
+
+    setIsLoading(true)
+
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/routes/${selectedRouteId}`
+
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete route: ${await response.text()}`)
+      }
+
+      // Refresh list after successful delete
+      await fetchRoutes()
+      setIsDialogOpen(false)
+      setSelectedRouteId(null) // Reset selected route
+    } catch (error) {
+      console.error('Error deleting route:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   if (loading)
     return (
       <div className='flex flex-col space-y-3 mt-4'>
