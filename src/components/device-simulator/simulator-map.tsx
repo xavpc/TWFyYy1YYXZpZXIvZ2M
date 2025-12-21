@@ -206,7 +206,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   }
 
   return (
-    <div className='flex flex-col h-full'>
+    <div className='flex flex-col h-[calc(100vh-64px)]'>
       {/* Header Bar */}
       <div className='bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center'>
         <h1 className='text-xl font-bold text-white'>
@@ -270,7 +270,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       </div>
 
       {/* Main Content */}
-      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden'>
+      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden h-[calc(100vh-8rem)]'>
         {/* Left Panel - Session Info */}
         <div className='lg:col-span-1 flex flex-col max-h-[calc(100vh-8rem)]'>
           {sessionId ? (
@@ -638,7 +638,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
         </div>
 
         {/* Right Panel - Map */}
-        <div className='lg:col-span-3 h-[600px] bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden'>
+        <div className='lg:col-span-3 h-full bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden'>
           <Map
             sessionActive={!!sessionId}
             onAddMarker={handleAddMarker}
