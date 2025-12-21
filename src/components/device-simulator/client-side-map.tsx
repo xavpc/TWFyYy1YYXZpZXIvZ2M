@@ -225,7 +225,7 @@ const ClientSideMap = ({
   const [editableTimestamps, setEditableTimestamps] = useState<{ [index: number]: string }>({});
   const [routeLoading, setRouteLoading] = useState<boolean>(false);
   const [ignoreClicks, setIgnoreClicks] = useState<boolean>(false);
-
+  const [showLegend, setShowLegend] = useState<boolean>(false);
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -565,24 +565,68 @@ const ClientSideMap = ({
           </Popup>
         </Marker>
       ))}
-      
 
-      {/* Legend for the map */}
-      <div className="absolute bottom-6 right-2 bg-black bg-opacity-70 text-white p-2 rounded-md text-xs z-1000">
-        <div className="font-bold mb-1">Map Legend</div>
-        <div className="flex items-center mb-1">
-          <div className="w-4 h-2 bg-orange-500 mr-2"></div>
-          <span>Preset Route</span>
+      {/* TODO: fix button for legend, still has bugs when clicking(generate markers behind it), small hitbox?*/}
+    <div 
+      className="absolute top-2 right-2 z-[9999]"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation(); 
+      }} 
+    >
+      <button 
+        className="bg-gray-800 bg-opacity-80 text-white p-2 rounded-md hover:bg-gray-700 transition-all shadow-md"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation(); // Prevent click from propagating to the map
+          setShowLegend(!showLegend);
+        }}
+        title="Show/Hide Map Legend"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+          <path d="M11.625 16.5a1.875 1.875 0 100-3.75 1.875 1.875 0 000 3.75z" />
+          <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 013.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 013.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875zm6 16.5c.66 0 1.277-.28 1.705-.783l1.44 1.44a.75.75 0 001.06-1.06l-1.44-1.44A2.625 2.625 0 1011.625 18z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
+
+
+      {/* Legend for the map - now with adjusted opacity */}
+      {showLegend && (
+        <div className="absolute bottom-6 right-2 bg-black bg-opacity-80 text-white p-2 rounded-md text-xs z-[9999] pointer-events-auto shadow-lg">
+          <div className="font-bold mb-1">Map Legend</div>
+          <div className="flex items-center mb-1">
+            <div className="w-4 h-2 bg-orange-500 mr-2"></div>
+            <span>Preset Route</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="w-4 h-2 bg-blue-500 mr-2 border-t-2 border-dashed"></div>
+            <span>Device Path</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+            <span>Start Point</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            <span>Waypoint</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            <span>End Point</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+            <span>Route Start</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+            <span>Route End</span>
+          </div>
         </div>
-        <div className="flex items-center mb-1">
-          <div className="w-4 h-2 bg-blue-500 mr-2 border-t-2 border-dashed"></div>
-          <span>Device Path</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-          <span>Device Location</span>
-        </div>
-      </div>
+      )}    
+
+
     </MapContainer>
   )
 }
