@@ -91,7 +91,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
           session_id: sessionId
         };
         
-        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}device-locations`, payload);
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/device-locations`, payload);
         
         setSendingProgress(Math.round(((i + 1) / markers.length) * 100));
         
@@ -121,7 +121,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       await handleSendLocations()
       console.log('Ending session:', sessionId);
   
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}device-sessions/${sessionId}/end`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/${sessionId}/end`;
       const response = await axios.put(apiUrl);
       
       console.log('Session ended successfully:', response.data);
@@ -354,7 +354,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
               </>
             )}
           </button>
-        ) : (
+        ) :markers.length > 1 ? (
           <button
             onClick={handleEndSession}
             className='bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2'
@@ -402,7 +402,27 @@ const DeviceSimulatorMap = (): JSX.Element => {
               </>
             )}
           </button>
-        )}
+        ):(  
+        
+        <button
+          className='bg-gray-600 text-white px-4 py-2 rounded-md cursor-not-allowed flex items-center gap-2'
+          disabled={true}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            className='h-5 w-5'
+            viewBox='0 0 20 20'
+            fill='currentColor'
+          >
+            <path
+              fillRule='evenodd'
+              d='M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z'
+              clipRule='evenodd'
+            />
+          </svg>
+          Add Location Waypoints
+        </button>
+      )}
       </div>
 
       {/* Main Content */}
