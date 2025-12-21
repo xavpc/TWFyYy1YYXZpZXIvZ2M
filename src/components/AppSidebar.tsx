@@ -1,11 +1,8 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
 import {
   Smartphone,
   LayoutDashboard,
   MousePointer2,
-  Users,
+  CircleUserRound,
   ChevronUp,
   User2,
   NotebookText,
@@ -40,7 +37,7 @@ const items = [
   {
     title: 'Employees',
     url: '/employees',
-    icon: Users,
+    icon: CircleUserRound,
   },
   {
     title: 'Device',
@@ -60,8 +57,6 @@ const items = [
 ]
 
 export function AppSidebar() {
-  const pathname = usePathname() // Get current path
-
   return (
     <Sidebar>
       <SidebarContent>
@@ -69,24 +64,16 @@ export function AppSidebar() {
           <SidebarGroupLabel>Garbage Collection System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className='mt-5'>
-              {items.map((item) => {
-                const isActive = pathname === item.url
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link
-                        href={item.url}
-                        className={`flex items-center gap-2 text-lg px-3 py-2 rounded-md ${
-                          isActive ? 'bg-gray-200 dark:bg-zinc-800' : ''
-                        }`}
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link href={item.url} className='text-lg'>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -106,7 +93,7 @@ export function AppSidebar() {
                 className='w-[--radix-popper-anchor-width]'
               >
                 <DropdownMenuItem>
-                  <button>Sign out</button>
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
