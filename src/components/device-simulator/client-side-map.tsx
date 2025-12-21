@@ -196,44 +196,72 @@ const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) =
   return null;
 };
 
+// Update the MarkerManager component to handle marker cursors
 const MarkerManager = ({ 
   sessionActive, 
   onAddMarker, 
   routeLoading,
-  ignoreClicks 
+  ignoreClicks,
+  isCollecting
 }: MapProps & { 
   routeLoading: boolean,
-  ignoreClicks: boolean
+  ignoreClicks: boolean,
+  isCollecting:  {[key: string]: boolean}
 }) => {
   
   // Update cursor based on sessionActive, routeLoading, and ignoreClicks
   useEffect(() => {
     const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
+    
     if (mapContainer) {
+      // Set appropriate cursor based on state
       if (routeLoading) {
-        mapContainer.style.cursor = 'wait'; // Show loading cursor during route calculation
+        mapContainer.style.cursor = 'wait';
       } else if (ignoreClicks) {
-        mapContainer.style.cursor = 'not-allowed'; // Show not-allowed cursor when clicks are disabled
+        mapContainer.style.cursor = 'not-allowed';
       } else {
         mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
       }
-      
-      // Add CSS to ensure markers have the pointer cursor
-      const styleElement = document.createElement('style');
-      styleElement.textContent = `
-        .leaflet-marker-icon {
-          cursor: pointer !important;
-        }
-      `;
-      document.head.appendChild(styleElement);
-      
-      return () => {
-        if (mapContainer) {
-          mapContainer.style.cursor = 'grab';
-        }
-        document.head.removeChild(styleElement);
-      };
     }
+    
+    // Fix for marker cursor styles
+    const updateMarkerCursors = () => {
+      const markerIcons = document.querySelectorAll('.leaflet-marker-icon');
+      markerIcons.forEach((icon) => {
+        // Cast to HTMLElement first
+        const iconElement = icon as HTMLElement;
+        
+        // Always use pointer cursor for markers regardless of session state
+        iconElement.style.cursor = 'pointer';
+        
+        // But modify if needed for special states
+        if (routeLoading) {
+          iconElement.style.cursor = 'wait';
+        } else if (ignoreClicks) {
+          iconElement.style.cursor = 'not-allowed';
+        }
+      });
+    };
+    
+    // Run initially
+    updateMarkerCursors();
+    
+    // Set up a mutation observer to catch dynamically added markers
+    const observer = new MutationObserver(() => {
+      updateMarkerCursors();
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    return () => {
+      if (mapContainer) {
+        mapContainer.style.cursor = 'grab';
+      }
+      observer.disconnect();
+    };
   }, [sessionActive, routeLoading, ignoreClicks]);
   
   const map = useMapEvents({
@@ -253,7 +281,20 @@ const MarkerManager = ({
   // Add style to head
   useEffect(() => {
     const styleElement = document.createElement('style');
-    styleElement.textContent = darkPopupStyle;
+    styleElement.textContent = darkPopupStyle + `
+      /* Add global marker cursor styles */
+      .leaflet-marker-icon {
+        cursor: pointer !important;
+      }
+      
+      /* Override when necessary */
+      .leaflet-marker-wait {
+        cursor: wait !important;
+      }
+      .leaflet-marker-disabled {
+        cursor: not-allowed !important;
+      }
+    `;
     document.head.appendChild(styleElement);
     
     return () => {
@@ -287,6 +328,7 @@ const ClientSideMap = ({
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [collectedPointsMap, setCollectedPointsMap] = useState<{[key: string]: boolean}>({});
   const [isCollecting, setIsCollecting] = useState<{[key: string]: boolean}>({});
+  const [isAnyPointCollecting, setIsAnyPointCollecting] = useState<boolean>(false);
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -538,17 +580,26 @@ const ClientSideMap = ({
 
 
   const collectPoint = async (collectionPointId: string) => {
+
+    if (isAnyPointCollecting) {
+      // Show an error message
+      alert("Please wait for the current collection to complete");
+      return;
+    }
+
     if (!sessionId || !selectedDevice) {
       console.error("Session ID or device not selected");
       return;
     }
-    
+     setIsAnyPointCollecting(true);
     // Set collecting state for this point
     setIsCollecting(prev => ({
       ...prev,
       [collectionPointId]: true
     }));
     
+    setIgnoreClicks(true);
+
     try {
       const payload = {
         device_id: selectedDevice.device_id,
@@ -583,6 +634,8 @@ const ClientSideMap = ({
         ...prev,
         [collectionPointId]: false
       }));
+      setIsAnyPointCollecting(false);
+      setIgnoreClicks(false);
     }
   };
 
@@ -601,6 +654,17 @@ const ClientSideMap = ({
       style={{ height: '100%', width: '100%' }}
       className="z-0"
     >
+      {routeLoading && (
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]">
+          <div className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center">
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-white">Calculating route...</span>
+          </div>
+        </div>
+      )}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -611,6 +675,7 @@ const ClientSideMap = ({
         onAddMarker={onAddMarker} 
         routeLoading={routeLoading}
         ignoreClicks={ignoreClicks} 
+        isCollecting={isCollecting}
       />
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
@@ -633,8 +698,19 @@ const ClientSideMap = ({
           <Marker 
             key={`collection-point-${point.collection_point_id || index}`}
             position={[point.latitude, point.longitude]} 
-            icon={createTrashCanIcon(isCollected)} 
+            icon={createTrashCanIcon(isCollected)}
+            // Add event handlers to disable clicks during loading
+            eventHandlers={{
+              click: (e) => {
+                if (routeLoading) {
+                  e.originalEvent.stopPropagation();
+                  e.originalEvent.preventDefault();
+                  return false;
+                }
+              }
+            }}
           >
+          {!routeLoading && (
             <Popup className="dark-theme-popup">
               <div className="font-semibold">Collection Point</div>
               {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
@@ -650,9 +726,9 @@ const ClientSideMap = ({
                 // Show collect button only when end marker is near and not already collected
                 isNearCollectionPoint && (
                   <button 
-                    className={`${isCollectingPoint ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3 flex justify-center items-center`}
+                    className={`${isCollectingPoint || isAnyPointCollecting ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3 flex justify-center items-center`}
                     onClick={() => collectPoint(point.collection_point_id)}
-                    disabled={isCollectingPoint || !selectedDevice}
+                    disabled={isCollectingPoint || isAnyPointCollecting || !selectedDevice}
                   >
                     {isCollectingPoint ? (
                       <>
@@ -662,6 +738,8 @@ const ClientSideMap = ({
                         </svg>
                         Processing...
                       </>
+                    ) : isAnyPointCollecting ? (
+                      'Collection in progress...'
                     ) : !selectedDevice ? (
                       'Select a device first'
                     ) : (
@@ -671,6 +749,7 @@ const ClientSideMap = ({
                 )
               )}
             </Popup>
+          )}
           </Marker>
         );
       })}      
@@ -738,8 +817,30 @@ const ClientSideMap = ({
         <Marker 
           key={`marker-${index}-${position.lat}-${position.lng}`}
           position={[position.lat, position.lng]} 
-          icon={getMarkerIcon(index, markers.length)} 
+          icon={getMarkerIcon(index, markers.length)}
+          // Add this eventHandlers prop to disable click events
+          eventHandlers={{
+            click: (e) => {
+              if (routeLoading) {
+                e.originalEvent.stopPropagation();
+                e.originalEvent.preventDefault();
+                return false;
+              }
+            },
+            // Optional: change cursor when hovering over markers during loading
+            mouseover: (e) => {
+              if (routeLoading) {
+                e.target._icon.style.cursor = 'wait';
+              }
+            },
+            mouseout: (e) => {
+              if (routeLoading) {
+                e.target._icon.style.cursor = '';
+              }
+            }
+          }}
         >
+        {!routeLoading && (
           <Popup className="dark-theme-popup">
             {index === 0 ? 'Start Point' : 
             index === markers.length - 1 ? 'End Point' : 
@@ -781,6 +882,7 @@ const ClientSideMap = ({
               </div>
             )}
           </Popup>
+        )}
         </Marker>
       ))}
 
