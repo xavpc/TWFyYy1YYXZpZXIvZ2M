@@ -91,7 +91,7 @@ const Route = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
-  
+
   if (loading)
     return (
       <div className='flex flex-col space-y-3 mt-4'>
