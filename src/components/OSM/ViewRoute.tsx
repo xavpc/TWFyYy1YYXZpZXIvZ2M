@@ -383,6 +383,44 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     setShowRoutes(!showRoutes)
   }
 
+ //^ FETCH DEVICE ROUTE
+  const fetchDeviceRoute = async () => {
+    setIsLoading(true) // Start loading
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/device-routes/route/${route_id}`
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      const deviceRouteArray = Array.isArray(data)
+        ? data
+        : data.posts || data.data || []
+
+      console.log('Processed device route array:', deviceRouteArray) // 🔍 Log processed data
+
+      if (!Array.isArray(deviceRouteArray)) {
+        console.error('Device route data is not an array:', deviceRouteArray)
+        setDeviceRoutes([]) // Fallback to empty array
+      } else {
+        setDeviceRoutes([...deviceRouteArray]) // 🔄 Force a re-render
+      }
+
+      console.log('Device routes successfully fetched')
+    } catch (error) {
+      console.error('Error fetching device routes:', error)
+      setDeviceRoutes([])
+    } finally {
+      setIsLoading(false) // Stop loading
+    }
+  }
+
+
   return (
     <div className='relative'>
       <div>
