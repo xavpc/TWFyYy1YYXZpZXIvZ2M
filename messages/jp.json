@@ -55,6 +55,7 @@
     "Route Name": "ルート名",
     "Action": "操作",
     "Add Route": "ルートを追加",
+    "Add Device": "デバイスの追加",
     "Add": "追加",
     "Delete": "消去",
     "View": "表示",
@@ -68,7 +69,9 @@
     "Last Click": "ラストクリック",
     "Add Collection Point": "収集ポイントの追加",
     "Create Collection": "コレクションを作成する",
-    "Delete Collection": "コレクションを削除する"
+    "Delete Collection": "コレクションを削除する",
+    "Device Name": "デバイス名",
+    "Search Route Name": "ルート名を検索する"
   },
   "Device": {
     "Device Name": "デバイス名",

@@ -22,10 +22,22 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
 import { Input } from '@/components/ui/input'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+
+import { Devices } from '@/types/devices'
 import { useTranslations } from 'next-intl' // Import useTranslations
 
 const Route = () => {
@@ -36,9 +48,12 @@ const Route = () => {
   const [newRouteName, setNewRouteName] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null) // Track selected route
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
+  const [devices, setDevices] = useState<Devices[]>([])
 
   const t = useTranslations('Route') // Ensure
   const pagination = useTranslations('Pagination') // Ensure
@@ -47,9 +62,10 @@ const Route = () => {
 
   useEffect(() => {
     fetchRoutes()
+    fetchDevices()
   }, [])
 
-  // GET ROUTE NAMES
+  //^ GET ROUTE NAMES
   const fetchRoutes = async () => {
     setLoading(true)
 
@@ -77,7 +93,7 @@ const Route = () => {
     }
   }
 
-  // ADD ROUTE NAME
+  //^ ADD ROUTE NAME
   const addRouteName = async () => {
     if (!newRouteName.trim()) {
       console.error('Route name is required')
@@ -108,7 +124,7 @@ const Route = () => {
     }
   }
 
-   //^ GET DEVICE
+  //^ GET DEVICE
   const fetchDevices = async () => {
     setLoading(true) // Start loading
 
@@ -173,7 +189,6 @@ const Route = () => {
       setIsLoading(false)
     }
   }
-
 
   const filteredRoutes = routes.filter(
     (route) =>
@@ -245,7 +260,7 @@ const Route = () => {
     <>
       <div className='flex justify-between items-center mt-4'>
         <Input
-          placeholder='Search Route Name...'
+          placeholder={t('Search Route Name')}
           className='max-w-sm'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -261,7 +276,7 @@ const Route = () => {
             <TableRow>
               <TableHead className='w-1/2'> {t('Route Name')}</TableHead>
               <TableHead>{t('View')}</TableHead>
-              <TableHead>{t('Add')}</TableHead>
+              <TableHead className='text-center'>{t('Add')}</TableHead>
               <TableHead>{t('Delete')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -303,6 +318,16 @@ const Route = () => {
                       }}
                     >
                       {t('Add Collection Point')}
+                    </Button>
+                    <Button
+                      className='bg-green-500 text-white hover:bg-green-800'
+                      size='sm'
+                      onClick={() => {
+                        setSelectedRouteId(route.route_id) // Store selected route
+                        setIsAddDeviceOpen(true) // Open modal
+                      }}
+                    >
+                      {t('Add Device')}
                     </Button>
                   </div>
                 </TableCell>
@@ -371,6 +396,58 @@ const Route = () => {
         </Dialog>
       </div>
 
+      {/* ADD DEVICE DIALOG */}
+      <div className='relative z-50'>
+        <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('Add Device')}</DialogTitle>
+            </DialogHeader>
+            <div className='mt-2'>
+              <h2 className='text-sm  mb-2'>{t('Device Name')}:</h2>
+              <Select onValueChange={(value) => setSelectedDeviceId(value)}>
+                <SelectTrigger className='w-[280px]'>
+                  <SelectValue placeholder={t('Device Name')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Devices</SelectLabel>
+                    {devices.map((device) => (
+                      <SelectItem
+                        key={device.device_id}
+                        value={device.device_id}
+                        className='cursor-pointer hover:bg-zinc-800'
+                      >
+                        {device.device_name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  if (selectedDeviceId && selectedRouteId) {
+                    addDeviceToRoute(selectedDeviceId, selectedRouteId)
+                  }
+                }}
+                disabled={!selectedDeviceId || !selectedRouteId} // Disable button if values are missing
+              >
+                {t('Save')}
+              </Button>
+
+              <Button
+                variant='outline'
+                onClick={() => setIsAddDeviceOpen(false)}
+              >
+                {t('Cancel')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* ADD ROUTE DIALOG */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
@@ -382,7 +459,7 @@ const Route = () => {
               {t('Route Name')}:
             </label>
             <Input
-              placeholder='Route name...'
+              placeholder={t('Route Name')}
               className='mt-2'
               value={newRouteName}
               onChange={(e) => setNewRouteName(e.target.value)} // ✅ Bind input to state

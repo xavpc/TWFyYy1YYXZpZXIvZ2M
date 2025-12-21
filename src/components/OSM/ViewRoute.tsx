@@ -3,6 +3,14 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -10,9 +18,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Loader2 } from 'lucide-react'
 
-import { Trash, MapPin } from 'lucide-react' // Import icons
+import { Trash, MapPin, EllipsisVertical } from 'lucide-react' // Import icons
 
 interface OSMMapProps {
   route_id?: string
@@ -32,6 +39,8 @@ interface CollectionPoint {
 
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
+import { Devices } from '@/types/devices'
+import { Badge } from '../ui/badge'
 
 const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -55,6 +64,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
   const [showMarkers, setShowMarkers] = useState(true)
   const [showRoutes, setShowRoutes] = useState(true)
+  const [deviceRoutes, setDeviceRoutes] = useState<Devices[]>([])
 
   const router = useRouter()
 
@@ -66,6 +76,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       await fetchCenterCoordinates()
       await fetchAndDisplayRoute()
       await fetchCollectionPoints()
+      await fetchDeviceRoute()
     }
 
     fetchData()
@@ -383,7 +394,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     setShowRoutes(!showRoutes)
   }
 
- //^ FETCH DEVICE ROUTE
+  //^ FETCH DEVICE ROUTE
   const fetchDeviceRoute = async () => {
     setIsLoading(true) // Start loading
 
@@ -420,7 +431,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-
   return (
     <div className='relative'>
       <div>
@@ -429,38 +439,87 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             ref={mapContainerRef}
             className='h-[500px] w-full relative z-10'
           />
+        </div>
 
-          <div className='flex justify-between items-center'>
-            <div className='flex gap-2'>
-              <button
-                onClick={toggleMarkers}
-                className='bg-gray-500 p-2 rounded-full'
-              >
-                <Trash className='text-white' size={20} />
-              </button>
-              <button
-                onClick={toggleRoutes}
-                className='bg-blue-500 p-2 rounded-full'
-              >
-                <MapPin className='text-white' size={20} />
-              </button>
-            </div>
-            <div className='flex gap-2'>
-              <button
-                onClick={() => setIsDialogOpen(true)}
-                className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
-                disabled={isLoading}
-              >
-                {t('Delete Route')}
-              </button>
-              <button
-                onClick={() => setIsCollectionOpen(true)}
-                className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
-                disabled={isLoading}
-              >
-                {t('Delete Collection')}
-              </button>
-            </div>
+        {/* 🔹 Debugging Data Display */}
+        <div className='p-4'>
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Device Name</TableHead>
+                    <TableHead>Vehicle Plate Number</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {deviceRoutes.length > 0 ? (
+                    deviceRoutes.map((route, index) => (
+                      <TableRow
+                        key={route.device?.device_id || `device-${index}`}
+                      >
+                        <TableCell>
+                          {route.device?.device_name || 'No Name'}
+                        </TableCell>
+                        <TableCell>
+                          {route.device?.vehicle_plate_num || 'No Plate'}
+                        </TableCell>
+                        <Badge
+                          className={`text-white px-3 text-center my-2 ${
+                            route.device?.status === 'active'
+                              ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17'
+                              : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17'
+                          } `}
+                        >
+                          {route.device?.status || 'No Status'}
+                        </Badge>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className='text-center'>
+                        No devices found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </>
+          )}
+        </div>
+        <div className='flex justify-between items-center'>
+          <div className='flex gap-2'>
+            <button
+              onClick={toggleMarkers}
+              className='bg-gray-500 p-2 rounded-full'
+            >
+              <Trash className='text-white' size={20} />
+            </button>
+            <button
+              onClick={toggleRoutes}
+              className='bg-blue-500 p-2 rounded-full'
+            >
+              <MapPin className='text-white' size={20} />
+            </button>
+          </div>
+          <div className='flex gap-2'>
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-xs float-right'
+              disabled={isLoading}
+            >
+              {t('Delete Route')}
+            </button>
+            <button
+              onClick={() => setIsCollectionOpen(true)}
+              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-xs float-right'
+              disabled={isLoading}
+            >
+              {t('Delete Collection')}
+            </button>
           </div>
         </div>
 

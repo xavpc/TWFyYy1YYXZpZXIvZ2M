@@ -55,6 +55,7 @@
     "Route Name": "Route Name",
     "Action": "Action",
     "Add Route": "Add Route",
+    "Add Device": " Add Device",
     "Add": "Add",
     "Delete": "Delete",
     "View": "View",
@@ -68,7 +69,9 @@
     "Last Click": "Last Click",
     "Add Collection Point": "Add Collection Point",
     "Create Collection": "Create Collection",
-    "Delete Collection": "Delete Collection"
+    "Delete Collection": "Delete Collection",
+    "Device Name": "Device Name",
+    "Search Route Name": "Search Route Name"
   },
   "Device": {
     "Device Name": "Device Name",
@@ -81,7 +84,6 @@
     "active": "active",
     "inactive": "inactive",
     "Edit": "Edit"
-    
   },
   "Complaints": {
     "Mark as in progress": "Mark as In Progress",
@@ -91,19 +93,18 @@
     "No complaints found": "No complaints found.",
     "Select a complaint to view details": "Select a complaint to view details"
   },
-  "Device Simulator":{
+  "Device Simulator": {
     "Hello there": "Hello there!",
     "Start Session": "Start Session",
     "Starting": "Starting...",
     "Session Active": "Session Active",
     "Active Session": "Active Session",
     "Device Simulator": "Device Simulator",
-    "Select a Device":"Select a Device",
+    "Select a Device": "Select a Device",
     "End Session": "End Session",
-    "Ending":"Ending"
-
+    "Ending": "Ending"
   },
-  
+
   "Dialog": {
     "Cancel": "Cancel",
     "Delete Paragraph": " This action cannot be undone. This will permanently delete this route.",
