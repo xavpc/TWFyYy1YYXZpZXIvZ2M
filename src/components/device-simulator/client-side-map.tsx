@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap 
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
+import { CollectionPoints } from '@/types/collection-points'
 
 // Custom CSS for dark theme popups
 const darkPopupStyle = `
@@ -32,6 +33,9 @@ const darkPopupStyle = `
   .leaflet-interactive {
     cursor: inherit !important;
   }
+  .custom-trash-icon {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
+}
 `;
 
 // Fix the marker icons - create actual different colored icons
@@ -80,6 +84,15 @@ const routeEndIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+const collectionPointIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png', // Base icon (we'll customize this with SVG overlay)
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 interface Position {
   lat: number;
   lng: number;
@@ -120,7 +133,24 @@ interface MapProps {
   onUpdateMarkerTimestamp?: (index: number, newTimestamp: string) => void;
   routeCoordinates?: RouteCoordinate[];
   selectedRoute?: Route | null;
+  collectionPoints?: CollectionPoints[];
 }
+
+const createTrashCanIcon = () => {
+  // Create a custom divIcon with an embedded SVG trash can
+  return L.divIcon({
+    className: 'custom-trash-icon',
+    html: `<div style="display: flex; justify-content: center; align-items: center; width: 28px; height: 38px; background-color: #8B5CF6; border-radius: 50% 50% 0 50%; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid #ffffff;">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18" height="18" style="transform: rotate(45deg);">
+               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/>
+               <path d="M10 11v6M14 11v6"/>
+             </svg>
+           </div>`,
+    iconSize: [28, 38],
+    iconAnchor: [14, 38],
+    popupAnchor: [0, -38]
+  });
+};
 
 // Component to update map center when selected route changes
 const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) => {
@@ -216,6 +246,7 @@ const ClientSideMap = ({
   onClearMarkers,
   onUpdateMarkerTimestamp,
   routeCoordinates = [],
+  collectionPoints = [],
   selectedRoute = null
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -318,6 +349,8 @@ const ClientSideMap = ({
     }));
   };
   
+  
+
   // Save timestamp changes
   const saveTimestampChanges = (index: number) => {
     // Get the input value
@@ -455,7 +488,23 @@ const ClientSideMap = ({
       />
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
-      
+      {/* Display collection points markers */}
+      {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => (
+        <Marker 
+          key={`collection-point-${point.collection_point_id || index}`}
+          position={[point.latitude, point.longitude]} 
+          icon={createTrashCanIcon()} 
+        >
+          <Popup className="dark-theme-popup">
+            <div className="font-semibold">Collection Point</div>
+            {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
+            {/* {point.description && <div className="text-sm mt-1">{point.description}</div>} */}
+            <div className="text-xs mt-2">
+              Lat: {point.latitude}, Lng: {point.longitude}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
       {/* Draw the preset route coordinates */}
       {presetRoutePath.length > 0 && (
         <Polyline 
@@ -623,6 +672,11 @@ const ClientSideMap = ({
             <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
             <span>Route End</span>
           </div>
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+            <span>Collection Point</span>
+          </div>
+
         </div>
       )}    
 

@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import axios from 'axios'
 import { Toaster, toast } from 'react-hot-toast';
 import { useRef } from 'react'
-
+import { CollectionPoints } from '@/types/collection-points'
 // Dynamically import the map component with SSR disabled
 const Map = dynamic(() => import('./client-side-map'), { ssr: false })
 
@@ -49,6 +49,7 @@ interface DeviceRoute {
 }
 
 
+
 const DeviceSimulatorMap = (): JSX.Element => {
   const t = useTranslations('Layout')
   const devsim = useTranslations('Device Simulator')
@@ -69,6 +70,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [isSendingLocations, setIsSendingLocations] = useState(false)
   const [sendingProgress, setSendingProgress] = useState(0)
   const [routes, setRoutes] = useState<Array<Route>>([]);
+  const [collectionPoints, setCollectionPoints] = useState<Array<CollectionPoints>>([])
+
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([]);
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false);
   const [routesLoading, setRoutesLoading] = useState(false);
@@ -87,6 +90,16 @@ const DeviceSimulatorMap = (): JSX.Element => {
   }>>([]);
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedRoute && selectedRoute.route_id) {
+      fetchCollectionPoints(selectedRoute.route_id);
+    } else {
+      // Clear collection points if no route is selected
+      
+      setCollectionPoints([]);
+    }
+  }, [selectedRoute]);
 
   useEffect(() => {
     const fetchRoutes = async () => {
@@ -156,6 +169,32 @@ const DeviceSimulatorMap = (): JSX.Element => {
     }
   };
 
+  const fetchCollectionPoints = async (routeId: string) => {
+    if (!routeId) return;
+    
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/collection-points/route/${routeId}`;
+      const response = await axios.get(apiUrl);
+      
+      if (response.data.success && response.data.data) {
+        setCollectionPoints(response.data.data);
+      }
+      console.log(`collection point fetched: ${response.data.data}`)
+    } catch (error) {
+      console.error('Error fetching collection points:', error);
+      toast.error('Failed to load collection points for this route', {
+        duration: 3000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      });
+    }
+  };
+  
+  
   const fetchRouteCoordinates = async (routeId: string) => {
     if (!routeId) return;
     
@@ -163,7 +202,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       setRouteCoordinatesLoading(true);
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${routeId}`;
       const response = await axios.get(apiUrl);
-  
+      
       if (response.data.success && response.data.data) {
         // Sort by sequence to ensure proper order
         const sortedCoordinates = response.data.data.sort(
@@ -178,12 +217,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
     }
   };
 
-  // Function to handle route selection
-  const handleRouteSelect = (route : Route) => {
-    setSelectedRoute(route);
-    setIsRouteDropdownOpen(false);
-    fetchRouteCoordinates(route.route_id);
-  };
+
 
   const handleSendLocations = async () => {
     if (!sessionId || !selectedDevice || markers.length < 2) {
@@ -1096,8 +1130,9 @@ const DeviceSimulatorMap = (): JSX.Element => {
           onUpdateMarkerTimestamp={handleUpdateMarkerTimestamp}
           markers={markers}
           onClearMarkers={handleClearAllWaypoints}
-          routeCoordinates={routeCoordinates} // Add this line
+          routeCoordinates={routeCoordinates} 
           selectedRoute={selectedRoute}
+          collectionPoints={collectionPoints}
         />
         </div>
       </div>
