@@ -36,6 +36,19 @@ interface Route {
   center_longitude: string;
 }
 
+interface DeviceRoute {
+  device_route_id: string;
+  day_assigned: string;
+  device: {
+    device_id: string;
+    device_name: string;
+    vehicle_plate_num: string;
+    status: string;
+  };
+  route: Route;
+}
+
+
 const DeviceSimulatorMap = (): JSX.Element => {
   const t = useTranslations('Layout')
   const devsim = useTranslations('Device Simulator')
@@ -56,6 +69,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [isSendingLocations, setIsSendingLocations] = useState(false)
   const [sendingProgress, setSendingProgress] = useState(0)
   const [routes, setRoutes] = useState<Array<Route>>([]);
+  const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([]);
+  const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false);
   const [routesLoading, setRoutesLoading] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{
@@ -114,6 +129,33 @@ const DeviceSimulatorMap = (): JSX.Element => {
     fetchDevices()
   }, [])
 
+  const fetchDeviceRoutes = async (deviceId: string) => {
+    if (!deviceId) return;
+    
+    try {
+      setDeviceRoutesLoading(true);
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-routes/device/${deviceId}`;
+      const response = await axios.get(apiUrl);
+  
+      if (response.data.success && response.data.data) {
+        setDeviceRoutes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching device routes:', error);
+      toast.error('Failed to load routes for this device', {
+        duration: 3000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      });
+    } finally {
+      setDeviceRoutesLoading(false);
+    }
+  };
+
   const fetchRouteCoordinates = async (routeId: string) => {
     if (!routeId) return;
     
@@ -143,32 +185,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
     fetchRouteCoordinates(route.route_id);
   };
 
-
-  // Add a function to load the route waypoints as markers
-  // const loadRouteAsWaypoints = () => {
-  //   if (!sessionId || routeCoordinates.length < 2) {
-  //     toast.error('You need an active session and a route with coordinates to load waypoints', {
-  //       duration: 4000,
-  //       style: {
-  //         background: '#1F2937',
-  //         color: '#FFF',
-  //         border: '1px solid #374151',
-  //         borderRadius: '6px',
-  //       },
-  //     });
-  //     return;
-  //   }
-
-  //   // Convert route coordinates to markers
-  //   const newMarkers = routeCoordinates.map(coord => ({
-  //     lat: parseFloat(coord.latitude),
-  //     lng: parseFloat(coord.longitude),
-  //     timestamp: new Date().toISOString() // Default to current time
-  //   }));
-
-  //   setMarkers(newMarkers);
-  // };
-    
   const handleSendLocations = async () => {
     if (!sessionId || !selectedDevice || markers.length < 2) {
       toast.error('You need an active session with at least 2 waypoints to send locations', {
@@ -460,12 +476,11 @@ const DeviceSimulatorMap = (): JSX.Element => {
         <h1 className='text-xl font-bold text-white'>
           {t('Device Simulator')}
         </h1>
-
         {!sessionId ? (
           <button
             onClick={handleStartSession}
             className='bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center gap-2'
-            disabled={loading || !selectedDevice}
+            disabled={loading || !selectedDevice || !selectedRoute}
           >
             {loading ? (
               <>
@@ -581,9 +596,9 @@ const DeviceSimulatorMap = (): JSX.Element => {
       </div>
 
       {/* Main Content */}
-      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden h-[calc(100vh-8rem)]'>
+      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-auto' style={{ height: 'calc(100vh - 132px)' }}>
 {/* Left Panel - Session Info */}
-<div className='lg:col-span-1 flex flex-col max-h-[calc(100vh-8rem)]'>
+<div className='lg:col-span-1 flex flex-col overflow-auto'>
   {sessionId ? (
     <div className='bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col h-full'>
       <div className='p-4 border-b border-gray-700'>
@@ -633,109 +648,32 @@ const DeviceSimulatorMap = (): JSX.Element => {
               </div>
             </div>
           )}
-
-          {/* Route Selection */}
-          <div className='mb-4 bg-gray-900 rounded-md p-3 border border-gray-700'>
-            <h4 className='text-white text-sm font-medium mb-2'>
-              Route Selection
-            </h4>
-            <div className='relative'>
-              <button
-                type='button'
-                className='relative w-full bg-gray-800 border border-gray-700 rounded-md pl-3 pr-10 py-2 text-left cursor-default text-white'
-                onClick={() => setIsRouteDropdownOpen(!isRouteDropdownOpen)}
-              >
-                <span className='block truncate'>
-                  {selectedRoute
-                    ? selectedRoute.route_name
-                    : 'Select a route...'}
-                </span>
-                <span className='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none'>
-                  <svg
-                    className='h-5 w-5 text-gray-400'
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 20 20'
-                    fill='currentColor'
-                    aria-hidden='true'
-                  >
-                    <path
-                      fillRule='evenodd'
-                      d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'
-                      clipRule='evenodd'
-                    />
-                  </svg>
-                </span>
-              </button>
-
-              {/* Route Dropdown Panel */}
-              {isRouteDropdownOpen && (
-                <div className='absolute z-10 mt-1 w-full bg-gray-900 shadow-lg rounded-md py-1 max-h-60 overflow-auto'>
-                  {routesLoading ? (
-                    <div className='px-3 py-2 text-sm text-gray-400 flex items-center justify-center'>
-                      <svg
-                        className='animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500'
-                        xmlns='http://www.w3.org/2000/svg'
-                        fill='none'
-                        viewBox='0 0 24 24'
-                      >
-                        <circle
-                          className='opacity-25'
-                          cx='12'
-                          cy='12'
-                          r='10'
-                          stroke='currentColor'
-                          strokeWidth='4'
-                        ></circle>
-                        <path
-                          className='opacity-75'
-                          fill='currentColor'
-                          d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                        ></path>
-                      </svg>
-                      Loading routes...
-                    </div>
-                  ) : routes.length === 0 ? (
-                    <div className='px-3 py-2 text-sm text-gray-400'>
-                      No routes available
-                    </div>
-                  ) : (
-                    routes.map((route) => (
-                      <button
-                        key={route.route_id}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-800 ${
-                          selectedRoute?.route_id === route.route_id
-                            ? 'bg-gray-700 text-blue-400'
-                            : 'text-white'
-                        }`}
-                        onClick={() => handleRouteSelect(route)}
-                      >
-                        <div className='flex flex-col'>
-                          <span className='font-medium'>
-                            {route.route_name}
-                          </span>
-                          <span className='text-xs text-gray-400'>
-                            Center: {parseFloat(route.center_latitude).toFixed(4)}, {parseFloat(route.center_longitude).toFixed(4)}
-                          </span>
-                        </div>
-                      </button>
-                    ))
-                  )}
+          {/*route information */}
+          {selectedRoute && sessionId && (
+            <div className='mb-4 bg-gray-900 rounded-md p-3 border border-gray-700'>
+              <h4 className='text-white text-sm font-medium mb-2'>
+                Route Information
+              </h4>
+              <div className='space-y-2'>
+                <div>
+                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                    Route Name
+                  </p>
+                  <p className='text-indigo-300 text-xs'>
+                    {selectedRoute.route_name}
+                  </p>
                 </div>
-              )}
-            </div>
-            
-            {/* Route Information and Controls */}
-            {selectedRoute && (
-              <div className='mt-3'>
-                <div className='flex justify-between items-center'>
-                  <span className='text-xs text-gray-400'>
-                    {routeCoordinatesLoading ? 'Loading...' : `${routeCoordinates.length} coordinates`}
-                  </span>
-                  
+                <div>
+                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                    Center Coordinates
+                  </p>
+                  <p className='text-gray-300 text-xs font-mono'>
+                    {selectedRoute.center_latitude.slice(0, 7)}, {selectedRoute.center_longitude.slice(0, 7)}
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}          
 
           <div>
             <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
@@ -766,32 +704,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
             </p>
           </div>
 
-          {/* Route Information */}
-          {markers.length >= 2 && (
-            <div className='pt-3 pb-3 border-t border-b border-gray-700'>
-              <h4 className='text-sm font-semibold text-white mb-2'>
-                Route Information
-              </h4>
-              <div className='grid grid-cols-2 gap-2'>
-                <div>
-                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                    Distance
-                  </p>
-                  <p className='bg-gray-900 px-2 py-1 rounded text-purple-300 text-xs'>
-                    {formatDistance(routeInfo.distance)}
-                  </p>
-                </div>
-                <div>
-                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                    Duration
-                  </p>
-                  <p className='bg-gray-900 px-2 py-1 rounded text-orange-300 text-xs'>
-                    {formatDuration(routeInfo.duration)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className='pt-3'>
             <h4 className='text-sm font-semibold text-white mb-2'>
@@ -1028,6 +940,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
                       onClick={() => {
                         setSelectedDevice(device)
                         setIsDropdownOpen(false)
+                        setSelectedRoute(null) 
+                        fetchDeviceRoutes(device.device_id) 
                       }}
                     >
                       <div className='flex flex-col'>
@@ -1060,130 +974,88 @@ const DeviceSimulatorMap = (): JSX.Element => {
                 )}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Route Selection in non-session mode */}
-        <div className='mb-6'>
-          <label className='block text-sm font-medium text-gray-400 mb-2'>
-            Route (Preview)
-          </label>
-          <div className='relative'>
-            <button
-              type='button'
-              className='relative w-full bg-gray-900 border border-gray-700 rounded-md pl-3 pr-10 py-2 text-left cursor-default text-white'
-              onClick={() => setIsRouteDropdownOpen(!isRouteDropdownOpen)}
-            >
-              <span className='block truncate'>
-                {selectedRoute
-                  ? selectedRoute.route_name
-                  : 'Select a route...'}
-              </span>
-              <span className='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none'>
-                <svg
-                  className='h-5 w-5 text-gray-400'
-                  xmlns='http://www.w3.org/2000/svg'
-                  viewBox='0 0 20 20'
-                  fill='currentColor'
-                  aria-hidden='true'
+            {/* Route Selection UI - Displayed after device selection */}
+            {selectedDevice && !sessionId && (
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Route
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="relative w-full bg-gray-900 border border-gray-700 rounded-md pl-3 pr-10 py-2 text-left cursor-default text-white flex items-center"
+                  onClick={() => setIsRouteDropdownOpen(!isRouteDropdownOpen)}
                 >
-                  <path
-                    fillRule='evenodd'
-                    d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'
-                    clipRule='evenodd'
-                  />
-                </svg>
-              </span>
-            </button>
-
-            {/* Route Dropdown Panel */}
-            {isRouteDropdownOpen && (
-              <div className='absolute z-10 mt-1 w-full bg-gray-900 shadow-lg rounded-md py-1 max-h-60 overflow-auto'>
-                {routesLoading ? (
-                  <div className='px-3 py-2 text-sm text-gray-400 flex items-center justify-center'>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  <span className="block truncate">
+                    {selectedRoute ? selectedRoute.route_name : 'Select a route...'}
+                  </span>
+                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                     <svg
-                      className='animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500'
-                      xmlns='http://www.w3.org/2000/svg'
-                      fill='none'
-                      viewBox='0 0 24 24'
+                      className="h-5 w-5 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
                     >
-                      <circle
-                        className='opacity-25'
-                        cx='12'
-                        cy='12'
-                        r='10'
-                        stroke='currentColor'
-                        strokeWidth='4'
-                      ></circle>
                       <path
-                        className='opacity-75'
-                        fill='currentColor'
-                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                      ></path>
+                        fillRule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
-                    Loading routes...
-                  </div>
-                ) : routes.length === 0 ? (
-                  <div className='px-3 py-2 text-sm text-gray-400'>
-                    No routes available
-                  </div>
-                ) : (
-                  routes.map((route) => (
-                    <button
-                      key={route.route_id}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-800 ${
-                        selectedRoute?.route_id === route.route_id
-                          ? 'bg-gray-700 text-blue-400'
-                          : 'text-white'
-                      }`}
-                      onClick={() => handleRouteSelect(route)}
-                    >
-                      <div className='flex flex-col'>
-                        <span className='font-medium'>
-                          {route.route_name}
-                        </span>
-                        <span className='text-xs text-gray-400'>
-                          Center: {parseFloat(route.center_latitude).toFixed(4)}, {parseFloat(route.center_longitude).toFixed(4)}
-                        </span>
+                  </span>
+                </button>
+
+                {/* Route Dropdown Panel */}
+                {isRouteDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-gray-900 shadow-lg rounded-md py-1 max-h-60 overflow-auto">
+                    {deviceRoutesLoading ? (
+                      <div className="px-3 py-2 text-sm text-gray-400 flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading routes...
                       </div>
-                    </button>
-                  ))
+                    ) : deviceRoutes.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-gray-400">
+                        No routes assigned to this device
+                      </div>
+                    ) : (
+                      deviceRoutes.map((deviceRoute) => (
+                        <button
+                          key={deviceRoute.device_route_id}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-800 ${
+                            selectedRoute?.route_id === deviceRoute.route.route_id
+                              ? 'bg-gray-800 text-blue-400'
+                              : 'text-white'
+                          }`}
+                          onClick={() => {
+                            setSelectedRoute(deviceRoute.route);
+                            setIsRouteDropdownOpen(false);
+                            fetchRouteCoordinates(deviceRoute.route.route_id);
+                          }}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{deviceRoute.route.route_name}</span>
+                            <span className="text-xs text-gray-400">
+                              Day: {deviceRoute.day_assigned}
+                            </span>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-          
-          {selectedRoute && (
-            <div className='mt-3 text-xs text-gray-400'>
-              {routeCoordinatesLoading ? (
-                <div className='flex items-center'>
-                  <svg
-                    className='animate-spin -ml-1 mr-2 h-3 w-3 text-blue-500'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    ></circle>
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                    ></path>
-                  </svg>
-                  Loading coordinates...
-                </div>
-              ) : (
-                <span>Route has {routeCoordinates.length} waypoints</span>
-              )}
             </div>
           )}
+          </div>
+          
         </div>
 
         <div className='flex flex-col items-center justify-center text-center pt-4'>
@@ -1216,7 +1088,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
         </div>
 
         {/* Right Panel - Map */}
-        <div className='lg:col-span-3 h-full bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden'>
+        <div className='lg:col-span-3 bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden' style={{ height: '100%' }}>
         <Map
           sessionActive={!!sessionId}
           onAddMarker={handleAddMarker}
