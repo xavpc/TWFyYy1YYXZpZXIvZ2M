@@ -75,8 +75,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
     routesRef.current = []
   }
 
-  const handleMapClick = async (e: L.LeafletMouseEvent) => {
-    // Prevent new clicks while loading
+    const handleMapClick = async (e: L.LeafletMouseEvent) => {
     if (isLoading) return
 
     const map = mapInstanceRef.current
@@ -92,6 +91,9 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
 
     marker.bindPopup(`Point ${markersRef.current.length}`).openPopup()
 
+    // Add click event to remove marker
+    marker.on('click', () => handleDeleteMarker(marker))
+
     if (markersRef.current.length >= 2) {
       setIsLoading(true)
       try {
@@ -99,6 +101,27 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
       } finally {
         setIsLoading(false)
       }
+    }
+  }
+
+  const handleDeleteMarker = (marker: L.Marker) => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    // Remove marker from the map
+    marker.remove()
+
+    // Remove marker from the array
+    markersRef.current = markersRef.current.filter((m) => m !== marker)
+
+    console.log('Marker deleted:', marker.getLatLng())
+
+    // Update routes after deletion
+    if (markersRef.current.length >= 2) {
+      setIsLoading(true)
+      updateAllRoutes().finally(() => setIsLoading(false))
+    } else {
+      clearRoutes()
     }
   }
 
