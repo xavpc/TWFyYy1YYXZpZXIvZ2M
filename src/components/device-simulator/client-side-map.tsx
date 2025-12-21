@@ -81,12 +81,53 @@ interface MapProps {
   onUpdateMarkerTimestamp?: (index: number, newTimestamp: string) => void;
 }
 
-const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
-  const [ignoreNextClick, setIgnoreNextClick] = useState(false);
+const MarkerManager = ({ sessionActive, onAddMarker, routeLoading }: MapProps & { 
+  routeLoading: boolean 
+}) => {
+  const [ignoreClicks, setIgnoreClicks] = useState(false);
+  
+  // Update cursor based on both sessionActive and routeLoading
+  useEffect(() => {
+    const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
+    if (mapContainer) {
+      if (routeLoading) {
+        mapContainer.style.cursor = 'wait'; // Show loading cursor during route calculation
+      } else {
+        mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
+      }
+    }
+    
+    // Also update ignoreClicks based on routeLoading
+    setIgnoreClicks(routeLoading);
+    
+    return () => {
+      if (mapContainer) {
+        mapContainer.style.cursor = 'grab';
+      }
+    };
+  }, [sessionActive, routeLoading]);
+  
+  // Function to temporarily disable clicking
+  const disableClicks = useCallback((duration: number) => {
+    setIgnoreClicks(true);
+    // Change cursor to indicate clicks are disabled
+    const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
+    if (mapContainer) {
+      mapContainer.style.cursor = 'not-allowed';
+    }
+    
+    setTimeout(() => {
+      setIgnoreClicks(false);
+      // Restore cursor
+      if (mapContainer) {
+        mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
+      }
+    }, duration);
+  }, [sessionActive]);
   
   const map = useMapEvents({
     click: (e) => {
-      if (sessionActive && !ignoreNextClick) {
+      if (sessionActive && !ignoreClicks && !routeLoading) {
         const newPosition = {
           lat: e.latlng.lat,
           lng: e.latlng.lng
@@ -95,8 +136,6 @@ const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
           onAddMarker(newPosition);
         }
       }
-      // Reset ignore flag after handling the event
-      setIgnoreNextClick(false);
     }
   });
 
@@ -111,24 +150,10 @@ const MarkerManager = ({ sessionActive, onAddMarker }: MapProps) => {
     };
   }, []);
 
-  // Function to set ignore flag when clicking on popups or markers
+  // Expose the disableClicks function to parent component
   useEffect(() => {
-    const handlePopupOrMarkerClick = () => {
-      setIgnoreNextClick(true);
-    };
-    
-    // Add event listeners to any popup or marker
-    document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.leaflet-popup') || target.closest('.leaflet-marker-icon')) {
-        handlePopupOrMarkerClick();
-      }
-    });
-    
-    return () => {
-      document.removeEventListener('click', () => {});
-    };
-  }, []);
+    (window as any).disableMapClicks = disableClicks;
+  }, [disableClicks]);
   
   return null;
 };
@@ -146,7 +171,7 @@ const ClientSideMap = ({
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [editableTimestamps, setEditableTimestamps] = useState<{ [index: number]: string }>({});
-  
+  const [routeLoading, setRouteLoading] = useState<boolean>(false);
   useEffect(() => {
     const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
     if (mapContainer) {
@@ -235,19 +260,22 @@ const ClientSideMap = ({
   const handleRemoveMarkerClick = useCallback((e: React.MouseEvent, index: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    setRouteLoading(true);
     // Close the popup before removing the marker
     const popupCloseButton = document.querySelector('.leaflet-popup-close-button') as HTMLElement;
     if (popupCloseButton) {
       popupCloseButton.click();
     }
     
-    // Small delay to prevent immediate map click
-    setTimeout(() => {
-      if (onRemoveMarker) {
-        onRemoveMarker(index);
-      }
-    }, 50);
+    // Disable map clicks for 300ms and change cursor
+    if ((window as any).disableMapClicks) {
+      (window as any).disableMapClicks(300);
+    }
+    
+    // Remove the marker
+    if (onRemoveMarker) {
+      onRemoveMarker(index);
+    }
   }, [onRemoveMarker]);
   
   // Fetch route when we have at least 2 markers
@@ -256,6 +284,7 @@ const ClientSideMap = ({
       if (markers.length >= 2) {
         try {
           setLoading(true);
+          setRouteLoading(true); // Set route loading state to true
           
           // Clear previous route path
           setRoutePath([]);
@@ -291,6 +320,7 @@ const ClientSideMap = ({
           setRoutePath(markers.map(pos => [pos.lat, pos.lng] as [number, number]));
         } finally {
           setLoading(false);
+          setRouteLoading(false); // Set route loading state back to false
         }
       } else {
         // Reset route when we have fewer than 2 markers
@@ -299,8 +329,7 @@ const ClientSideMap = ({
     };
     
     fetchRoute();
-  }, [markers]); // Use markers from props instead of positions
-  
+  }, [markers]);  
   // Reset markers when session becomes inactive
   useEffect(() => {
     if (!sessionActive) {
@@ -317,17 +346,21 @@ const ClientSideMap = ({
   
   return (
     <MapContainer 
-      center={center} 
-      zoom={13} 
-      style={{ height: '100%', width: '100%' }}
-      className="z-0"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      
-      <MarkerManager sessionActive={sessionActive} onAddMarker={onAddMarker} />
+    center={center} 
+    zoom={13} 
+    style={{ height: '100%', width: '100%' }}
+    className="z-0"
+  >
+    <TileLayer
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
+    
+    <MarkerManager 
+      sessionActive={sessionActive} 
+      onAddMarker={onAddMarker} 
+      routeLoading={routeLoading} 
+    />
       
       {/* Draw the route using OSRM data */}
       {routePath.length > 0 && (
