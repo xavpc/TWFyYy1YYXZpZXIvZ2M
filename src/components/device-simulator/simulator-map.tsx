@@ -57,12 +57,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [sendingProgress, setSendingProgress] = useState(0)
   const [routes, setRoutes] = useState<Array<Route>>([]);
   const [routesLoading, setRoutesLoading] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<{ 
-    route_id: string; 
-    route_name: string; 
-    center_latitude: string; 
-    center_longitude: string; 
-  } | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{
     route_coordinates_id: string;
     latitude: string;
@@ -150,29 +145,29 @@ const DeviceSimulatorMap = (): JSX.Element => {
 
 
   // Add a function to load the route waypoints as markers
-  const loadRouteAsWaypoints = () => {
-    if (!sessionId || routeCoordinates.length < 2) {
-      toast.error('You need an active session and a route with coordinates to load waypoints', {
-        duration: 4000,
-        style: {
-          background: '#1F2937',
-          color: '#FFF',
-          border: '1px solid #374151',
-          borderRadius: '6px',
-        },
-      });
-      return;
-    }
+  // const loadRouteAsWaypoints = () => {
+  //   if (!sessionId || routeCoordinates.length < 2) {
+  //     toast.error('You need an active session and a route with coordinates to load waypoints', {
+  //       duration: 4000,
+  //       style: {
+  //         background: '#1F2937',
+  //         color: '#FFF',
+  //         border: '1px solid #374151',
+  //         borderRadius: '6px',
+  //       },
+  //     });
+  //     return;
+  //   }
 
-    // Convert route coordinates to markers
-    const newMarkers = routeCoordinates.map(coord => ({
-      lat: parseFloat(coord.latitude),
-      lng: parseFloat(coord.longitude),
-      timestamp: new Date().toISOString() // Default to current time
-    }));
+  //   // Convert route coordinates to markers
+  //   const newMarkers = routeCoordinates.map(coord => ({
+  //     lat: parseFloat(coord.latitude),
+  //     lng: parseFloat(coord.longitude),
+  //     timestamp: new Date().toISOString() // Default to current time
+  //   }));
 
-    setMarkers(newMarkers);
-  };
+  //   setMarkers(newMarkers);
+  // };
     
   const handleSendLocations = async () => {
     if (!sessionId || !selectedDevice || markers.length < 2) {
@@ -737,13 +732,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
                     {routeCoordinatesLoading ? 'Loading...' : `${routeCoordinates.length} coordinates`}
                   </span>
                   
-                  <button
-                    onClick={loadRouteAsWaypoints}
-                    disabled={routeCoordinatesLoading || routeCoordinates.length < 2}
-                    className='bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-md text-xs transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed'
-                  >
-                    Load as Waypoints
-                  </button>
                 </div>
               </div>
             )}
@@ -854,59 +842,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
                 />
               </svg>
               Clear All Waypoints
-            </button>
-          )}
-
-          {/* Send Locations Button (when route is loaded) */}
-          {sessionId && markers.length >= 2 && (
-            <button
-              onClick={handleSendLocations}
-              disabled={isSendingLocations}
-              className='w-full mt-2 bg-green-700 hover:bg-green-800 text-white px-3 py-2 rounded-md transition-colors text-sm flex items-center justify-center gap-2'
-            >
-              {isSendingLocations ? (
-                <>
-                  <svg
-                    className='animate-spin -ml-1 mr-2 h-4 w-4 text-white'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    ></circle>
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                    ></path>
-                  </svg>
-                  Sending Locations ({sendingProgress}%)
-                </>
-              ) : (
-                <>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    className='h-4 w-4'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M5 13l4 4L19 7'
-                    />
-                  </svg>
-                  Send All Locations
-                </>
-              )}
             </button>
           )}
 
@@ -1290,7 +1225,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
           markers={markers}
           onClearMarkers={handleClearAllWaypoints}
           routeCoordinates={routeCoordinates} // Add this line
-          isPreviewMode={!sessionId} // Add this to indicate preview mode
+          selectedRoute={selectedRoute}
         />
         </div>
       </div>

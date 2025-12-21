@@ -1,10 +1,9 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
-
 
 // Custom CSS for dark theme popups
 const darkPopupStyle = `
@@ -29,9 +28,11 @@ const darkPopupStyle = `
   .dark-theme-popup button:hover {
     background-color: #1e40af;
   }
+  /* Fix for polyline mouse events */
+  .leaflet-interactive {
+    cursor: inherit !important;
+  }
 `;
-
-
 
 // Fix the marker icons - create actual different colored icons
 const startIcon = new L.Icon({
@@ -61,6 +62,24 @@ const endIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+const routeStartIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const routeEndIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 interface Position {
   lat: number;
   lng: number;
@@ -72,6 +91,26 @@ interface RouteGeometry {
   type: string;
 }
 
+interface Route {
+  route_id: string;
+  route_name: string;
+  center_latitude: string;
+  center_longitude: string;
+}
+
+interface RouteCoordinate {
+  route_coordinates_id: string;
+  latitude: string;
+  longitude: string;
+  sequence: number;
+  route: {
+    route_id: string;
+    route_name: string;
+    center_latitude: string;
+    center_longitude: string;
+  }
+}
+
 interface MapProps {
   sessionActive: boolean;
   markers?: Position[];
@@ -79,46 +118,61 @@ interface MapProps {
   onRemoveMarker?: (index: number) => void;
   onClearMarkers?: () => void;
   onUpdateMarkerTimestamp?: (index: number, newTimestamp: string) => void;
-  routeCoordinates?: Array<{
-    route_coordinates_id: string;
-    latitude: string;
-    longitude: string;
-    sequence: number;
-    route: {
-      route_id: string;
-      route_name: string;
-      center_latitude: string;
-      center_longitude: string;
-    }
-  }>;
-  isPreviewMode?: boolean;
+  routeCoordinates?: RouteCoordinate[];
+  selectedRoute?: Route | null;
 }
 
-const MarkerManager = ({ sessionActive, onAddMarker, routeLoading }: MapProps & { 
-  routeLoading: boolean 
+// Component to update map center when selected route changes
+const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (selectedRoute && selectedRoute.center_latitude && selectedRoute.center_longitude) {
+      const lat = parseFloat(selectedRoute.center_latitude);
+      const lng = parseFloat(selectedRoute.center_longitude);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        map.setView([lat, lng], 13);
+      }
+    }
+  }, [selectedRoute, map]);
+  
+  return null;
+};
+
+const MarkerManager = ({ sessionActive, onAddMarker, routeLoading, loading }: MapProps & { 
+  routeLoading: boolean,
+  loading: boolean 
 }) => {
   const [ignoreClicks, setIgnoreClicks] = useState(false);
   
-  // Update cursor based on both sessionActive and routeLoading
+  // Update cursor based on both sessionActive, routeLoading and loading
   useEffect(() => {
     const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
     if (mapContainer) {
-      if (routeLoading) {
+      if (routeLoading || loading) {
         mapContainer.style.cursor = 'wait'; // Show loading cursor during route calculation
       } else {
         mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
       }
+      
+      // Add CSS to ensure markers have the pointer cursor
+      const styleElement = document.createElement('style');
+      styleElement.textContent = `
+        .leaflet-marker-icon {
+          cursor: pointer !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+      
+      return () => {
+        if (mapContainer) {
+          mapContainer.style.cursor = 'grab';
+        }
+        document.head.removeChild(styleElement);
+      };
     }
-    
-    // Also update ignoreClicks based on routeLoading
-    setIgnoreClicks(routeLoading);
-    
-    return () => {
-      if (mapContainer) {
-        mapContainer.style.cursor = 'grab';
-      }
-    };
-  }, [sessionActive, routeLoading]);
+  }, [sessionActive, routeLoading, loading]);
   
   // Function to temporarily disable clicking
   const disableClicks = useCallback((duration: number) => {
@@ -131,17 +185,21 @@ const MarkerManager = ({ sessionActive, onAddMarker, routeLoading }: MapProps & 
     
     setTimeout(() => {
       setIgnoreClicks(false);
-      // Restore cursor
+      // Restore cursor based on current states
       if (mapContainer) {
-        mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
+        if (routeLoading || loading) {
+          mapContainer.style.cursor = 'wait';
+        } else {
+          mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab';
+        }
       }
       console.log("Clicks re-enabled, sessionActive:", sessionActive);
     }, duration);
-  }, [sessionActive]);
+  }, [sessionActive, routeLoading, loading]);
   
   const map = useMapEvents({
     click: (e) => {
-      if (sessionActive && !ignoreClicks && !routeLoading) {
+      if (sessionActive && !ignoreClicks && !routeLoading && !loading) {
         const newPosition = {
           lat: e.latlng.lat,
           lng: e.latlng.lng
@@ -179,27 +237,47 @@ const ClientSideMap = ({
   onRemoveMarker,
   onClearMarkers,
   onUpdateMarkerTimestamp,
-  routeCoordinates = [], 
-  isPreviewMode = false, 
+  routeCoordinates = [],
+  selectedRoute = null
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
-  const [center] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
+  const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
+  const [presetRoutePath, setPresetRoutePath] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [editableTimestamps, setEditableTimestamps] = useState<{ [index: number]: string }>({});
   const [routeLoading, setRouteLoading] = useState<boolean>(false);
+  const [markerRemovalInProgress, setMarkerRemovalInProgress] = useState<boolean>(false);
+
+  // Update center when selectedRoute changes
   useEffect(() => {
-    const mapContainer = document.querySelector('.leaflet-container') as HTMLElement;
-    if (mapContainer) {
-      mapContainer.style.cursor = sessionActive ? 'crosshair' : 'grab'; // Change to a crosshair when active
-    }
-  
-    return () => {
-      if (mapContainer) {
-        mapContainer.style.cursor = 'grab'; // Reset cursor when session is inactive
+    if (selectedRoute && selectedRoute.center_latitude && selectedRoute.center_longitude) {
+      const lat = parseFloat(selectedRoute.center_latitude);
+      const lng = parseFloat(selectedRoute.center_longitude);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setCenter([lat, lng]);
       }
-    };
-  }, [sessionActive]);
+    }
+  }, [selectedRoute]);
+
+  // Process route coordinates
+  useEffect(() => {
+    if (routeCoordinates && routeCoordinates.length > 0) {
+      // Sort by sequence
+      const sortedCoordinates = [...routeCoordinates].sort((a, b) => a.sequence - b.sequence);
+      
+      // Convert to [lat, lng] format for Leaflet
+      const path = sortedCoordinates.map(coord => [
+        parseFloat(coord.latitude), 
+        parseFloat(coord.longitude)
+      ] as [number, number]);
+      
+      setPresetRoutePath(path);
+    } else {
+      setPresetRoutePath([]);
+    }
+  }, [routeCoordinates]);
 
   // Keep editableTimestamps in sync with markers
   useEffect(() => {
@@ -276,7 +354,12 @@ const ClientSideMap = ({
   const handleRemoveMarkerClick = useCallback((e: React.MouseEvent, index: number) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Set all loading states to true
     setRouteLoading(true);
+    setLoading(true);
+    setMarkerRemovalInProgress(true);
+    
     // Close the popup before removing the marker
     const popupCloseButton = document.querySelector('.leaflet-popup-close-button') as HTMLElement;
     if (popupCloseButton) {
@@ -288,10 +371,12 @@ const ClientSideMap = ({
       (window as any).disableMapClicks(300);
     }
     
-    // Remove the marker
-    if (onRemoveMarker) {
-      onRemoveMarker(index);
-    }
+    // Remove the marker with a small delay to ensure cursor gets updated first
+    setTimeout(() => {
+      if (onRemoveMarker) {
+        onRemoveMarker(index);
+      }
+    }, 50);
   }, [onRemoveMarker]);
   
   // Fetch route when we have at least 2 markers
@@ -300,8 +385,10 @@ const ClientSideMap = ({
       // Check if we have at least 2 markers to calculate a route
       if (markers.length >= 2) {
         try {
+          // Make sure we keep loading states true if we were already loading
+          // (this ensures consistency if a marker was just removed)
           setLoading(true);
-          setRouteLoading(true); // Set route loading state to true
+          setRouteLoading(true);
           
           // Clear previous route path
           setRoutePath([]);
@@ -336,25 +423,29 @@ const ClientSideMap = ({
           // If there's an error fetching the route, fall back to a direct line between markers
           setRoutePath(markers.map(pos => [pos.lat, pos.lng] as [number, number]));
         } finally {
+          // Clear all loading states
           setLoading(false);
-          setRouteLoading(false); // Set route loading state back to false
+          setRouteLoading(false);
+          setMarkerRemovalInProgress(false);
         }
       } else {
         // Reset route when we have fewer than 2 markers
         setRoutePath([]);
-        // Make sure to reset loading states when we don't have enough markers
+        // Make sure to reset all loading states
         setLoading(false);
         setRouteLoading(false);
+        setMarkerRemovalInProgress(false);
       }
     };
     
     fetchRoute();
   }, [markers]);
+
   // Reset markers when session becomes inactive
   useEffect(() => {
     if (!sessionActive) {
       setPositions([]);
-      setRoutePath([]);
+      // Don't reset the routePath here, as we want to display it regardless of session state
     }
   }, [sessionActive]);
   
@@ -364,43 +455,96 @@ const ClientSideMap = ({
     return midIcon;
   };
   
+  // Determine if we should show the loading indicator in UI
+  const showLoadingIndicator = loading || routeLoading || markerRemovalInProgress;
+  
   return (
     <MapContainer 
-    center={center} 
-    zoom={13} 
-    style={{ height: '100%', width: '100%' }}
-    className="z-0"
-  >
-    <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    />
-    
-    <MarkerManager 
-      sessionActive={sessionActive} 
-      onAddMarker={onAddMarker} 
-      routeLoading={routeLoading} 
-    />
+      center={center} 
+      zoom={13} 
+      style={{ height: '100%', width: '100%' }}
+      className="z-0"
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
       
-      {/* Draw the route using OSRM data */}
+      <MarkerManager 
+        sessionActive={sessionActive} 
+        onAddMarker={onAddMarker} 
+        routeLoading={routeLoading}
+        loading={loading || markerRemovalInProgress}
+      />
+      
+      <MapCenterUpdater selectedRoute={selectedRoute} />
+      
+      {/* Draw the preset route coordinates */}
+      {presetRoutePath.length > 0 && (
+        <Polyline 
+          positions={presetRoutePath} 
+          color="#ff7800"  // Orange color for route path
+          weight={4}
+          opacity={0.7}
+        />
+      )}
+      
+      {/* Show start and end markers for the preset route */}
+      {presetRoutePath.length > 0 && (
+        <>
+          <Marker 
+            position={presetRoutePath[0]} 
+            icon={routeStartIcon}
+          >
+            <Popup className="dark-theme-popup">
+              Route Start
+              <br />
+              Lat: {presetRoutePath[0][0].toFixed(6)}, Lng: {presetRoutePath[0][1].toFixed(6)}
+              {selectedRoute && (
+                <div className="text-xs mt-1">
+                  Route: {selectedRoute.route_name}
+                </div>
+              )}
+            </Popup>
+          </Marker>
+          
+          <Marker 
+            position={presetRoutePath[presetRoutePath.length - 1]} 
+            icon={routeEndIcon}
+          >
+            <Popup className="dark-theme-popup">
+              Route End
+              <br />
+              Lat: {presetRoutePath[presetRoutePath.length - 1][0].toFixed(6)}, 
+              Lng: {presetRoutePath[presetRoutePath.length - 1][1].toFixed(6)}
+              {selectedRoute && (
+                <div className="text-xs mt-1">
+                  Route: {selectedRoute.route_name}
+                </div>
+              )}
+            </Popup>
+          </Marker>
+        </>
+      )}
+      
+      {/* Draw the device location route path */}
       {routePath.length > 0 && (
         <Polyline 
           positions={routePath} 
-          color="#3388ff"
+          color="#3388ff"  // Blue color for device path
           weight={4}
           opacity={0.8}
           dashArray="5, 10"
         />
       )}
       
-      {/* Draw markers for user-clicked points only */}
+      {/* Draw markers for user-clicked points (device locations) */}
       {markers.map((position, index) => (
         <Marker 
           key={`marker-${index}-${position.lat}-${position.lng}`}
           position={[position.lat, position.lng]} 
-          icon={getMarkerIcon(index, markers.length)} // Pass the total length
+          icon={getMarkerIcon(index, markers.length)} 
         >
-
           <Popup className="dark-theme-popup">
             {index === 0 ? 'Start Point' : 
             index === markers.length - 1 ? 'End Point' : 
@@ -436,6 +580,7 @@ const ClientSideMap = ({
                 <button 
                   onClick={(e) => handleRemoveMarkerClick(e, index)}
                   className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded-md transition-colors"
+                  disabled={showLoadingIndicator}
                 >
                   Remove Waypoint
                 </button>
@@ -446,11 +591,28 @@ const ClientSideMap = ({
       ))}
       
       {/* Loading indicator for route fetching */}
-      {loading && markers.length >= 2 && (
+      {showLoadingIndicator && (
         <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-md text-sm z-1000">
-          Calculating route...
+          {markerRemovalInProgress ? "Removing waypoint..." : "Calculating route..."}
         </div>
       )}
+      
+      {/* Legend for the map */}
+      <div className="absolute bottom-6 right-2 bg-black bg-opacity-70 text-white p-2 rounded-md text-xs z-1000">
+        <div className="font-bold mb-1">Map Legend</div>
+        <div className="flex items-center mb-1">
+          <div className="w-4 h-2 bg-orange-500 mr-2"></div>
+          <span>Preset Route</span>
+        </div>
+        <div className="flex items-center mb-1">
+          <div className="w-4 h-2 bg-blue-500 mr-2 border-t-2 border-dashed"></div>
+          <span>Device Path</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+          <span>Device Location</span>
+        </div>
+      </div>
     </MapContainer>
   )
 }
