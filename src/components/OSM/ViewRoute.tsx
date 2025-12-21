@@ -116,6 +116,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
     setIsLoading(true)
     setError(null)
+    setNoData(false) // Reset no data state
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
     const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving/'
@@ -125,11 +126,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       const response = await fetch(
         `${API_URL}/route-coordinates/route/${route_id}`
       )
-      if (!response.ok)
-        throw new Error(`Failed to fetch route: ${await response.text()}`)
 
       const { data } = await response.json()
-      if (!data?.length) throw new Error('No route data found')
+      if (!data?.length) {
+        setNoData(true) // Indicate no data found
+        return
+      }
 
       // Sort by sequence and format for OSRM
       const sortedCoordinates = data.sort(
