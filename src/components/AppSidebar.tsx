@@ -10,6 +10,7 @@ import {
   ChevronUp,
   User2,
   NotebookText,
+  PlaySquare,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -65,6 +66,12 @@ export function AppSidebar() {
       title: t('Complaints'),
       url: '/complaints',
       icon: NotebookText,
+    },
+
+    {
+      title: t('Device Simulator'),
+      url: '/device-simulator',
+      icon: PlaySquare,
     },
   ]
 

@@ -7,7 +7,8 @@
     "Route": "Route",
     "Complaints": "Complaints",
     "Username": "Username",
-    "SignOut": "Sign Out"
+    "SignOut": "Sign Out",
+    "Device Simulator": "Device Simulator"
   },
   "Dashboard": {
     "Hello there": "Hello there!"
@@ -17,7 +18,8 @@
     "Employees": "Employees",
     "Device": "Device",
     "Route": "Route",
-    "Complaints": "Complaints"
+    "Complaints": "Complaints",
+    "Device Simulator": "Device Simulator"
   },
   "Pagination": {
     "Next": "Next",
@@ -89,6 +91,11 @@
     "No complaints found": "No complaints found.",
     "Select a complaint to view details": "Select a complaint to view details"
   },
+  "Device Simulator":{
+    "Hello there": "Hello there!",
+    "Start Session": "Start Session"
+  },
+  
   "Dialog": {
     "Cancel": "Cancel",
     "Delete Paragraph": " This action cannot be undone. This will permanently delete this route.",

@@ -7,7 +7,8 @@
       "Route": "ルート",
       "Complaints": "苦情",
       "Username": "ユーザー名",
-      "SignOut": "ログアウト"
+      "SignOut": "ログアウト",
+      "Device Simulator": "デバイスシミュレーター"
     },
     "Dashboard": {
       "Hello there": "こんにちは!"
@@ -17,7 +18,8 @@
       "Employees": "従業員",
       "Device": "デバイス",
       "Route": "ルート",
-      "Complaints": "苦情"
+      "Complaints": "苦情",
+      "Device Simulator": "デバイスシミュレーター"
     },
     "Pagination": {
       "Next": "次へ",
@@ -87,6 +89,9 @@
       "Lang": "経度",
       "No complaints found": "苦情は見つかりませんでした",
       "Select a complaint to view details": "苦情を選択して詳細を表示"
+    },
+    "Device Simulator":{
+      "Hello there": "こんにちは!"
     },
     "Dialog": {
       "Cancel": "キャンセル",
