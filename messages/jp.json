@@ -1,91 +1,92 @@
 {
-  "Sidebar": {
-    "Title": "ごみ収集システム",
-    "Dashboard": "ダッシュボード",
-    "Employees": "従業員",
-    "Device": "デバイス",
-    "Route": "ルート",
-    "Complaints": "苦情",
-    "Username": "ユーザー名",
-    "SignOut": "ログアウト"
-  },
-  "Dashboard": {
-    "Hello there": "こんにちは!"
-  },
-  "Layout": {
-    "Dashboard": "ダッシュボード",
-    "Employees": "従業員",
-    "Device": "デバイス",
-    "Route": "ルート",
-    "Complaints": "苦情"
-  },
-  "Pagination": {
-    "Next": "次へ",
-    "Previous": "前へ",
-    "Page": "ページ",
-    "of": "／"
-  },
-  "Employees": {
-    "Name": "名前",
-    "Email": "メールアドレス",
-    "Phone": "電話番号",
-    "Address": "住所",
-    "age": "年齢",
-    "Actions": "操作",
-    "Add Employee": "従業員を追加",
-    "Edit Employee": "従業員を編集",
-    "Edit": "編集"
-  },
-  "Add Employee": {
-    "first_name": "名",
-    "last_name": "姓",
-    "middle_name": "ミドルネーム",
-    "age": "年齢",
-    "email": "メールアドレス",
-    "contact_number": "連絡先番号",
-    "address": "住所",
-    "Save": "保存",
-    "Cancel": "キャンセル"
-  },
-  "Route": {
-    "View Route": "ルートを表示",
-    "Route Name": "ルート名",
-    "Action": "操作",
-    "Add Route": "ルートを追加",
-    "Add": "追加",
-    "Delete ": "消去",
-    "View": "表示",
-    "Invalid Route": "無効なルート",
-    "Save": "保存",
-    "Cancel": "キャンセル",
-    "Delete Route": "ルートの削除",
-    "Remove Route": "ルートを削除する",
-    "Create Route": "ルートを作成する",
-    "Click Points": "地図上の点をクリックして、接続されたルートを作成します。すべてのポイント間のルートが順番に計算されます。",
-    "Last Click": "ラストクリック",
-    "Add Collection Point": "収集ポイントの追加",
-    "Create Collection": "コレクションを作成する",
-    "Remove Collection": "コレクションを削除する"
-  },
-  "Device": {
-    "Device Name": "デバイス名",
-    "Vehicle Plate Number": "車両番号",
-    "Phone": "電話番号",
-    "Employee": "従業員",
-    "Status": "ステータス",
-    "Action": "操作"
-  },
-  "Complaints": {
-    "Mark as in progress": "進行中としてマーク",
-    "Mark as complete": "完了としてマーク",
-    "Lat": "緯度",
-    "Lang": "経度",
-    "No complaints found": "苦情は見つかりませんでした",
-    "Select a complaint to view details": "苦情を選択して詳細を表示"
-  },
-  "Dialog": {
-    "Cancel": "キャンセル",
-    "Delete Paragraph": "この操作は元に戻すことができません。これにより、このルートは完全に削除されます。",
-    "Sure": "絶対に間違いありませんか？"
+    "Sidebar": {
+      "Title": "ごみ収集システム",
+      "Dashboard": "ダッシュボード",
+      "Employees": "従業員",
+      "Device": "デバイス",
+      "Route": "ルート",
+      "Complaints": "苦情",
+      "Username": "ユーザー名",
+      "SignOut": "ログアウト"
+    },
+    "Dashboard": {
+      "Hello there": "こんにちは!"
+    },
+    "Layout": {
+      "Dashboard": "ダッシュボード",
+      "Employees": "従業員",
+      "Device": "デバイス",
+      "Route": "ルート",
+      "Complaints": "苦情"
+    },
+    "Pagination": {
+      "Next": "次へ",
+      "Previous": "前へ",
+      "Page": "ページ",
+      "of": "／"
+    },
+    "Employees": {
+      "Name": "名前",
+      "Email": "メールアドレス",
+      "Phone": "電話番号",
+      "Address": "住所",
+      "age": "年齢",
+      "Actions": "操作",
+      "Add Employee": "従業員を追加",
+      "Edit Employee": "従業員を編集",
+      "Edit": "編集"
+    },
+    "Add Employee": {
+      "first_name": "名",
+      "last_name": "姓",
+      "middle_name": "ミドルネーム",
+      "age": "年齢",
+      "email": "メールアドレス",
+      "contact_number": "連絡先番号",
+      "address": "住所",
+      "Save": "保存",
+      "Cancel": "キャンセル"
+    },
+    "Route": {
+      "View Route": "ルートを表示",
+      "Route Name": "ルート名",
+      "Action": "操作",
+      "Add Route": "ルートを追加",
+      "Add": "追加",
+      "Delete ": "消去",
+      "View": "表示",
+      "Invalid Route": "無効なルート",
+      "Save": "保存",
+      "Cancel": "キャンセル",
+      "Delete Route": "ルートの削除",
+      "Remove Route": "ルートを削除する",
+      "Create Route": "ルートを作成する",
+      "Click Points": "地図上の点をクリックして、接続されたルートを作成します。すべてのポイント間のルートが順番に計算されます。",
+      "Last Click": "ラストクリック",
+      "Add Collection Point": "収集ポイントの追加",
+      "Create Collection": "コレクションを作成する",
+      "Remove Collection": "コレクションを削除する"
+    },
+    "Device": {
+      "Device Name": "デバイス名",
+      "Vehicle Plate Number": "車両番号",
+      "Phone": "電話番号",
+      "Employee": "従業員",
+      "Status": "ステータス",
+      "Action": "操作"
+    },
+    "Complaints": {
+      "Mark as in progress": "進行中としてマーク",
+      "Mark as complete": "完了としてマーク",
+      "Lat": "緯度",
+      "Lang": "経度",
+      "No complaints found": "苦情は見つかりませんでした",
+      "Select a complaint to view details": "苦情を選択して詳細を表示"
+    },
+    "Dialog": {
+      "Cancel": "キャンセル",
+      "Delete Paragraph": "この操作は元に戻すことができません。これにより、このルートは完全に削除されます。",
+      "Sure": "絶対に間違いありませんか？"
+    }
   }
-}
+  

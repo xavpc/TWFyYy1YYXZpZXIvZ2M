@@ -99,7 +99,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
+          <SidebarMenuItem>   <LanguageSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
@@ -120,7 +120,7 @@ export function AppSidebar() {
                   </button>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <LanguageSwitcher />
+               
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import {
   DropdownMenu,
@@ -12,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button'
 
 export default function LanguageSwitcher() {
-  const router = useRouter()
   const currentLocale = useLocale()
   const [locale, setLocale] = useState(currentLocale)
 
@@ -21,11 +19,23 @@ export default function LanguageSwitcher() {
     setLocale(storedLocale)
   }, [])
 
+  // Client-side function to update and save the locale
+  const changeLocale = (newLocale: string) => {
+    if (typeof window !== 'undefined') {
+        // Save locale to localStorage
+        localStorage.setItem('locale', newLocale)
+        // Also set a cookie so the server can read it
+        document.cookie = `locale=${newLocale}; path=/;`
+      
+      // Refresh the page so that your app re-initializes with the new locale
+      window.location.reload()
+    }
+  }
+
   const changeLanguage = (newLocale: string) => {
     if (newLocale !== locale) {
-      localStorage.setItem('locale', newLocale)
       setLocale(newLocale)
-      router.refresh() // Reload the page to apply the new language
+      changeLocale(newLocale)
     }
   }
 
@@ -33,14 +43,14 @@ export default function LanguageSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='outline'>
-          {locale === 'en' ? '🇺🇸 English' : '🇯🇵 日本語'}
+          {locale === 'en' ? '🇺🇸 English' : locale === 'jp' ? '🇯🇵 日本語' : 'no locale'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='start'>
         <DropdownMenuItem onClick={() => changeLanguage('en')}>
           🇺🇸 English
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => changeLanguage('ja')}>
+        <DropdownMenuItem onClick={() => changeLanguage('jp')}>
           🇯🇵 日本語
         </DropdownMenuItem>
       </DropdownMenuContent>

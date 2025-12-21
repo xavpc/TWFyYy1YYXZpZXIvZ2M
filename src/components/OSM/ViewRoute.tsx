@@ -253,7 +253,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       setCollectionPoints(data) // Store in state
-
+      const routesRef = useRef<L.Marker[]>([]);
       // Add markers to the map
       data.forEach(
         ({ latitude, longitude, collection_point_name }: CollectionPoint) => {
@@ -266,7 +266,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
           })
 
           const marker = L.marker(
-            [parseFloat(latitude), parseFloat(longitude)],
+            [(latitude), (longitude)],
             { icon: markerIcon }
           )
             .addTo(mapInstanceRef.current!)
