@@ -19,7 +19,7 @@ export default function ComplaintsList() {
   async function fetchComplaints() {
     try {
       const response = await fetch(
-        ` ${process.env.NEXT_PUBLIC_API_URL}/mobile.complaints`
+        ` ${process.env.NEXT_PUBLIC_API_URL}/complaints`
       ) // Adjust the endpoint as needed
       const result = await response.json()
 

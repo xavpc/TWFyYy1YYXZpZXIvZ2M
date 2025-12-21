@@ -4,11 +4,13 @@ import 'leaflet/dist/leaflet.css'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react' // Add this import for the loading spinner
+
 interface OSMMapProps {
   className?: string
+  route_id?: string
 }
 
-const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
+const OSMMap: React.FC<OSMMapProps> = ({ route_id, className }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
@@ -16,6 +18,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
   const [error, setError] = useState<string | null>(null)
   const [clickCoords, setClickCoords] = useState<string>('No clicks yet')
   const [isLoading, setIsLoading] = useState(false) // Add loading state
+
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return
 
@@ -32,8 +35,8 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
       })
 
       const map = L.map(mapContainerRef.current, {
-        center: [-6.2088, 106.8456], // Jakarta
-        zoom: 13,
+        center: [10.3157, 123.8854], // Cebu
+        zoom: 15,
       })
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -60,7 +63,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
       console.error('Error initializing map:', error)
       setError('Failed to initialize map')
     }
-  }, [])
+  }, [route_id])
 
   const clearRoutes = () => {
     routesRef.current.forEach((route) => route.remove())
@@ -120,6 +123,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
     }
   }
 
+  // GET ROUTE
   const getRoute = async (start: L.LatLng, end: L.LatLng) => {
     const map = mapInstanceRef.current
     if (!map) return
@@ -168,16 +172,24 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
       return
     }
 
+    if (!route_id) {
+      setError('Route ID is missing.')
+      return
+    }
+
     setIsLoading(true)
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/mobile.route-coordinates`
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates`
 
-      for (const marker of markersRef.current) {
+      for (let index = 0; index < markersRef.current.length; index++) {
+        const marker = markersRef.current[index]
         const { lat, lng } = marker.getLatLng()
 
         const markerData = {
           latitude: lat,
           longitude: lng,
+          route_id, // Include route_id in the request
+          sequence: index + 1, // Ensure sequence starts from 1
         }
 
         console.log('Sending marker data:', markerData)
@@ -201,7 +213,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
       console.log('All markers saved successfully!')
     } catch (error) {
       console.error('Error saving markers:', error)
-      setError(`Failed to save markers: error`)
+      setError(`Failed to save markers: ${error}`)
     } finally {
       setIsLoading(false)
     }
@@ -209,9 +221,6 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle>Route Planner</CardTitle>
-      </CardHeader>
       <CardContent>
         {error && (
           <Alert variant='destructive' className='mb-4'>
@@ -231,7 +240,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ className }) => {
         <div className='relative'>
           <div
             ref={mapContainerRef}
-            className='h-[500px] w-full rounded-md border'
+            className='h-[500px] w-full '
             style={{ cursor: isLoading ? 'wait' : 'crosshair' }}
           />
           {isLoading && (

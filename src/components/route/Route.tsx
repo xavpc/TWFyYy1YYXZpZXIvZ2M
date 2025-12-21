@@ -13,6 +13,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+
 import { Input } from '@/components/ui/input'
 
 import { Button } from '@/components/ui/button'
@@ -23,6 +31,8 @@ const Route = () => {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
+  const [newRouteName, setNewRouteName] = useState('')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const router = useRouter()
 
@@ -30,13 +40,12 @@ const Route = () => {
     fetchRoutes()
   }, [])
 
+  // GET ROUTE NAMES
   const fetchRoutes = async () => {
     setLoading(true)
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/web.routes`
-      )
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/routes`)
       const data = await response.json()
 
       console.log('API Response:', data) // Debugging
@@ -59,13 +68,37 @@ const Route = () => {
     }
   }
 
-  // Function to handle route deletion (or any other action)
-  // const handleAction = (route_id: string) => {
-  //   router.push(`mobile.routes-coordinates/route/${route_id}`)
-  //   // Add delete, edit, or any other action logic here
-  // }
+  // ADD ROUTE NAME
+  const addRouteName = async () => {
+    if (!newRouteName.trim()) {
+      console.error('Route name is required')
+      return
+    }
 
-  // ✅ Fixed the filter function (previously using `employee.route_name`)
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/routes`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ route_name: newRouteName }), // ✅ Send route_name
+        }
+      )
+
+      if (!response.ok) {
+        const errorMessage = await response.text()
+        console.error('Failed to add route:', errorMessage)
+        throw new Error(`Failed to add route: ${errorMessage}`)
+      }
+
+      await fetchRoutes() // Refresh list
+      setIsAddModalOpen(false)
+      setNewRouteName('') // Reset input
+    } catch (error) {
+      console.error('Error adding route:', error)
+    }
+  }
+
   const filteredRoutes = routes.filter(
     (route) =>
       route.route_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,7 +146,7 @@ const Route = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Button variant='outline' onClick={() => console.log('clicked')}>
+        <Button variant='outline' onClick={() => setIsAddModalOpen(true)}>
           Add Route
         </Button>
       </div>
@@ -131,16 +164,30 @@ const Route = () => {
               <TableRow key={route.route_id}>
                 <TableCell>{route.route_name}</TableCell>
                 <TableCell>
-                  <Button
-                    className='bg-blue-500 text-white hover:bg-blue-800'
-                    size='sm'
-                    onClick={() => {
-                      console.log('Navigating to:', `/route/${route.route_id}`)
-                      router.push(`/route/${route.route_id}`)
-                    }}
-                  >
-                    View
-                  </Button>
+                  <div className='flex gap-2'>
+                    <Button
+                      className='bg-blue-500 text-white hover:bg-blue-800'
+                      size='sm'
+                      onClick={() => {
+                        router.push(`/route/view/${route.route_id}`)
+                      }}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      className='bg-blue-500 text-white hover:bg-blue-800'
+                      size='sm'
+                      onClick={() => {
+                        console.log(
+                          'Navigating to:',
+                          `/route/${route.route_id}`
+                        )
+                        router.push(`/route/${route.route_id}`)
+                      }}
+                    >
+                      Add Route
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -166,6 +213,30 @@ const Route = () => {
           Next
         </Button>
       </div>
+
+      {/* ADD ROUTE DIALOG */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Route</DialogTitle>
+          </DialogHeader>
+          <div>
+            <label htmlFor='route'>Route Name:</label>
+            <Input
+              placeholder='Route name...'
+              className='mt-2'
+              value={newRouteName}
+              onChange={(e) => setNewRouteName(e.target.value)} // ✅ Bind input to state
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={addRouteName}>Save</Button>
+            <Button variant='outline' onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

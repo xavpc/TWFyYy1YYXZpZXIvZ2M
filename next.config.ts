@@ -1,18 +1,8 @@
-import type { NextConfig } from 'next'
+import createNextIntlPlugin from 'next-intl/plugin'
 
-const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'asset.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-    ],
-  },
-}
+const withNextIntl = createNextIntlPlugin()
 
-export default nextConfig
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+export default withNextIntl(nextConfig)

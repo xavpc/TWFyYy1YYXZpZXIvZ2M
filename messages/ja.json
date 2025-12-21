@@ -1,0 +1,47 @@
+{
+  "Sidebar": {
+    "Title": "ゴミ収集システム",
+    "Dashboard": "ダッシュボード",
+    "Employees": "従業員",
+    "Device": "デバイス",
+    "Route": "ルート",
+    "Complaints": "苦情",
+    "Username": "ユーザー名",
+    "SignOut": "サインアウト"
+  },
+  "Layout": {
+    "Dashboard": "ダッシュボード",
+    "Employees": "従業員",
+    "Device": "デバイス",
+    "Route": "ルート",
+    "Complaints": "苦情"
+  },
+  "Pagination": {
+    "Next": "次",
+    "Previous": "前の",
+    "Page": "ページ",
+    "of": "の"
+  },
+  "Employees": {
+    "Name": "名前",
+    "Email": "電子メール",
+    "Phone": "電話",
+    "Address": "住所",
+    "age": "年",
+    "Actions": "アクション",
+    "Add Employee": "従業員を追加する",
+    "Edit Employee": "従業員を編集する",
+    "Edit": "編集"
+  },
+  "AddEmployee": {
+    "first_name": "ネーム",
+    "last_name": "苗字",
+    "middle_name": "ミドルネーム",
+    "age": "年",
+    "email": "電子メール",
+    "contact_number": "連絡先番号",
+    "address": "住所",
+    "Save": "保存",
+    "Cancel": "キャンセル"
+  }
+}

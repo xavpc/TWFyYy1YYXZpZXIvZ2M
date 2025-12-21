@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl' // Import useTranslations
 import {
   Smartphone,
   LayoutDashboard,
@@ -10,7 +11,6 @@ import {
   User2,
   NotebookText,
 } from 'lucide-react'
-
 import {
   Sidebar,
   SidebarContent,
@@ -29,44 +29,46 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
+import LanguageSwitcher from './LanguageSwitcher'
 
 // Menu items.
-const items = [
-  {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Employees',
-    url: '/employees',
-    icon: Users,
-  },
-  {
-    title: 'Device',
-    url: '/device',
-    icon: Smartphone,
-  },
-  {
-    title: 'Route',
-    url: '/route',
-    icon: MousePointer2,
-  },
-  {
-    title: 'Complaints',
-    url: '/complaints',
-    icon: NotebookText,
-  },
-]
-
 export function AppSidebar() {
-  const pathname = usePathname() // Get current path
+  const pathname = usePathname()
+  const t = useTranslations('Sidebar') // Ensure translations work
+
+  const items = [
+    {
+      title: t('Dashboard'),
+      url: '/dashboard',
+      icon: LayoutDashboard,
+    },
+    {
+      title: t('Employees'),
+      url: '/employees',
+      icon: Users,
+    },
+    {
+      title: t('Device'),
+      url: '/device',
+      icon: Smartphone,
+    },
+    {
+      title: t('Route'),
+      url: '/route',
+      icon: MousePointer2,
+    },
+    {
+      title: t('Complaints'),
+      url: '/complaints',
+      icon: NotebookText,
+    },
+  ]
 
   return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Garbage Collection System</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('Title')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className='mt-5'>
               {items.map((item) => {
@@ -97,7 +99,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> Username
+                  <User2 /> {t('Username')}
                   <ChevronUp className='ml-auto' />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -106,7 +108,10 @@ export function AppSidebar() {
                 className='w-[--radix-popper-anchor-width]'
               >
                 <DropdownMenuItem>
-                  <button>Sign out</button>
+                  <button>{t('SignOut')}</button>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <LanguageSwitcher />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -47,7 +47,7 @@ const DevicesComponent = () => {
 
     try {
       const response = await fetch(
-        ` ${process.env.NEXT_PUBLIC_API_URL}/web.devices`
+        ` ${process.env.NEXT_PUBLIC_API_URL}/devices`
       )
       const data = await response.json()
 
@@ -78,7 +78,7 @@ const DevicesComponent = () => {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/web.devices/${updatedDevice.device_id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/devices/${updatedDevice.device_id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

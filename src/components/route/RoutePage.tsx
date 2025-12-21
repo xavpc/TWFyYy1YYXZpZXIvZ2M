@@ -10,13 +10,14 @@ const RoutePage = ({ route_id }: { route_id: string }) => {
 
   useEffect(() => {
     fetchRouteDetails()
-  }, [])
+    setLoading(false)
+  }, [route_id])
 
   const fetchRouteDetails = async () => {
     setLoading(true) // Start loading
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/mobile.route-coordinates/route/${route_id}`
+      `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${route_id}`
     )
     const data = await response.json()
 
@@ -37,16 +38,16 @@ const RoutePage = ({ route_id }: { route_id: string }) => {
 
   if (loading) return <p>Loading route...</p>
   if (error) return <p className='text-red-500'>{error}</p>
-  if (!routeData) return <p>Route not found.</p>
+  if (!routeData) return <p>No Route made</p>
 
   return (
     <div>
       <h1>Route Details</h1>
       <p>
-        <strong>Route ID:</strong> {routeData.route.route_id}
+        <strong>Route ID:</strong> {routeData.route?.route_id ?? 'N/A'}
       </p>
       <p>
-        <strong>Route Name:</strong> {routeData.route.route_name}
+        <strong>Route Name:</strong> {routeData.route?.route_name ?? 'N/A'}
       </p>
       <p>
         <strong>Route Coordinates ID:</strong>{' '}

@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { useTranslations } from 'next-intl' // Import useTranslations
 
 // EMPLOYEES INTERFACE
 import { Employee } from '@/types/employees'
@@ -47,6 +48,10 @@ export default function EmployeeList() {
     age: 18,
   })
 
+  const t = useTranslations('Employees') // Ensure
+  const y = useTranslations('AddEmployee') // Ensure
+  const u = useTranslations('Pagination') // Ensure
+
   // GET ALL EMPLOYEES
   useEffect(() => {
     fetchEmployees()
@@ -58,7 +63,7 @@ export default function EmployeeList() {
 
     try {
       const response = await fetch(
-        ` ${process.env.NEXT_PUBLIC_API_URL}/web.employees`
+        ` ${process.env.NEXT_PUBLIC_API_URL}/employees`
       )
       const data = await response.json()
 
@@ -89,7 +94,7 @@ export default function EmployeeList() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/web.employees`,
+        `${process.env.NEXT_PUBLIC_API_URL}/employees`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -129,7 +134,7 @@ export default function EmployeeList() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/web.employees/${updatedEmployee.employee_id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/employees/${updatedEmployee.employee_id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -239,7 +244,7 @@ export default function EmployeeList() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <Button variant='outline' onClick={() => setIsAddModalOpen(true)}>
-          Add Employee
+          {t('Add Employee')}
         </Button>
       </div>
 
@@ -247,13 +252,13 @@ export default function EmployeeList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Address</TableHead>
+              <TableHead>{t('Name')}</TableHead>
+              <TableHead>{t('Email')}</TableHead>
+              <TableHead>{t('Phone')}</TableHead>
+              <TableHead>{t('Address')}</TableHead>
 
-              <TableHead>Age</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t('age')}</TableHead>
+              <TableHead>{t('Actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -273,7 +278,7 @@ export default function EmployeeList() {
                     variant='outline'
                     onClick={() => handleEditClick(employee)} // Trigger edit modal
                   >
-                    Edit
+                    {t('Edit')}
                   </Button>
                   {/* <Button variant='destructive'>Delete</Button> */}
                 </TableCell>
@@ -290,17 +295,17 @@ export default function EmployeeList() {
           disabled={currentPage === 1}
           onClick={() => handlePageChange(currentPage - 1)}
         >
-          Previous
+          {u('Previous')}
         </Button>
         <span className='text-sm'>
-          Page {currentPage} of {totalPages}
+          {u('Page')} {currentPage} {u('of')} {totalPages}
         </span>
         <Button
           variant='outline'
           disabled={currentPage === totalPages}
           onClick={() => handlePageChange(currentPage + 1)}
         >
-          Next
+          {u('Next')}
         </Button>
       </div>
 
@@ -308,7 +313,7 @@ export default function EmployeeList() {
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Employee</DialogTitle>
+            <DialogTitle>{t('Add Employee')}</DialogTitle>
           </DialogHeader>
           <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6'>
             {[
@@ -322,16 +327,13 @@ export default function EmployeeList() {
             ].map((field) => (
               <div key={field} className='sm:col-span-3'>
                 <label htmlFor={field} className='block text-sm font-medium'>
-                  {field
-                    .replace('_', ' ') // Replace underscores with spaces
-                    .toLowerCase() // Convert the whole string to lowercase
-                    .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
+                  {y(field)}
                 </label>
                 <div className='mt-2'>
                   <Input
                     id={field}
                     name={field}
-                    placeholder={field.replace('_', ' ')}
+                    placeholder={y(field)}
                     value={newEmployee[field as keyof Employee] || ''}
                     onChange={handleNewEmployeeChange}
                   />
@@ -342,7 +344,7 @@ export default function EmployeeList() {
             {/* Add Age Input Field */}
             <div className='sm:col-span-3'>
               <label htmlFor='age' className='block text-sm font-medium'>
-                Age
+                {t('age')}
               </label>
               <div className='mt-2'>
                 <Input
@@ -357,9 +359,9 @@ export default function EmployeeList() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={addEmployee}>Save</Button>
+            <Button onClick={addEmployee}>{y('Save')}</Button>
             <Button variant='outline' onClick={() => setIsAddModalOpen(false)}>
-              Cancel
+              {y('Cancel')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -369,7 +371,7 @@ export default function EmployeeList() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogTitle>{t('Edit Employee')}</DialogTitle>
           </DialogHeader>
           <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6'>
             {[
@@ -386,10 +388,7 @@ export default function EmployeeList() {
                   htmlFor={field}
                   className='block text-sm font-medium text-white'
                 >
-                  {field
-                    .replace('_', ' ') // Replace underscores with spaces
-                    .toLowerCase() // Convert the whole string to lowercase
-                    .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
+                  {y(field)}
                 </label>
                 <div className='mt-2'>
                   <Input
@@ -405,9 +404,9 @@ export default function EmployeeList() {
           </div>
 
           <DialogFooter>
-            <Button onClick={updateEmployee}>Save</Button>
+            <Button onClick={updateEmployee}>{y('Save')}</Button>
             <Button variant='outline' onClick={() => setIsEditModalOpen(false)}>
-              Cancel
+              {y('Cancel')}
             </Button>
           </DialogFooter>
         </DialogContent>

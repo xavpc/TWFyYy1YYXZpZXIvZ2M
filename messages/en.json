@@ -1,0 +1,47 @@
+{
+  "Sidebar": {
+    "Title": "Garbage Collection System",
+    "Dashboard": "Dashboard",
+    "Employees": "Employees",
+    "Device": "Device",
+    "Route": "Route",
+    "Complaints": "Complaints",
+    "Username": "Username",
+    "SignOut": "Sign Out"
+  },
+  "Layout": {
+    "Dashboard": "Dashboard",
+    "Employees": "Employees",
+    "Device": "Device",
+    "Route": "Route",
+    "Complaints": "Complaints"
+  },
+  "Pagination": {
+    "Next": "Next",
+    "Previous": "Previous",
+    "Page": "Page",
+    "no": "of"
+  },
+  "Employees": {
+    "Name": "Name",
+    "Email": "Email",
+    "Phone": "Phone",
+    "Address": "Address",
+    "Age": "Age",
+    "Actions": "Actions",
+    "Add Employee": "Add Employee",
+    "Edit Employee": "Edit Employee",
+    "Edit": "Edit"
+  },
+  "Add Employee": {
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "middle_name": "Middle Name",
+    "age": "Age",
+    "email": "Email",
+    "contact_number": "Contact Number",
+    "address": "Address",
+    "Save": "Save",
+    "Cancel": "Cancel"
+  }
+}
