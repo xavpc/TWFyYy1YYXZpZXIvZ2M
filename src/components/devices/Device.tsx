@@ -105,21 +105,21 @@ const DevicesComponent = () => {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!updatedDevice) return
+  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (!updatedDevice) return
 
-    if (e.target.name === 'age') {
-      setUpdatedDevice({
-        ...updatedDevice,
-        [e.target.name]: parseInt(e.target.value) || 0,
-      })
-    } else {
-      setUpdatedDevice({
-        ...updatedDevice,
-        [e.target.name]: e.target.value,
-      })
-    }
-  }
+  //   if (e.target.name === 'age') {
+  //     setUpdatedDevice({
+  //       ...updatedDevice,
+  //       [e.target.name]: parseInt(e.target.value) || 0,
+  //     })
+  //   } else {
+  //     setUpdatedDevice({
+  //       ...updatedDevice,
+  //       [e.target.name]: e.target.value,
+  //     })
+  //   }
+  // }
 
   const handleEditClick = (devices: Devices) => {
     setEditingDevice(devices)
@@ -258,7 +258,7 @@ const DevicesComponent = () => {
                       .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
                   </label>
                   <div className='mt-2'>
-                    <Input
+                    {/* <Input
                       id={field}
                       name={field}
                       placeholder={field.replace('_', ' ')}
@@ -268,7 +268,7 @@ const DevicesComponent = () => {
                           : updatedDevice?.[field as keyof Devices] || ''
                       }
                       onChange={handleInputChange}
-                    />
+                    /> */}
                   </div>
                 </div>
               )
