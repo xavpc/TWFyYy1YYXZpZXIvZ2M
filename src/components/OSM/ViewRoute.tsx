@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dialog'
 import { Loader2 } from 'lucide-react'
 
+import { Trash, MapPin } from 'lucide-react' // Import icons
+
 interface OSMMapProps {
   route_id?: string
   route_name: string
@@ -35,6 +37,9 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const routesRef = useRef<L.Polyline[]>([])
+  const markersRef = useRef<L.Marker<any>[]>([])
+  const routesMarkerRef = useRef<L.Marker<any>[]>([])
+
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [center, setCenter] = useState<CenterCoordinates>({
@@ -47,6 +52,10 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>(
     []
   )
+
+  const [showMarkers, setShowMarkers] = useState(true)
+  const [showRoutes, setShowRoutes] = useState(true)
+
   const router = useRouter()
 
   const t = useTranslations('Route')
@@ -136,7 +145,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving/'
 
     try {
-      // Fetch route coordinates
       const response = await fetch(
         `${API_URL}/route-coordinates/route/${route_id}`
       )
@@ -147,7 +155,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         return
       }
 
-      // Sort by sequence and format for OSRM
       const sortedCoordinates = data.sort(
         (a: any, b: any) => a.sequence - b.sequence
       )
@@ -155,7 +162,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         .map((coord: any) => `${coord.longitude},${coord.latitude}`)
         .join(';')
 
-      // Fetch optimized route from OSRM
       const osrmResponse = await fetch(
         `${OSRM_BASE_URL}${waypoints}?overview=full&geometries=geojson`
       )
@@ -164,43 +170,49 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       if (!osrmData.routes?.length)
         throw new Error('OSRM did not return a valid route')
 
-      // Convert OSRM response to Leaflet-compatible coordinates
       const routeCoordinates = osrmData.routes[0].geometry.coordinates.map(
         ([lng, lat]: [number, number]) => [lat, lng]
       )
 
-      // Add polyline route to the map
+      // Remove previous routes before adding new ones
+      routesRef.current.forEach((route) => route.remove())
+      routesRef.current = []
+
       const route = L.polyline(routeCoordinates, {
         color: 'blue',
         weight: 3,
         opacity: 0.7,
       }).addTo(mapInstanceRef.current)
+
+      // Store the route reference
       routesRef.current.push(route)
 
-      // Add markers for each coordinate with sequence number
+      // Remove previous markers
+      routesMarkerRef.current.forEach((marker) => marker.remove())
+      routesMarkerRef.current = []
+
+      // Add markers for each coordinate
       sortedCoordinates.forEach(
         ({ latitude, longitude, sequence }: Coordinate) => {
-          // Create a custom div icon to show the sequence number above the marker
           const sequenceIcon = L.divIcon({
             html: `<div style="
-      background-color: white;
-      border: 2px solid blue;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 14px;
-      line-height: 24px;
-      color: black;">
-      ${sequence}
-    </div>`,
+          background-color: white;
+          border: 2px solid blue;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          text-align: center;
+          font-weight: bold;
+          font-size: 14px;
+          line-height: 24px;
+          color: black;">
+          ${sequence}
+        </div>`,
             className: 'sequence-label',
             iconSize: [20, 20],
-            iconAnchor: [10, -10], // Position above the marker
+            iconAnchor: [10, -10],
           })
 
-          // Create a marker icon
           const markerIcon = L.icon({
             iconUrl:
               'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -209,15 +221,21 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             popupAnchor: [1, -34],
           })
 
-          // Add sequence number as a separate icon
-          L.marker([parseFloat(latitude), parseFloat(longitude)], {
-            icon: sequenceIcon,
-          }).addTo(mapInstanceRef.current!)
+          const sequenceMarker = L.marker(
+            [parseFloat(latitude), parseFloat(longitude)],
+            {
+              icon: sequenceIcon,
+            }
+          ).addTo(mapInstanceRef.current!)
 
-          // Add actual marker
-          L.marker([parseFloat(latitude), parseFloat(longitude)], {
-            icon: markerIcon,
-          }).addTo(mapInstanceRef.current!)
+          const actualMarker = L.marker(
+            [parseFloat(latitude), parseFloat(longitude)],
+            {
+              icon: markerIcon,
+            }
+          ).addTo(mapInstanceRef.current!)
+
+          routesMarkerRef.current.push(sequenceMarker, actualMarker)
         }
       )
     } catch (error) {
@@ -247,7 +265,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       setCollectionPoints(data) // Store in state
-      const routesRef = useRef<L.Marker[]>([])
+
       // Add markers to the map
       data.forEach(
         ({ latitude, longitude, collection_point_name }: CollectionPoint) => {
@@ -339,32 +357,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-  //^ TOGGLE MARKER
-  const toggleMarkers = () => {
-    if (showMarkers) {
-      markersRef.current.forEach((marker) => marker.remove())
-    } else {
-      markersRef.current.forEach((marker) =>
-        marker.addTo(mapInstanceRef.current!)
-      )
-    }
-    setShowMarkers(!showMarkers)
-  }
-
-  //^ TOGGLE ROUTES
-  const toggleRoutes = () => {
-    if (showRoutes) {
-      routesRef.current.forEach((route) => route.remove())
-      routesMarkerRef.current.forEach((marker) => marker.remove())
-    } else {
-      routesRef.current.forEach((route) => route.addTo(mapInstanceRef.current!))
-      routesMarkerRef.current.forEach((route) =>
-        route.addTo(mapInstanceRef.current!)
-      )
-    }
-    setShowRoutes(!showRoutes)
-  }
-
   return (
     <div className='relative'>
       <div>
@@ -374,21 +366,37 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             className='h-[500px] w-full relative z-10'
           />
 
-          <div className='flex gap-2'>
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
-              disabled={isLoading}
-            >
-              {t('Delete Route')}
-            </button>
-            <button
-              onClick={() => setIsCollectionOpen(true)}
-              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
-              disabled={isLoading}
-            >
-              {t('Delete Collection')}
-            </button>
+          <div className='flex justify-between items-center'>
+            <div className='flex gap-2'>
+              <button
+                onClick={toggleMarkers}
+                className='bg-gray-500 p-2 rounded-full'
+              >
+                <Trash className='text-white' size={20} />
+              </button>
+              <button
+                onClick={toggleRoutes}
+                className='bg-blue-500 p-2 rounded-full'
+              >
+                <MapPin className='text-white' size={20} />
+              </button>
+            </div>
+            <div className='flex gap-2'>
+              <button
+                onClick={() => setIsDialogOpen(true)}
+                className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
+                disabled={isLoading}
+              >
+                {t('Delete Route')}
+              </button>
+              <button
+                onClick={() => setIsCollectionOpen(true)}
+                className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm float-right'
+                disabled={isLoading}
+              >
+                {t('Delete Collection')}
+              </button>
+            </div>
           </div>
         </div>
 
