@@ -9,8 +9,6 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { FloatingTrigger } from '@/components/floating-trigger'
 
-
-
 export default async function RootLayout({
   children,
 }: {
@@ -18,7 +16,7 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale()
   const messages = await getMessages()
-  
+
   return (
     <html
       lang={locale}
@@ -37,10 +35,8 @@ export default async function RootLayout({
               {/* Show Sidebar unless on the Login Page */}
               <AppSidebar />
               <SidebarInset>
+                <main className='relative w-full '>{children}</main>
                 <FloatingTrigger />
-                <main className="relative w-full pl-7">
-                  {children}
-                </main>
               </SidebarInset>
             </NextIntlClientProvider>
           </SidebarProvider>

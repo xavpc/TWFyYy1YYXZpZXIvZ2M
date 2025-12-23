@@ -388,7 +388,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-  //^ TOGGLE MARKER
+  //^ TOGGLE MARKERS
   const toggleMarkers = () => {
     if (showMarkers) {
       markersRef.current.forEach((marker) => marker.remove())
@@ -466,11 +466,11 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       console.log('Device successfully deleted')
-      window.location.reload()
     } catch (error) {
       console.error('Error deleting device:', error)
     } finally {
       setIsLoading(false) // Stop loading
+      window.location.reload()
     }
   }
 
@@ -480,83 +480,29 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         <Breadcrumb className='mb-5'>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href='/'>Home</BreadcrumbLink>
+              <BreadcrumbLink href='/route'>{t('Route')}</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
               <Slash />
             </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink href='/route'>Route</BreadcrumbLink>
-            </BreadcrumbItem>
+            <BreadcrumbItem>{t('View Route')}</BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <div>
-          <div
-            ref={mapContainerRef}
-            className='h-[500px] w-full relative z-10'
-          />
-        </div>
-
-        {/* 🔹 Debugging Data Display */}
-        <div className='p-4'>
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{device('Device Name')}</TableHead>
-                    <TableHead>{device('Vehicle Plate Number')}</TableHead>
-                    <TableHead>{device('Status')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {deviceRoutes.length > 0 ? (
-                    deviceRoutes.map((route, index) => (
-                      <TableRow
-                        key={route.device?.device_id || `device-${index}`}
-                      >
-                        <TableCell>
-                          {route.device?.device_name || 'No Name'}
-                        </TableCell>
-                        <TableCell>
-                          {route.device?.vehicle_plate_num || 'No Plate'}
-                        </TableCell>
-                        <Badge
-                          className={`text-white px-3 text-center my-2 ${
-                            route.device?.status === 'active'
-                              ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17'
-                              : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17'
-                          } `}
-                        >
-                          {route.device?.status || 'No Status'}
-                        </Badge>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className='text-center'>
-                        {device('No Device Found')}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </>
-          )}
-        </div>
         <div className='flex justify-between items-center'>
           <div className='flex gap-2'>
             <button
               onClick={toggleMarkers}
-              className='bg-gray-500 p-2 rounded-full'
+              className={`p-2 rounded-full transition-colors ${
+                showMarkers ? 'bg-gray-500' : 'bg-blue-500'
+              }`}
             >
               <Trash className='text-white' size={20} />
             </button>
             <button
               onClick={toggleRoutes}
-              className='bg-blue-500 p-2 rounded-full'
+              className={`p-2 rounded-full transition-colors ${
+                showRoutes ? 'bg-gray-500' : 'bg-blue-500'
+              }`}
             >
               <MapPin className='text-white' size={20} />
             </button>
@@ -596,6 +542,68 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </div>
+
+        <div className='mt-5'>
+          <div
+            ref={mapContainerRef}
+            className='h-[500px] w-full relative z-10'
+          />
+        </div>
+
+        {/* 🔹 Debugging Data Display */}
+        <div className='p-4'>
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{device('Device Name')}</TableHead>
+                    <TableHead>{device('Vehicle Plate Number')}</TableHead>
+                    <TableHead>{device('Day Assigned')}</TableHead>
+                    <TableHead>{device('Status')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {deviceRoutes.length > 0 ? (
+                    deviceRoutes.map((route, index) => (
+                      <TableRow
+                        key={route.device?.device_id || `device-${index}`}
+                      >
+                        <TableCell>
+                          {route.device?.device_name || 'No Name'}
+                        </TableCell>
+
+                        <TableCell>
+                          {route.device?.vehicle_plate_num || 'No Plate'}
+                        </TableCell>
+                        <TableCell>
+                          {device(route.day_assigned) || 'No Day Assigned'}
+                        </TableCell>
+                        <Badge
+                          className={`text-white px-3 text-center my-2 ${
+                            route.device?.status === 'active'
+                              ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17'
+                              : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17'
+                          } `}
+                        >
+                          {device(route.device?.status) || 'No Status'}
+                        </Badge>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className='text-center'>
+                        {device('No Device Found')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </div>
 
         <div className='relative z-50'>

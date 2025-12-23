@@ -52,6 +52,7 @@
     "Cancel": "キャンセル"
   },
   "Route": {
+    "Route": "ルート",
     "View Route": "ルートを表示",
     "Route Name": "ルート名",
     "Action": "操作",
@@ -73,7 +74,9 @@
     "Delete Collection": "コレクションを削除する",
     "Device Name": "デバイス名",
     "Search Route Name": "ルート名を検索する",
-    "Delete Device": "デバイスの削除"
+    "Delete Device": "デバイスの削除",
+    "Day Assigned": "割り当てられた日",
+    "Select Day": "日を選択してください"
   },
   "Device": {
     "Device Name": "デバイス名",
@@ -86,7 +89,16 @@
     "active": "稼働中",
     "inactive": "オフライン",
     "Edit": "編集",
-    "No Device Found": "デバイスが見つかりません"
+    "No Device Found": "デバイスが見つかりません",
+    "Day Assigned": "割り当てられた日",
+    "Days": "日",
+    "monday": "月曜日",
+    "tuesday": "火曜日",
+    "wednesday": "水曜日",
+    "thursday": "木曜日",
+    "friday": "金曜日",
+    "saturday": "土曜日",
+    "sunday": "日曜日"
   },
   "Complaints": {
     "Mark as in progress": "進行中としてマーク",

@@ -53,9 +53,11 @@ const Route = () => {
 
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null) // Track selected route
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
+  const [selectedDay, setSelectedDay] = useState<string>('monday')
   const [devices, setDevices] = useState<Devices[]>([])
 
   const t = useTranslations('Route') // Ensure
+  const device = useTranslations('Device')
   const pagination = useTranslations('Pagination') // Ensure
   const router = useRouter()
   const dialog = useTranslations('Dialog')
@@ -151,7 +153,11 @@ const Route = () => {
   }
 
   //^ ASSIGN DEVICE TO ROUTE
-  const addDeviceToRoute = async (deviceId: string, routeId: string) => {
+  const addDeviceToRoute = async (
+    deviceId: string,
+    routeId: string,
+    selectedDay: string
+  ) => {
     if (!deviceId || !routeId) {
       console.error('Device ID and Route ID are required')
       return
@@ -170,7 +176,7 @@ const Route = () => {
           body: JSON.stringify({
             device_id: deviceId,
             route_id: routeId,
-            day_assigned: 'monday',
+            day_assigned: selectedDay, // Use selected day from the dropdown
           }),
         }
       )
@@ -296,7 +302,7 @@ const Route = () => {
                   </Button>
                 </TableCell>
                 <TableCell>
-                  <div className='flex gap-2'>
+                  <div className='flex gap-2 justify-center'>
                     <Button
                       className='bg-green-500 text-white hover:bg-green-800'
                       size='sm'
@@ -411,7 +417,7 @@ const Route = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Devices</SelectLabel>
+                    <SelectLabel>{device('Device Name')}</SelectLabel>
                     {devices.map((device) => (
                       <SelectItem
                         key={device.device_id}
@@ -424,15 +430,48 @@ const Route = () => {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+              {/* Day Assigned Selection */}
+              <h2 className='text-sm mt-5 mb-2'>{t('Day Assigned')}:</h2>
+              <Select onValueChange={(value) => setSelectedDay(value)}>
+                <SelectTrigger className='w-[280px]'>
+                  <SelectValue placeholder={t('Select Day')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>{device('Days')}</SelectLabel>
+                    {[
+                      'monday',
+                      'tuesday',
+                      'wednesday',
+                      'thursday',
+                      'friday',
+                      'saturday',
+                      'sunday',
+                    ].map((day) => (
+                      <SelectItem
+                        key={day}
+                        value={day.toLowerCase()} // Ensure value is lowercase for consistency
+                        className='cursor-pointer hover:bg-zinc-800'
+                      >
+                        {device(day)} {/* Correctly translate each day */}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button
                 onClick={() => {
-                  if (selectedDeviceId && selectedRouteId) {
-                    addDeviceToRoute(selectedDeviceId, selectedRouteId)
+                  if (selectedDeviceId && selectedRouteId && selectedDay) {
+                    addDeviceToRoute(
+                      selectedDeviceId,
+                      selectedRouteId,
+                      selectedDay
+                    )
                   }
                 }}
-                disabled={!selectedDeviceId || !selectedRouteId} // Disable button if values are missing
+                disabled={!selectedDeviceId || !selectedRouteId || !selectedDay} // Button disabled if any one value is missing
               >
                 {t('Save')}
               </Button>
