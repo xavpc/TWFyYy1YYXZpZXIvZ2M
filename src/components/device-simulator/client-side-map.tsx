@@ -787,7 +787,7 @@ const ClientSideMap = ({
         const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
           endMarker.lat, endMarker.lng, 
           point.latitude, point.longitude
-        ) < 0.03; // 100 meters threshold (0.03 km)
+        ) < 0.01; // 100 meters threshold (0.03 km)
         
         // Check if this point has been collected
         const isCollected = collectedPointsMap[point.collection_point_id] === true;
@@ -856,13 +856,30 @@ const ClientSideMap = ({
       
       {/* Draw the preset route coordinates */}
       {presetRoutePath.length > 0 && (
-        <Polyline 
-          positions={presetRoutePath} 
-          color="#ff7800"  // Orange color for route path
-          weight={4}
-          opacity={0.7}
-        />
-      )}
+  <>
+    {/* Add a subtle background line for an outline effect */}
+    <Polyline 
+      positions={presetRoutePath} 
+      color="#4338CA" // Darker indigo for outline
+      weight={8}      // Thicker outline
+      opacity={0.4}   // Low opacity for subtle effect
+      lineJoin="round"
+      lineCap="round"
+      className="preset-route-outline"
+    />
+    {/* Main route line */}
+    <Polyline 
+      positions={presetRoutePath} 
+      color="#6366F1" // Indigo
+      weight={6.5}    // Increased thickness as requested
+      opacity={0.9}   // High opacity
+      lineJoin="round"
+      lineCap="round"
+      className="preset-route-line"
+    />
+  </>
+)}
+
       
       {/* Show start and end markers for the preset route */}
       {presetRoutePath.length > 0 && (
@@ -904,14 +921,30 @@ const ClientSideMap = ({
       
       {/* Draw the device location route path */}
       {routePath.length > 0 && (
-        <Polyline 
-          positions={routePath} 
-          color="#3388ff"  // Blue color for device path
-          weight={4}
-          opacity={0.8}
-          dashArray="5, 10"
-        />
-      )}
+  <>
+    {/* Add a subtle background line for an outline effect */}
+    <Polyline 
+      positions={routePath} 
+      color="#1F2937" // Dark gray for outline
+      weight={5}      // Slightly thicker than main line
+      opacity={0.3}   // Very low opacity for subtle effect
+      lineJoin="round"
+      lineCap="round"
+      className="device-path-outline"
+    />
+    {/* Main device path line */}
+    <Polyline 
+      positions={routePath} 
+      color="#FFFFFF" // White
+      weight={3.5}    // Keep this thinner than preset route
+      opacity={0.85}  // Slightly higher opacity for white to be visible
+      dashArray="8, 8" // Balanced dash pattern
+      lineJoin="round"
+      lineCap="round"
+      className="device-path-line"
+    />
+  </>
+)}
       
       {/* Draw markers for user-clicked points (device locations) */}
       {markers.map((position, index) => (
@@ -987,45 +1020,84 @@ const ClientSideMap = ({
         </Marker>
       ))}
   
-      {/* Legend for the map - now with adjusted opacity */}
+      {/* Legend for the map */}
       {showLegend && (
-        <div className="absolute bottom-6 right-2 bg-black bg-opacity-80 text-white p-2 rounded-md text-xs z-[9999] pointer-events-auto shadow-lg">
-          <div className="font-bold mb-1">Map Legend</div>
-          <div className="flex items-center mb-1">
-            <div className="w-4 h-2 bg-orange-500 mr-2"></div>
+        <div className="absolute bottom-6 right-2 bg-black bg-opacity-80 text-white p-3 rounded-md text-xs z-[9999] pointer-events-auto shadow-lg">
+          <div className="font-bold mb-2 text-sm">Map Legend</div>
+          
+          <div className="flex items-center mb-2">
+            <div className="w-4 h-2 bg-indigo-500 mr-2 rounded-sm"></div>
             <span>Preset Route</span>
           </div>
-          <div className="flex items-center mb-1">
-            <div className="w-4 h-2 bg-blue-500 mr-2 border-t-2 border-dashed"></div>
+          
+          <div className="flex items-center mb-2">
+            <div className="w-4 h-2 bg-white mr-2 border-t border-b border-dashed"></div>
             <span>Device Path</span>
           </div>
-          <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-            <span>Start Point</span>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#10B981">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Start Point</span>
+            </div>
           </div>
-          <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-            <span>Waypoint</span>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#3B82F6">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Waypoint</span>
+            </div>
           </div>
-          <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-            <span>End Point</span>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#EF4444">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>End Point</span>
+            </div>
           </div>
-          <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-            <span>Route Start</span>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#F59E0B">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Route Start</span>
+            </div>
           </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#F97316">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Route End</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#8B5CF6">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12z"/>
+              </svg>
+              <span>Collection Point</span>
+            </div>
+          </div>
+          
           <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
-            <span>Route End</span>
-          </div>
-          <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
-            <span>Collection Point</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-            <span>Collected Point</span>
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#34D399">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12z"/>
+              </svg>
+              <span>Collected Point</span>
+            </div>
           </div>
         </div>
       )}
