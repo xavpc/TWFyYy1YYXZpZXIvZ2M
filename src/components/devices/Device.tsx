@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { toast } from 'react-hot-toast'
 
 import {
   Table,
@@ -115,15 +114,12 @@ const DevicesComponent = () => {
       const newDevice: Devices = await response.json()
       console.log('Device added successfully:', newDevice)
 
-      toast.success('Device added successfully! 🎉')
-
       setIsAddDeviceModalOpen(false) // Close modal
       setNewDevice(null) // Reset form input with an empty object (not null)
 
       fetchDevices()
     } catch (error) {
       console.error('Error adding device:', error)
-      toast.error('Failed to add device. Please try again! ❌')
     } finally {
       setLoading(false) // Stop loading
     }
@@ -177,15 +173,12 @@ const DevicesComponent = () => {
       if (!response.ok) {
         const errorMessage = await response.text() // Get error details
         console.error('Failed to update employee:', errorMessage)
-        toast.error('Failed to update device. Please try again! ❌')
         throw new Error(`Failed to update employee: ${errorMessage}`)
       }
 
       setDevices((prev) =>
         prev.filter((emp) => emp.device_id !== updatedDevice.device_id)
       )
-
-      toast.success('Device updated successfully! 🎉')
 
       setIsEditDeviceModalOpen(false) // Close the edit modal
       setUpdatedDevice(null) // Clear updated employee data

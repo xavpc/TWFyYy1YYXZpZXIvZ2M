@@ -133,7 +133,7 @@ const Combobox: React.FC<ComboboxProps> = ({
           />
         </span>
       </button>
-
+  
       {/* Dropdown Panel with fixed dimensions and scrollbar alignment */}
       {!disabled && isOpen && (
         <div 
@@ -156,7 +156,7 @@ const Combobox: React.FC<ComboboxProps> = ({
               />
             </div>
           </div>
-
+  
           {/* Scrollable content with fixed height */}
           <div className="overflow-y-auto" style={{ maxHeight: "260px" }}>
             {loading ? (
@@ -192,7 +192,10 @@ const Combobox: React.FC<ComboboxProps> = ({
                 <button
                   key={index}
                   className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-700 ${
-                    selectedItem && selectedItem[displayProperty] === item[displayProperty]
+                    selectedItem && (
+                      selectedItem[displayProperty] === item[displayProperty] && 
+                      (item.uniqueKey ? selectedItem.uniqueKey === item.uniqueKey : true)
+                    )
                       ? 'bg-gray-700 text-blue-400'
                       : 'text-white'
                   }`}
@@ -215,7 +218,10 @@ const Combobox: React.FC<ComboboxProps> = ({
                     <div className="flex items-center space-x-2">
                       {statusProperty && getStatusIndicator(item)}
                       
-                      {selectedItem && selectedItem[displayProperty] === item[displayProperty] && (
+                      {selectedItem && (
+                        selectedItem[displayProperty] === item[displayProperty] && 
+                        (item.uniqueKey ? selectedItem.uniqueKey === item.uniqueKey : true)
+                      ) && (
                         <Check size={14} className="text-blue-400" />
                       )}
                     </div>

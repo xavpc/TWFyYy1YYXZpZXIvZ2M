@@ -25,8 +25,6 @@ import { useTranslations } from 'next-intl' // Import useTranslations
 // EMPLOYEES INTERFACE
 import { Employee } from '@/types/employees'
 
-import { toast } from 'react-hot-toast'
-
 export default function EmployeeList() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoading, setIsLoading] = useState(false) //
@@ -108,12 +106,10 @@ export default function EmployeeList() {
       if (!response.ok) {
         const errorMessage = await response.text()
         console.error('Failed to add employee:', errorMessage)
-        toast.error('Failed to add employee. Please try again! ❌')
         throw new Error(`Failed to add employee: ${errorMessage}`)
       }
 
       // Fetch updated employees list after adding
-      toast.success('Employee added successfully! 🎉')
       await fetchEmployees()
 
       setIsAddModalOpen(false)
@@ -151,11 +147,8 @@ export default function EmployeeList() {
       if (!response.ok) {
         const errorMessage = await response.text() // Get error details
         console.error('Failed to update employee:', errorMessage)
-        toast.error('Failed to update employee. Please try again! ❌')
         throw new Error(`Failed to update employee: ${errorMessage}`)
       }
-
-      toast.success('Employee updated successfully! 🎉')
 
       setEmployees((prev) =>
         prev.map((emp) =>

@@ -40,6 +40,7 @@ export function EmployeeChart() {
       visitors: 15,
       fill: 'var(--color-complaints)',
     },
+    { browser: dashboard('Others'), visitors: 10, fill: 'var(--color-other)' },
   ]
 
   const chartConfig = {
@@ -58,6 +59,10 @@ export function EmployeeChart() {
     complaints: {
       label: dashboard('Complaints'),
       color: 'hsl(var(--chart-4))',
+    },
+    other: {
+      label: dashboard('Others'),
+      color: 'hsl(var(--chart-5))',
     },
   } satisfies ChartConfig
   const totalVisitors = React.useMemo(() => {
@@ -120,21 +125,9 @@ export function EmployeeChart() {
           </PieChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className='text-sm'>
-        <div>
-          <p>
-            {dashboard('Employees')} - <span className='font-bold'>35</span>
-          </p>
-          <p>
-            {dashboard('Devices')} - <span className='font-bold'>21</span>
-          </p>
-
-          <p>
-            {dashboard('Route')} - <span className='font-bold'>20</span>
-          </p>
-          <p>
-            {dashboard('Complaints')} - <span className='font-bold'>15</span>
-          </p>
+      <CardFooter className='flex-col gap-2 text-sm'>
+        <div className='flex items-center gap-2 leading-none'>
+          <p className='text-xs text-center'>{dashboard('Showing')}</p>
         </div>
       </CardFooter>
     </Card>

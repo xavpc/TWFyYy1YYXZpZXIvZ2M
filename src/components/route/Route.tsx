@@ -39,7 +39,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 import { Devices } from '@/types/devices'
 import { useTranslations } from 'next-intl' // Import useTranslations
-import toast from 'react-hot-toast'
 
 const Route = () => {
   const [routes, setRoutes] = useState<RouteName[]>([])
@@ -119,14 +118,11 @@ const Route = () => {
         throw new Error(`Failed to add route: ${errorMessage}`)
       }
 
-      toast.success('Route added successfully! 🎉')
-
       await fetchRoutes() // Refresh list
       setIsAddModalOpen(false)
       setNewRouteName('') // Reset input
     } catch (error) {
       console.error('Error adding route:', error)
-      toast.error('Failed to route. Please try again! ❌')
     }
   }
 
@@ -190,13 +186,11 @@ const Route = () => {
         throw new Error(`Failed to add device: ${errorMessage}`)
       }
 
-      toast.success('Assign device to route is successfully! 🎉')
       console.log('Device successfully assigned to route')
 
       setIsAddDeviceOpen(false) // Close the modal
     } catch (error) {
       console.error('Error adding device to route:', error)
-      toast.error('Failed to assign device to route. Please try again! ❌')
     } finally {
       setIsLoading(false)
     }
@@ -246,13 +240,10 @@ const Route = () => {
       }
 
       // Refresh list after successful delete
-      toast.success('Device deleted successfully! 🎉')
       await fetchRoutes()
       setIsDialogOpen(false)
     } catch (error) {
       console.error('Error deleting route:', error)
-      // Show error toast
-      toast.error('Failed to delete device. Please try again! ❌')
     } finally {
       setIsLoading(false)
     }
@@ -425,18 +416,18 @@ const Route = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>{t('Device Name')}</SelectLabel>
-                    {devices
-                      .filter((device) => device.device_id) // Filter out devices with an empty ID
-                      .map((device) => (
-                        <SelectItem
-                          key={device.device_id!}
-                          value={device.device_id!}
-                          className='cursor-pointer hover:bg-zinc-800'
-                        >
-                          {device.device_name}
-                        </SelectItem>
-                      ))}
+                  <SelectLabel>{t('Device Name')}</SelectLabel>
+              {devices
+                .filter((device) => device.device_id) // Filter out devices with an empty ID
+                .map((device) => (
+                  <SelectItem
+                    key={device.device_id!}
+                    value={device.device_id!}
+                    className='cursor-pointer hover:bg-zinc-800'
+                  >
+                    {device.device_name}
+                  </SelectItem>
+                ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>

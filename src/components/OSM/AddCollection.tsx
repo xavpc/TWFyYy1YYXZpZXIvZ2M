@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Loader2, Slash } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CenterCoordinates } from '@/types/center-coordinates'
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-} from '../ui/breadcrumb'
 
 interface OSMMapProps {
   route_id?: string
@@ -102,8 +95,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
 
   const handleDeleteMarker = (marker: L.Marker) => {
     marker.remove()
-    collectionPointsMarkerRef.current =
-      collectionPointsMarkerRef.current.filter((m) => m !== marker)
+    collectionPointsMarkerRef.current = collectionPointsMarkerRef.current.filter((m) => m !== marker)
   }
 
   const fetchCenterCoordinates = async () => {
@@ -128,10 +120,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       }
       setCenter(newCenter)
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.setView(
-          [newCenter.latitude, newCenter.longitude],
-          15
-        )
+        mapInstanceRef.current.setView([newCenter.latitude, newCenter.longitude], 15)
       }
       console.log(`route data`, data)
     } catch (error) {
@@ -158,12 +147,11 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       const sortedCoordinates = data.sort(
         (a: any, b: any) => a.sequence - b.sequence
       )
-
+      
       // Create array of coordinates for the polyline
-      const routeCoordinates = sortedCoordinates.map((coord: any) => [
-        parseFloat(coord.latitude),
-        parseFloat(coord.longitude),
-      ])
+      const routeCoordinates = sortedCoordinates.map(
+        (coord: any) => [parseFloat(coord.latitude), parseFloat(coord.longitude)]
+      )
 
       // Draw the polyline directly with the coordinates
       const route = L.polyline(routeCoordinates, {
@@ -177,26 +165,23 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       const startPoint = routeCoordinates[0]
       L.marker(startPoint, {
         icon: L.icon({
-          iconUrl:
-            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
-        }),
+        })
       }).addTo(mapInstanceRef.current!)
 
       // Add only end marker (red)
       const endPoint = routeCoordinates[routeCoordinates.length - 1]
       const redIcon = new L.Icon({
-        iconUrl:
-          'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-        shadowUrl:
-          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
       })
-
+      
       L.marker(endPoint, { icon: redIcon }).addTo(mapInstanceRef.current!)
     } catch (error) {
       console.error('Error fetching route:', error)
@@ -211,11 +196,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
     setIsLoading(true)
 
     try {
-      for (
-        let index = 0;
-        index < collectionPointsMarkerRef.current.length;
-        index++
-      ) {
+      for (let index = 0; index < collectionPointsMarkerRef.current.length; index++) {
         const marker = collectionPointsMarkerRef.current[index]
         const { lat, lng } = marker.getLatLng()
 
@@ -229,9 +210,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
             body: JSON.stringify({
               latitude: lat,
               longitude: lng,
-              collection_point_name: `Collection Point ${
-                index + 1
-              }, ${route_id}`,
+              collection_point_name: `Collection Point ${index + 1}, ${route_id}`,
               route_id,
             }),
           }
@@ -255,17 +234,6 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
 
   return (
     <div>
-      <Breadcrumb className='mb-5'>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href='/route'>{t('Route')}</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <Slash />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>{t('Add Collection')}</BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <div className='mb-4'>
         <div className='bg-blue-500 p-4 text-sm rounded'>
           {t('Click Points')}

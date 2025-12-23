@@ -3,7 +3,6 @@ import { getLocale, getMessages } from 'next-intl/server'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
-import { Toaster } from 'react-hot-toast'
 
 import './globals.css'
 import { GeistSans } from 'geist/font/sans'
@@ -36,10 +35,7 @@ export default async function RootLayout({
               {/* Show Sidebar unless on the Login Page */}
               <AppSidebar />
               <SidebarInset>
-                <main className='relative w-full '>
-                  <Toaster position='top-center' />
-                  {children}
-                </main>
+                <main className='relative w-full '>{children}</main>
                 <FloatingTrigger />
               </SidebarInset>
             </NextIntlClientProvider>
