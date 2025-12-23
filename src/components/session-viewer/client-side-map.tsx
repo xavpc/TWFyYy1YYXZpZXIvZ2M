@@ -16,7 +16,7 @@ const icon = L.icon({
 })
 
 // Map View Control component to handle changing the view when data updates
-function MapViewControl({ locations, currentLocation }: { locations: DeviceLocation[], currentLocation?: DeviceLocation }) {
+function MapViewControl({ locations, currentLocation }: { locations: DeviceLocation[], currentLocation?: DeviceLocation | null}) {
   const map = useMap();
   
   useEffect(() => {
@@ -69,25 +69,46 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
     : defaultPosition;
   
   // Current location to display
-  const currentLocation = sortedLocations[currentIndex];
+  const currentLocation = sortedLocations.length > 0 ? sortedLocations[currentIndex] : null;
   
   // Calculate the start and end timestamps for the session
-  const startTimestamp = sortedLocations.length > 0 ? new Date(sortedLocations[0].current_location_timestamp) : new Date();
-  const endTimestamp = sortedLocations.length > 0 ? new Date(sortedLocations[sortedLocations.length - 1].current_location_timestamp) : new Date();
-  const sessionDuration = endTimestamp.getTime() - startTimestamp.getTime();
+  const startTimestamp = sortedLocations.length > 0 ? sortedLocations[0].current_location_timestamp : '';
+  const endTimestamp = sortedLocations.length > 0 ? sortedLocations[sortedLocations.length - 1].current_location_timestamp : '';
   
-  // Format duration as HH:MM:SS
-  const formatDuration = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  const formatDisplayTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
+    try {
+      const date = new Date(timestamp);
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+      
+      return `${hours}:${minutes}:${seconds}`;
+    } catch (e) {
+      return timestamp;
+    }
   };
-  
-  // Format timestamp
-  const formatTimestamp = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString();
+
+  const formatPopupTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
+    try {
+      const date = new Date(timestamp);
+      
+      // Format date in a readable format
+      const year = date.getUTCFullYear();
+      const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getUTCMonth()];
+      const day = date.getUTCDate();
+      
+      // Format time
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+      
+      return `${month} ${day}, ${year} at ${hours}:${minutes}:${seconds} UTC+9`;
+    } catch (e) {
+      return timestamp;
+    }
   };
   
   // Handle slider change
@@ -113,11 +134,15 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
     const position = ((e.clientX - rect.left) / rect.width) * 100;
     setSliderHover(position);
     
-    // Calculate the timestamp at hover position
-    const timestamp = new Date(
-      startTimestamp.getTime() + ((position / 100) * sessionDuration)
+    // Calculate the timestamp at hover position based on index
+    const hoverIndex = Math.min(
+      Math.floor((position / 100) * (sortedLocations.length - 1)),
+      sortedLocations.length - 1
     );
-    setHoverTimestamp(formatTimestamp(timestamp));
+    
+    if (sortedLocations[hoverIndex]) {
+      setHoverTimestamp(formatDisplayTimestamp(sortedLocations[hoverIndex].current_location_timestamp));
+    }
   };
   
   // Handle slider mouseout
@@ -177,13 +202,13 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
               )}
             </button>
             
-            {/* Current position time */}
+            {/* Current position time / Last timestamp */}
             <div className='text-xs text-gray-300'>
-              {sortedLocations.length > 0 ? (
+              {sortedLocations.length > 0 && currentLocation ? (
                 <>
-                  <span>{formatTimestamp(new Date(currentLocation.current_location_timestamp))}</span>
+                  <span>{formatDisplayTimestamp(currentLocation.current_location_timestamp)}</span>
                   <span className='mx-1'>/</span>
-                  <span>{formatDuration(sessionDuration)}</span>
+                  <span>{formatDisplayTimestamp(endTimestamp)}</span>
                 </>
               ) : (
                 <span>No location data</span>
@@ -266,8 +291,11 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
             >
               <Popup>
                 <div className='text-sm'>
-                  <p className='font-bold'>Timestamp:</p>
-                  <p>{new Date(currentLocation.current_location_timestamp).toLocaleString()}</p>
+                  <p className='font-bold'>Device Location:</p>
+                  <p>{formatPopupTimestamp(currentLocation.current_location_timestamp)}</p>
+                  <p className='mt-1'>
+                    <span className='font-semibold'>Coordinates:</span> {currentLocation.latitude}, {currentLocation.longitude}
+                  </p>
                 </div>
               </Popup>
             </Marker>
