@@ -6,6 +6,8 @@ import { Device } from '@/types/device'
 import axios from 'axios'
 import DeviceCombobox from './subcomponents/device-combobox'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DeviceRoute } from '@/types/device-route'
+import toast from 'react-hot-toast'
 
 // Define a type for the session data
 interface DeviceSession {
@@ -34,7 +36,10 @@ const SessionViewer = (): JSX.Element => {
   const [devicesLoading, setDevicesLoading] = useState(false)
   const [viewingSession, setViewingSession] = useState(false)
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
-  
+  const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([])
+  const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false)
+
+
   // New state for sessions
   const [deviceSessions, setDeviceSessions] = useState<DeviceSession[]>([])
   const [sessionsLoading, setSessionsLoading] = useState(false)
@@ -64,7 +69,34 @@ const SessionViewer = (): JSX.Element => {
     fetchDevices()
   }, [])
 
-  // New function to fetch sessions when a device is selected
+
+  const fetchDeviceRoutes = async (deviceId: string) => {
+    if (!deviceId) return;
+    
+    try {
+      setDeviceRoutesLoading(true);
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-routes/device/${deviceId}`;
+      const response = await axios.get(apiUrl);
+  
+      if (response.data.success && response.data.data) {
+        setDeviceRoutes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching device routes:', error);
+      toast.error('Failed to load routes for this device', {
+        duration: 3000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      });
+    } finally {
+      setDeviceRoutesLoading(false);
+    }
+  };
+
   const fetchDeviceSessions = async (deviceId: string) => {
     try {
       setSessionsLoading(true)
@@ -91,8 +123,10 @@ const SessionViewer = (): JSX.Element => {
     
     if (device) {
       fetchDeviceSessions(device.device_id)
+      fetchDeviceRoutes(device.device_id)
     } else {
       setDeviceSessions([])
+      setDeviceRoutes([])
     }
   }
   
@@ -101,19 +135,12 @@ const SessionViewer = (): JSX.Element => {
     setViewingSession(true)
   }
   
-  const getDeviceDisplayName = (device: Device) => {
-    return `${device.device_name} (${device.vehicle_plate_num})`
-  }
 
   const getEmployeeDisplayName = (employee: Device['employee']) => {
     return `${employee.first_name} ${employee.last_name}`
   }
   
-  // Function to format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleString()
-  }
+
   
 
   const organizeSessionsByMonthAndWeek = (sessions: DeviceSession[]): GroupedSessions => {

@@ -8,27 +8,14 @@ import { useRef } from 'react'
 import { CollectionPoints } from '@/types/collection-points'
 import { Device } from '@/types/device'
 import { Employee } from '@/types/employees'
+import { Route } from '@/types/route'
+import { DeviceRoute } from '@/types/device-route'
 // Dynamically import the map component with SSR disabled
 const Map = dynamic(() => import('./client-side-map'), { ssr: false })
 
-interface Route {
-  route_id: string;
-  route_name: string;
-  center_latitude: string;
-  center_longitude: string;
-}
 
-interface DeviceRoute {
-  device_route_id: string;
-  day_assigned: string;
-  device: {
-    device_id: string;
-    device_name: string;
-    vehicle_plate_num: string;
-    status: string;
-  };
-  route: Route;
-}
+
+
 
 
 
