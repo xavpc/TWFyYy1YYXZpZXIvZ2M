@@ -59,8 +59,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   }>>([]);
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
-  const [isTimestampUpdate, setIsTimeStampUpdate] = useState(false);
-  
+
   useEffect(() => {
     if (selectedRoute && selectedRoute.route_id) {
       fetchCollectionPoints(selectedRoute.route_id);
@@ -386,7 +385,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
       }
       return newMarkers;
     });
-    setIsTimeStampUpdate(true)
     console.log(`Updated timestamp for marker ${index} to ${newTimestamp}`);
   };
 
@@ -449,13 +447,13 @@ const DeviceSimulatorMap = (): JSX.Element => {
     return new Date(timeString).toLocaleString()
   }
 
-  // // Format the distance in meters to a more readable format
-  // const formatDistance = (meters: number | null) => {
-  //   if (meters === null) return '-'
-  //   return meters < 1000
-  //     ? `${meters.toFixed(1)} m`
-  //     : `${(meters / 1000).toFixed(2)} km`
-  // }
+  // Format the distance in meters to a more readable format
+  const formatDistance = (meters: number | null) => {
+    if (meters === null) return '-'
+    return meters < 1000
+      ? `${meters.toFixed(1)} m`
+      : `${(meters / 1000).toFixed(2)} km`
+  }
 
   // Format the duration in seconds to a more readable format
   const formatDuration = (seconds: number | null) => {
@@ -1137,8 +1135,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
           collectionPoints={collectionPoints}
           sessionId={sessionId}
           selectedDevice={selectedDevice}
-          isTimeStampUpdate={isTimestampUpdate}
-          setIsTimeStampUpdate={setIsTimeStampUpdate}
         />
         </div>
       </div>

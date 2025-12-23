@@ -54,6 +54,7 @@
     "Cancel": "Cancel"
   },
   "Route": {
+    "Route": "Route",
     "View Route": "View Route",
     "Route Name": "Route Name",
     "Action": "Action",
@@ -75,7 +76,9 @@
     "Delete Collection": "Delete Collection",
     "Device Name": "Device Name",
     "Search Route Name": "Search Route Name",
-    "Delete Device": "Delete Device"
+    "Delete Device": "Delete Device",
+    "Day Assigned": "Day Assigned",
+    "Select Day": "Select Day"
   },
   "Device": {
     "Device Name": "Device Name",
@@ -85,10 +88,19 @@
     "Status": "Status",
     "Action": "Action",
     "Search devices": "Search devices... ",
-    "active": "active",
-    "inactive": "inactive",
+    "active": "Active",
+    "inactive": "Inactive",
     "Edit": "Edit",
-    "No Device Found": "No Device Found"
+    "No Device Found": "No Device Found",
+    "Day Assigned": "Day Assigned",
+    "Days": "Days",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
   },
   "Complaints": {
     "Mark as in progress": "Mark as In Progress",
@@ -111,9 +123,7 @@
   },
   "Session Viewer": {
     "Session Viewer": "Session Viewer",
-    "Session Information": "Session Information",
-    "Device Selection": "Device Selection",
-    "Sessions":"Sessions"
+    "Session Information": "Session Information"
   },
 
   "Dialog": {
