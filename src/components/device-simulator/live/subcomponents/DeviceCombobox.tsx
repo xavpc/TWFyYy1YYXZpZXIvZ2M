@@ -9,13 +9,15 @@ interface DeviceComboboxProps {
   devicesLoading: boolean
   onSelectDevice: (device: Device | null) => void
   selectedDevice: Device | null
+  disabled?: boolean
 }
 
 const DeviceCombobox: React.FC<DeviceComboboxProps> = ({
   devices,
   devicesLoading,
   onSelectDevice,
-  selectedDevice
+  selectedDevice,
+  disabled
 }) => {
   // Format device display name to include vehicle plate
   const formatDeviceName = (device: Device) => {
@@ -50,6 +52,7 @@ const DeviceCombobox: React.FC<DeviceComboboxProps> = ({
       label="Device"
       icon={<TabletIcon size={16} />}
       statusProperty="status"
+      disabled={disabled}
     />
   )
 }

@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -8,6 +8,8 @@ import { Device } from '@/types/device'
 import { createTrashCanIcon, darkPopupStyle, endIcon, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import MapButtons from '../map-buttons'
+import { Fullscreen } from 'lucide-react'
 
 interface LiveClientSideMapProps {
   routeCoordinates: Array<{
@@ -19,6 +21,8 @@ interface LiveClientSideMapProps {
   collectionPoints: Array<CollectionPoints>;
   sessionId: string | null;
   selectedDevice: Device | null;
+  localDateTime: string;
+  setIsFS: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 interface DeviceLocationTrackerProps {
@@ -30,6 +34,7 @@ interface DeviceLocationTrackerProps {
   }) => void;
   intervalSeconds: number;
   isActive: boolean;
+  isLoading:boolean;
 }
 
 interface DeviceLocation {
@@ -45,7 +50,7 @@ const addSecondsToTimestamp = (timestamp: string, seconds: number) => {
   return new Date(date.getTime() + (seconds * 1000)).toISOString();
 };
 
-const formatTimestampToISOJST = (utcTimestamp: string) => {
+export const formatTimestampToISOJST = (utcTimestamp: string) => {
   const date = new Date(utcTimestamp);
   date.setHours(date.getHours() + 9); // Adjust to JST (UTC+9)
   return date.toISOString();
@@ -70,7 +75,8 @@ const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({
   deviceId, 
   onAddLocation,
   intervalSeconds,
-  isActive
+  isActive,
+  isLoading,
 }) => {
   const mapRef = useRef<L.Map | null>(null);
   const isProcessingRef = useRef(false); // Add this ref to track processing state
@@ -105,24 +111,31 @@ const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({
   useEffect(() => {
     mapRef.current = map;
     
-    // Apply cursor styling based on active state
+    // Apply cursor styling based on active state and loading state
     if (map && map.getContainer()) {
-      if (isActive) {
+      if (isLoading) {
+        map.getContainer().style.cursor = 'wait';
+        map.getContainer().classList.remove('crosshair-cursor');
+        map.getContainer().classList.add('wait-cursor');
+      } else if (isActive) {
         map.getContainer().style.cursor = 'crosshair';
-        map.getContainer().classList.add('crosshair-cursor'); // Add this class
+        map.getContainer().classList.add('crosshair-cursor');
+        map.getContainer().classList.remove('wait-cursor');
       } else {
         map.getContainer().style.cursor = '';
-        map.getContainer().classList.remove('crosshair-cursor'); // Remove when inactive
+        map.getContainer().classList.remove('crosshair-cursor');
+        map.getContainer().classList.remove('wait-cursor');
       }
     }
     
     return () => {
       if (map && map.getContainer()) {
         map.getContainer().style.cursor = '';
-        map.getContainer().classList.remove('crosshair-cursor'); // Clean up
+        map.getContainer().classList.remove('crosshair-cursor');
+        map.getContainer().classList.remove('wait-cursor');
       }
     };
-  }, [map, isActive]);
+  }, [map, isActive, isLoading]);
   
   return null;
 }
@@ -134,7 +147,9 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   routeCoordinates, 
   collectionPoints,
   sessionId,
-  selectedDevice
+  selectedDevice,
+  localDateTime,
+  setIsFS
 }) => {
   // Default position (Tokyo) or use first coordinate if available
   const defaultPosition: [number, number] = [35.6895, 139.6917];
@@ -145,10 +160,13 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const [deviceLocations, setDeviceLocations] = useState<DeviceLocation[]>([]);
   const [intervalSeconds, setIntervalSeconds] = useState(1);
   const [locationAddingEnabled, setLocationAddingEnabled] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Add this line
   const [collectedPointsMap, setCollectedPointsMap] = useState<Record<string, boolean>>({});
   const [isCollecting, setIsCollecting] = useState<Record<string, boolean>>({});
   const lastTimestampRef = useRef<string | null>(null);
-
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [showLegend, setShowLegend] = useState<boolean>(false);
+  
   useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.textContent = darkPopupStyle + `
@@ -185,9 +203,24 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
     const styleElement = document.createElement('style');
     styleElement.innerHTML = `
       .leaflet-container.crosshair-cursor,
-      .leaflet-container.crosshair-cursor .leaflet-interactive,
-      .leaflet-container.crosshair-cursor .maintain-crosshair {
+      .leaflet-container.crosshair-cursor .leaflet-interactive:not(.leaflet-marker-icon) {
         cursor: crosshair !important;
+      }
+      
+      .leaflet-container.wait-cursor,
+      .leaflet-container.wait-cursor .leaflet-interactive:not(.leaflet-marker-icon) {
+        cursor: wait !important;
+      }
+      
+      /* Always ensure markers have pointer cursor */
+      .leaflet-marker-icon,
+      .leaflet-container.crosshair-cursor .leaflet-marker-icon {
+        cursor: pointer !important;
+      }
+      
+      /* Override for waiting state on markers */
+      .leaflet-container.wait-cursor .leaflet-marker-icon {
+        cursor: wait !important;
       }
     `;
     document.head.appendChild(styleElement);
@@ -197,18 +230,108 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       document.head.removeChild(styleElement);
     };
   }, []);
+
+  useEffect(() => {
+      // Find the map container element safely
+      const mapElement = document.querySelector('.leaflet-container');
+      if (!mapElement) return; // Exit if not found
+      
+      const mapContainer = mapElement.parentElement;
+      if (!mapContainer) return; // Exit if parent not found
+      
+      if (isFullScreen) {
+        // Store original styles
+        const originalPosition = mapContainer.style.position;
+        const originalZIndex = mapContainer.style.zIndex;
+        const originalWidth = mapContainer.style.width;
+        const originalHeight = mapContainer.style.height;
+        const originalTop = mapContainer.style.top;
+        const originalLeft = mapContainer.style.left;
+        const originalRight = mapContainer.style.right;
+        const originalBottom = mapContainer.style.bottom;
+    
+        // Apply full-screen styles
+        mapContainer.style.position = 'fixed';
+        mapContainer.style.top = '0';
+        mapContainer.style.left = '0';
+        mapContainer.style.right = '0';
+        mapContainer.style.bottom = '0';
+        mapContainer.style.width = '100vw';
+        mapContainer.style.height = '100vh';
+        mapContainer.style.zIndex = '9999';
+    
+        // Store original styles as data attributes
+        mapContainer.dataset.originalPosition = originalPosition;
+        mapContainer.dataset.originalZIndex = originalZIndex;
+        mapContainer.dataset.originalWidth = originalWidth;
+        mapContainer.dataset.originalHeight = originalHeight;
+        mapContainer.dataset.originalTop = originalTop;
+        mapContainer.dataset.originalLeft = originalLeft;
+        mapContainer.dataset.originalRight = originalRight;
+        mapContainer.dataset.originalBottom = originalBottom;
+      } else {
+        // Only restore if we have stored original values
+        if (mapContainer.dataset.originalPosition !== undefined) {
+          // Restore original styles
+          mapContainer.style.position = mapContainer.dataset.originalPosition || '';
+          mapContainer.style.zIndex = mapContainer.dataset.originalZIndex || '';
+          mapContainer.style.width = mapContainer.dataset.originalWidth || '';
+          mapContainer.style.height = mapContainer.dataset.originalHeight || '';
+          mapContainer.style.top = mapContainer.dataset.originalTop || '';
+          mapContainer.style.left = mapContainer.dataset.originalLeft || '';
+          mapContainer.style.right = mapContainer.dataset.originalRight || '';
+          mapContainer.style.bottom = mapContainer.dataset.originalBottom || '';
+          
+          // Clean up dataset
+          delete mapContainer.dataset.originalPosition;
+          delete mapContainer.dataset.originalZIndex;
+          delete mapContainer.dataset.originalWidth;
+          delete mapContainer.dataset.originalHeight;
+          delete mapContainer.dataset.originalTop;
+          delete mapContainer.dataset.originalLeft;
+          delete mapContainer.dataset.originalRight;
+          delete mapContainer.dataset.originalBottom;
+        }
+      }
+      
+      // Trigger a resize event to update the map
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+    }, [isFullScreen]);
+
   
   useEffect(() => {
-    if (sessionId) {
-      // Initialize with current time when session starts (in UTC)
-      lastTimestampRef.current = new Date().toISOString();
+    if (sessionId && localDateTime) {
+      console.log(`localdatetime: ${localDateTime}`);
+      
+      const jstDateTimeString = `${localDateTime}:00+09:00`;
+      
+      const date = new Date(jstDateTimeString);
+      
+      lastTimestampRef.current = date.toISOString();
+      console.log(`UTC timestamp: ${lastTimestampRef.current}`);
     } else {
-      // Reset when session ends
       lastTimestampRef.current = null;
       setDeviceLocations([]);
       setCollectedPointsMap({});
     }
-  }, [sessionId]);
+  }, [sessionId, localDateTime]);
+  useEffect(() => {
+    if(isFullScreen){
+      setIsFS?.(true)
+    }
+    else{
+      setIsFS?.(false)
+    }
+  }, [isFullScreen]);
+
+    const toggleFullScreen = useCallback((e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      setIsFullScreen(prev => !prev);
+    }, []);
 
   const handleAddDeviceLocation = async (location: {
     latitude: number;
@@ -220,7 +343,9 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       });
       return;
     }
-    
+    setIsLoading(true);
+
+
     try {
       // Calculate the next timestamp in UTC
       const currentTimestamp = lastTimestampRef.current || new Date().toISOString();
@@ -274,6 +399,9 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
           borderRadius: '6px',
         },
       });
+    }
+    finally {
+      setIsLoading(false); 
     }
   };
 
@@ -346,7 +474,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
           ...prev,
           [collectionPointId]: true
         }));
-        
+        setIsLoading(true);
         // Show a success notification
         toast.success(`Collection point collected successfully`, {
           duration: 4000,
@@ -375,6 +503,8 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         ...prev,
         [collectionPointId]: false
       }));
+
+      setIsLoading(false);
     }
   };
 
@@ -394,7 +524,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   return (
     <div className='relative border rounded-lg overflow-hidden' style={{ height: '500px' }}>
       {sessionId && showIntervalPanel && (
-        <div className="absolute top-4 right-4 z-[1000] bg-white dark:bg-gray-800 p-3 rounded-md shadow-md">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white dark:bg-gray-800 p-3 rounded-md shadow-md">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
               <label htmlFor="intervalSeconds" className="text-sm font-medium">
@@ -451,7 +581,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       {sessionId && !showIntervalPanel && (
         <button
           onClick={() => setShowIntervalPanel(true)}
-          className="absolute top-4 right-4 z-[1000] bg-white dark:bg-gray-800 p-1 rounded-md shadow-md text-xs"
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white dark:bg-gray-800 p-1 rounded-md shadow-md text-xs"
           type="button"
         >
           Show interval settings
@@ -464,6 +594,11 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
       >
+      <MapButtons 
+        setIsFullScreen={setIsFullScreen}
+        setShowLegend={setShowLegend}
+        
+      />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png" 
@@ -622,8 +757,86 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
             onAddLocation={handleAddDeviceLocation}
             intervalSeconds={intervalSeconds}
             isActive={locationAddingEnabled && !!sessionId && !!selectedDevice}
+            isLoading={isLoading}
           />
         )}
+
+            {/* Legend for the map */}
+            {showLegend && (
+        <div className="absolute bottom-6 right-2 bg-black bg-opacity-80 text-white p-3 rounded-md text-xs z-[9999] pointer-events-auto shadow-lg">
+          <div className="font-bold mb-2 text-sm">Map Legend</div>
+          
+          <div className="flex items-center mb-2">
+            <div className="w-4 h-2 bg-indigo-500 mr-2 rounded-sm"></div>
+            <span>Preset Route</span>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#10B981">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Start Point</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#3B82F6">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Waypoint</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#EF4444">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>End Point</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#F59E0B">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Route Start</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#F97316">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Route End</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center mb-2">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#8B5CF6">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12z"/>
+              </svg>
+              <span>Collection Point</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#34D399">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12z"/>
+              </svg>
+              <span>Collected Point</span>
+            </div>
+          </div>
+        </div>
+      )}
       </MapContainer>
     </div>
   )

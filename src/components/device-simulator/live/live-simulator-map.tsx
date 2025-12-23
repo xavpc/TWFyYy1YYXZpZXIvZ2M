@@ -33,12 +33,18 @@ const LiveSimulatorMap = (): JSX.Element => {
   }>>([]);
   const [collectionPoints, setCollectionPoints] = useState<Array<CollectionPoints>>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
-
+  const [isMapFullScreen, setIsMapFullScreen] = useState(false);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
   const [collectionPointsLoading, setCollectionPointsLoading] = useState(false);
   const [devicesLoading, setDevicesLoading] = useState(false)
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false)
   const [sessionStarting, setSessionStarting] = useState(false)
+  const [localDateTime, setLocalDateTime] = useState<string>(() => {
+    const now = new Date();
+    // Adjust to JST (UTC+9)
+    now.setHours(now.getHours() + 9);
+    return now.toISOString().slice(0, 16);
+  });
   const [sessionEnding, setSessionEnding] = useState(false);
   // Compute loading message based on what's currently loading
   const getLoadingMessage = () => {
@@ -51,6 +57,18 @@ const LiveSimulatorMap = (): JSX.Element => {
     }
     return "";
   };
+
+  useEffect(() => {
+    if (isMapFullScreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMapFullScreen]);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -246,7 +264,9 @@ const LiveSimulatorMap = (): JSX.Element => {
   return (
     <div className='flex flex-col h-screen'>
       {/* Header Bar with improved layout and z-index */}
-      <div className='bg-[#1F2937] text-white p-4 shadow-md mx-4 mt-4 rounded-lg relative z-40'>
+      <div className={`bg-[#1F2937] text-white p-4 shadow-md mx-4 mt-4 rounded-lg relative z-40 transition-all duration-300 ${
+        isMapFullScreen ? 'opacity-0 pointer-events-none absolute -top-full ' : 'opacity-100 '
+      }`}>
         <div className='flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center'>
           {/* Left side - Title with icon */}
           <div className='flex items-center'>
@@ -262,6 +282,7 @@ const LiveSimulatorMap = (): JSX.Element => {
                 devicesLoading={devicesLoading}
                 onSelectDevice={setSelectedDevice}
                 selectedDevice={selectedDevice}
+                disabled={!!sessionId}
               />
             </div>
             
@@ -271,7 +292,34 @@ const LiveSimulatorMap = (): JSX.Element => {
                 routesLoading={deviceRoutesLoading}
                 onSelectRoute={setSelectedDeviceRoute}
                 selectedRoute={selectedDeviceRoute}
-                disabled={!selectedDevice}
+                disabled={!selectedDevice || !!sessionId}
+              />
+            </div>
+
+            {/* DateTime Picker with disabled styling */}
+            <div className='flex-1'>
+              <div className="flex items-center space-x-2 mb-1">
+                <span className={`text-sm font-medium ${!!sessionId ? 'text-gray-500' : ''}`}>
+                  {devsim('Set Initial Time')}:
+                </span>
+              </div>
+              <input
+                type="datetime-local"
+                id="initialTime"
+                className={`w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-left text-sm transition-all ${
+                  !!sessionId 
+                    ? 'opacity-60 cursor-not-allowed text-gray-400' 
+                    : 'hover:bg-gray-650 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white'
+                }`}
+                value={localDateTime}
+                onChange={(e) => {
+                  if (!sessionId) {
+                    setLocalDateTime(e.target.value);
+                    console.log(`Selected time: ${e.target.value}`);
+                  }
+                }}
+                style={{ height: '38px' }}
+                disabled={!!sessionId}
               />
             </div>
           </div>
@@ -322,6 +370,8 @@ const LiveSimulatorMap = (): JSX.Element => {
             collectionPoints={collectionPoints}
             sessionId={sessionId}
             selectedDevice={selectedDevice}
+            localDateTime={localDateTime}
+            setIsFS={setIsMapFullScreen}
             />
             <LoadingOverlay 
                 isVisible={routeCoordinatesLoading || collectionPointsLoading} 

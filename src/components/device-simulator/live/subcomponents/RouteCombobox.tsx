@@ -42,6 +42,7 @@ const RouteCombobox: React.FC<RouteComboboxProps> = ({
       label="Route"
       icon={<RouteIcon size={16} />}
       statusProperty=""
+      disabled={disabled}
     />
   )
 }

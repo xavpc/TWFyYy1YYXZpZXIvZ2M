@@ -1056,11 +1056,6 @@ const ClientSideMap = ({
           </div>
           
           <div className="flex items-center mb-2">
-            <div className="w-4 h-2 bg-white mr-2 border-t border-b border-dashed"></div>
-            <span>Device Path</span>
-          </div>
-          
-          <div className="flex items-center mb-2">
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="#10B981">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>

@@ -14,6 +14,7 @@ interface ComboboxProps {
   label: string
   icon?: React.ReactNode
   statusProperty?: string
+  disabled?: boolean
 }
 
 const Combobox: React.FC<ComboboxProps> = ({
@@ -26,7 +27,8 @@ const Combobox: React.FC<ComboboxProps> = ({
   placeholder,
   label,
   icon,
-  statusProperty
+  statusProperty,
+  disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -106,13 +108,18 @@ const Combobox: React.FC<ComboboxProps> = ({
     <div className="relative" ref={dropdownRef}>
       <div className="flex items-center space-x-2 mb-1">
         {icon}
-        <span className="text-sm font-medium">{label}:</span>
+        <span className={`text-sm font-medium ${disabled ? 'text-gray-500' : ''}`}>{label}:</span>
       </div>
       
       <button
         type="button"
-        className="relative w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-left text-sm text-white transition-all hover:bg-gray-650 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => setIsOpen(!isOpen)}
+        className={`relative w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-left text-sm transition-all ${
+          disabled 
+            ? 'opacity-60 cursor-not-allowed text-gray-400'
+            : 'hover:bg-gray-650 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white'
+        }`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
       >
         <span className="block truncate">
           {selectedItem
@@ -128,7 +135,7 @@ const Combobox: React.FC<ComboboxProps> = ({
       </button>
 
       {/* Dropdown Panel with fixed dimensions and scrollbar alignment */}
-      {isOpen && (
+      {!disabled && isOpen && (
         <div 
           className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden"
           style={{ transformOrigin: "top center", zIndex: 9999, maxHeight: "320px" }}

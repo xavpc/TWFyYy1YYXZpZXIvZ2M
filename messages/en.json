@@ -149,7 +149,8 @@
     "Device": "Device",
     "Route": "Route",
     "Loading": "Loading...",
-    "Ending": "Ending..."
+    "Ending": "Ending...",
+    "Set Initial Time": "Set Initial Time"
   },
   "Session Viewer": {
     "Session Viewer": "Session Viewer",
