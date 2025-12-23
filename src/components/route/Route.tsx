@@ -419,8 +419,8 @@ const Route = () => {
                     <SelectLabel>{device('Device Name')}</SelectLabel>
                     {devices.map((device) => (
                       <SelectItem
-                        key={device.device_id}
-                        value={device.device_id}
+                        key={device.device_id || ''}
+                        value={device.device_id || ''}
                         className='cursor-pointer hover:bg-zinc-800'
                       >
                         {device.device_name}
