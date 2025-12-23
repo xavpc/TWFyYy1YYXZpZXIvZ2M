@@ -35,6 +35,28 @@ const DevicesComponent = () => {
     fetchDevices()
   }, [])
 
+   //^ FETCH EMPLOYEES
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/employees`
+      )
+      const result = await response.json()
+
+      if (result.success && Array.isArray(result.data)) {
+        setEmployees(result.data) // Set the employees from `data` property
+      } else {
+        console.error('Invalid employees data:', result)
+        setEmployees([]) // Reset to empty array if unexpected response
+      }
+
+      console.log(result)
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+      setEmployees([]) // Handle errors gracefully
+    }
+  }
+
   // GET EMPLOYEE
   const fetchDevices = async () => {
     setLoading(true) // Start loading
