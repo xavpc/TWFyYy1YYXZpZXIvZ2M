@@ -131,13 +131,21 @@
   "Device Simulator": {
     "Hello there": "Hello there!",
     "Start Session": "Start Session",
+    "Start Live Session": "Live Session",
     "Starting": "Starting...",
     "Session Active": "Session Active",
     "Active Session": "Active Session",
     "Device Simulator": "Device Simulator",
     "Select a Device": "Select a Device",
     "End Session": "End Session",
-    "Ending": "Ending"
+    "Ending": "Ending",
+    "Live Map": "Live Map",
+    "Settings": "Settings",
+    "Loading map data": "Loading map data",
+    "Please select a device and route" : "Please select a device and route",
+    "Please select a device" : "Please select a device",
+    "Please select a route" : "Please select a route",
+    "Initializing map" : "Initializing map..."
   },
   "Session Viewer": {
     "Session Viewer": "Session Viewer",
