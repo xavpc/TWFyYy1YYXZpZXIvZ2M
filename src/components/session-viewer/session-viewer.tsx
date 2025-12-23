@@ -131,7 +131,7 @@ const SessionViewer = (): JSX.Element => {
   const fetchSessionsByRouteAndDate = async (routeId: string, date: string) => {
     try {
       setSessionsLoading(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/filter/by-route-and-date?routeId=${routeId}&date=${date}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/filter/by-route-and-date?routeId=${routeId}&date=${date}&deviceId=${selectedDevice?.device_id}`;
       const response = await axios.get(apiUrl);
   
       if (response.data.success && response.data.data) {
@@ -160,7 +160,7 @@ const SessionViewer = (): JSX.Element => {
   const fetchSessionsByDate = async (date: string) => {
     try {
       setSessionsLoading(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/filter/by-date?date=${date}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/filter/by-date?date=${date}&deviceId=${selectedDevice?.device_id}`;
       const response = await axios.get(apiUrl);
   
       if (response.data.success && response.data.data) {
@@ -190,7 +190,7 @@ const SessionViewer = (): JSX.Element => {
   const fetchSessionsByRoute = async (routeId: string) => {
     try {
       setSessionsLoading(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/route/${routeId}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/route/${routeId}?deviceId=${selectedDevice?.device_id}`;
       const response = await axios.get(apiUrl);
 
       if (response.data.success && response.data.data) {

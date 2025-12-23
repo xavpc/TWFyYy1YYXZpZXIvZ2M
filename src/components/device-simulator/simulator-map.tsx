@@ -239,17 +239,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
           current_location_timestamp: marker.timestamp,
           session_id: sessionId
         };
-
-        toast.success(`location sent, timestamp: ${marker.timestamp}`, {
-          duration: 4000,
-          style: {
-            background: '#1F2937',
-            color: '#FFF',
-            border: '1px solid #374151',
-            borderRadius: '6px',
-          },
-          icon: '✅',
-        });
         
         await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/device-locations`, payload);
         
