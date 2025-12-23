@@ -6,28 +6,10 @@ import axios from 'axios'
 import { Toaster, toast } from 'react-hot-toast';
 import { useRef } from 'react'
 import { CollectionPoints } from '@/types/collection-points'
+import { Device } from '@/types/device'
+import { Employee } from '@/types/employees'
 // Dynamically import the map component with SSR disabled
 const Map = dynamic(() => import('./client-side-map'), { ssr: false })
-
-interface Employee {
-  employee_id: string
-  first_name: string
-  middle_name: string | null
-  last_name: string
-  email: string
-  contact_number: string
-  address: string
-  age: number
-  status: string
-}
-
-interface Device {
-  device_id: string
-  device_name: string
-  vehicle_plate_num: string
-  status: string
-  employee: Employee
-}
 
 interface Route {
   route_id: string;
