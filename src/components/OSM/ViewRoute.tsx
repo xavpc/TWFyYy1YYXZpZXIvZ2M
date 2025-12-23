@@ -339,29 +339,39 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
   //^ DELETE COLLECTION
   const handleDeleteCollection = async () => {
-    if (!route_id) return
+    if (!route_id) {
+      console.error('Error: route_id is missing')
+      return
+    }
 
     setIsLoading(true)
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
     try {
+      console.log(
+        `Deleting from: ${API_URL}/collection-points/route/${route_id}`
+      )
+
       const response = await fetch(
         `${API_URL}/collection-points/route/${route_id}`,
-        {
-          method: 'DELETE',
-        }
+        { method: 'DELETE' }
       )
 
       if (!response.ok) {
-        throw new Error(`Failed to delete collection: ${await response.text()}`)
+        const errorText = await response.text()
+        throw new Error(`Failed to delete collection: ${errorText}`)
       }
 
       console.log('Collection deleted successfully')
 
-      // Remove all markers from the map
-      markersRef.current.forEach((marker) => marker.remove())
-      markersRef.current = []
+      // Remove all markers if they exist
+      if (markersRef.current) {
+        markersRef.current.forEach((marker) => marker.remove())
+        markersRef.current = []
+      }
+
+      setIsCollectionOpen(false)
     } catch (error) {
       console.error('Error deleting collection:', error)
     } finally {
@@ -718,6 +728,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
           </Dialog>
         </div>
 
+        {/* DELETE COLLECTION DIALOG */}
         <div className='relative z-50'>
           <Dialog open={isCollectionOpen} onOpenChange={setIsCollectionOpen}>
             <DialogContent>
