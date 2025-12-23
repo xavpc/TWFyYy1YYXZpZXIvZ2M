@@ -8,6 +8,7 @@ import DeviceCombobox from './subcomponents/device-combobox'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DeviceRoute } from '@/types/device-route'
 import toast from 'react-hot-toast'
+import { DeviceLocation } from '@/types/device-location'
 
 // Define a type for the session data
 interface DeviceSession {
@@ -51,6 +52,10 @@ const SessionViewer = (): JSX.Element => {
 
   // State for device info modal
   const [deviceInfoModalOpen, setDeviceInfoModalOpen] = useState(false)
+  const [deviceLocations, setDeviceLocations] = useState<DeviceLocation[]>([])
+  const [deviceLocationsLoading, setDeviceLocationsLoading] = useState(false)
+
+
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -72,10 +77,16 @@ const SessionViewer = (): JSX.Element => {
     fetchDevices()
   }, [])
 
+  useEffect(() => {
+    if (selectedSession) {
+      fetchDeviceLocationsBySessionId(selectedSession.session_id);
+    }
+  }, [selectedSession]);
 
   const clearSelectedSession = () => {
     setSelectedSession(null);
     setViewingSession(false);
+    setDeviceLocations([]);
   };
 
   const resetFilters = () => {
@@ -85,6 +96,37 @@ const SessionViewer = (): JSX.Element => {
       fetchDeviceSessions(selectedDevice.device_id);
     }
   };
+
+
+  const fetchDeviceLocationsBySessionId = async (sessionId: string) => {
+    try {
+      setDeviceLocationsLoading(true)
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
+      const response = await axios.get(apiUrl)
+     
+      if (response.data.success && response.data.data) {
+        console.log(`Device Locations${response.data.data}`)
+        setDeviceLocations(response.data.data)
+      } else {
+        setDeviceLocations([])
+      }
+    } catch (error) {
+      console.error('Error fetching device locations:', error)
+      setDeviceLocations([])
+      toast.error('Failed to load device locations for this session', {
+        duration: 3000,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      })
+    } finally {
+      setDeviceLocationsLoading(false)
+    }
+  }
+
 
   const fetchSessionsByRouteAndDate = async (routeId: string, date: string) => {
     try {
@@ -452,7 +494,18 @@ const SessionViewer = (): JSX.Element => {
         {/* Map Panel - Takes up all remaining space */}
         <div className="lg:col-span-3 bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden" 
             style={{ height: '100%', position: 'relative', zIndex: 0 }}>
-          <Map />
+          {deviceLocationsLoading && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+              <div className="flex flex-col items-center">
+                <svg className='animate-spin h-10 w-10 text-blue-500 mb-2' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                  <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                  <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+                </svg>
+                <p className="text-sm text-white">Loading location data...</p>
+              </div>
+            </div>
+          )}
+          <Map deviceLocations={deviceLocations} />
         </div>
         
         {/* Floating Sessions List Panel */}
@@ -491,7 +544,7 @@ const SessionViewer = (): JSX.Element => {
                   <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Clear Selected Session
+                  Release Selection
                 </button>
               </div>
             )}
@@ -772,6 +825,8 @@ const SessionViewer = (): JSX.Element => {
           </DialogContent>
         </Dialog>
       </div>
+
+      
     </div>
   )
 }
