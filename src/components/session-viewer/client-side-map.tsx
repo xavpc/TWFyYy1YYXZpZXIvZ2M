@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { DeviceLocation } from '@/types/device-location'
 import axios from 'axios'
-import { createTrashCanIcon, routeEndIcon, routeStartIcon } from '../device-simulator/client-side-map'
+import { createTrashCanIcon, darkPopupStyle, routeEndIcon, routeStartIcon } from '../device-simulator/client-side-map'
 import { DeviceSession } from '@/types/device-session'
 
 // Fix for Leaflet marker icons
@@ -133,8 +133,38 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
   
 
 
-//TODO for the session modal/list change the duration to use hte device location first and last timestap
 
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = darkPopupStyle + `
+      /* Make all popups dark by default */
+      .leaflet-popup-content-wrapper {
+        background-color: #1f2937;
+        color: #e5e7eb;
+        border: 1px solid #374151;
+      }
+      .leaflet-popup-tip {
+        background-color: #1f2937;
+        border-left: 1px solid #374151;
+        border-top: 1px solid #374151;
+      }
+      /* Other popup styles */
+      .leaflet-marker-icon {
+        cursor: pointer !important;
+      }
+      .leaflet-marker-wait {
+        cursor: wait !important;
+      }
+      .leaflet-marker-disabled {
+        cursor: not-allowed !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
   useEffect(() => { 
     setSliderValue(0);
     setCurrentIndex(0);

@@ -387,7 +387,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
     }]);
     console.log('Added marker at:', position);
    };
-   //TODO: make the collection point time sync with the marker that coollected it
+
   const handleRemoveMarker = (index: number) => {
     setMarkers((prev) => {
       const newMarkers = [...prev]

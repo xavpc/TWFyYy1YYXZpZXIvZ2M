@@ -25,7 +25,7 @@ const Map = dynamic(
   () => import('./client-side-map'),
   { ssr: false }
 )
-        //TODO: problem on filtering 
+
 const SessionViewer = (): JSX.Element => {
   const t = useTranslations('Layout')
   const devsim = useTranslations('Session Viewer')

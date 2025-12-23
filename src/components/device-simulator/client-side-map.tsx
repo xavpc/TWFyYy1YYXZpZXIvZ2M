@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 
 
 // Custom CSS for dark theme popups
-const darkPopupStyle = `
+export const darkPopupStyle = `
   .dark-theme-popup .leaflet-popup-content-wrapper {
     background-color: #1f2937;
     color: #e5e7eb;
@@ -739,17 +739,7 @@ const ClientSideMap = ({
           [collectionPointId]: true
         }));
         
-        // Show a success notification (you can use a toast library here)
-        toast.success(`Collection point collected successfully`, {
-          duration: 4000,
-          style: {
-            background: '#1F2937',
-            color: '#FFF',
-            border: '1px solid #374151',
-            borderRadius: '6px',
-          },
-          icon: '✅',
-        });
+
       } else {
         console.error('Failed to collect point:', response.data.message);
       }
@@ -770,7 +760,7 @@ const ClientSideMap = ({
   
   const getMarkerIcon = (index: number, total: number) => {
     if (index === 0) return startIcon;
-    if (index === total - 1) return endIcon; // Always use the total length to determine the last marker
+    if (index === total - 1) return endIcon; 
     return midIcon;
   };
   

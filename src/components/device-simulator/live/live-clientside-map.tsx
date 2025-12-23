@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { CollectionPoints } from '@/types/collection-points'
 import { Device } from '@/types/device'
-import { createTrashCanIcon, endIcon, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
+import { createTrashCanIcon, darkPopupStyle, endIcon, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
@@ -127,6 +127,9 @@ const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({
   return null;
 }
 
+
+///TODO: add loading states, and set initial time, add map buttons(full screen + legends to both session viewer and live simulator)
+
 const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({ 
   routeCoordinates, 
   collectionPoints,
@@ -146,6 +149,38 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const [isCollecting, setIsCollecting] = useState<Record<string, boolean>>({});
   const lastTimestampRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = darkPopupStyle + `
+      /* Make all popups dark by default */
+      .leaflet-popup-content-wrapper {
+        background-color: #1f2937;
+        color: #e5e7eb;
+        border: 1px solid #374151;
+      }
+      .leaflet-popup-tip {
+        background-color: #1f2937;
+        border-left: 1px solid #374151;
+        border-top: 1px solid #374151;
+      }
+      /* Other popup styles */
+      .leaflet-marker-icon {
+        cursor: pointer !important;
+      }
+      .leaflet-marker-wait {
+        cursor: wait !important;
+      }
+      .leaflet-marker-disabled {
+        cursor: not-allowed !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+  
   useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.innerHTML = `
@@ -247,6 +282,14 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
     setIntervalSeconds(newValue);
   };
 
+  const removeTimezoneNotation = (timestamp: string): string => {
+    // Simply cut off everything from the decimal point (for milliseconds) or 'Z' (for timezone)
+    const timeWithoutMilliseconds = timestamp.split('.')[0];
+    
+    // Remove the 'Z' if it's there (in case there are no milliseconds)
+    return timeWithoutMilliseconds.replace('Z', '');
+  }
+
   const calculateDistance = (
     lat1: number, 
     lon1: number, 
@@ -288,10 +331,10 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       const payload = {
         device_id: selectedDevice.device_id,
         collection_point_id: collectionPointId,
-        collected_timestamp: formatTimestampToISOJST(currentTimestamp),
+        collected_timestamp: removeTimezoneNotation(formatTimestampToISOJST(currentTimestamp)),
         session_id: sessionId
       };
-
+      console.log(`collect point timestamp ${ removeTimezoneNotation(formatTimestampToISOJST(currentTimestamp))}`)
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/collected-points`,
         payload
