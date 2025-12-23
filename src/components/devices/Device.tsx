@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+
 import {
   Table,
   TableBody,
@@ -18,6 +19,23 @@ import { useTranslations } from 'next-intl' // Import
 
 // DEVICE INTERFACE
 import { Devices } from '@/types/devices'
+import { Employee } from '@/types/employees'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogFooter,
+} from '@/components/ui/dialog'
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const DevicesComponent = () => {
   // const [loading] = useState(true)
@@ -25,17 +43,82 @@ const DevicesComponent = () => {
   const [devices, setDevices] = useState<Devices[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
-  // Updated to use Device instead of Devices
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [editingDevice, setEditingDevice] = useState<Devices | null>(null)
   const [updatedDevice, setUpdatedDevice] = useState<Devices | null>(null)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false) // New state for edit modal
+  const [isEditDeviceModalOpen, setIsEditDeviceModalOpen] = useState(false) // New state for edit modal
+
+  const t = useTranslations('Device') // Ensure
+  const pagination = useTranslations('Pagination') // Ensure
 
   useEffect(() => {
     fetchDevices()
   }, [])
 
-  // GET EMPLOYEE
+  //^ Runs when isEditDeviceModalOpen changes
+  useEffect(() => {
+    if (isEditDeviceModalOpen) {
+      fetchEmployees()
+    }
+  }, [isEditDeviceModalOpen])
+
+  //^ FETCH EMPLOYEES
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/employees`
+      )
+      const result = await response.json()
+
+      if (result.success && Array.isArray(result.data)) {
+        setEmployees(result.data) // Set the employees from `data` property
+      } else {
+        console.error('Invalid employees data:', result)
+        setEmployees([]) // Reset to empty array if unexpected response
+      }
+
+      console.log(result)
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+      setEmployees([]) // Handle errors gracefully
+    }
+  }
+
+  //^ ADD DEVICE
+  const addDevice = async ({ device_id, ...newDeviceWithoutId }: Devices) => {
+    setLoading(true) // Start loading
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/devices`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newDeviceWithoutId), // Send without `device_id`
+        }
+      )
+
+      if (!response.ok) {
+        const errorMessage = await response.text()
+        console.error('Failed to add device:', errorMessage)
+        throw new Error(`Failed to add device: ${errorMessage}`)
+      }
+
+      const newDevice: Devices = await response.json()
+      console.log('Device added successfully:', newDevice)
+
+      setIsAddDeviceModalOpen(false) // Close modal
+      setNewDevice(null) // Reset form input with an empty object (not null)
+
+      fetchDevices()
+    } catch (error) {
+      console.error('Error adding device:', error)
+    } finally {
+      setLoading(false) // Stop loading
+    }
+  }
+
+  //^ GET DEVICES
   const fetchDevices = async () => {
     setLoading(true) // Start loading
 
@@ -47,25 +130,25 @@ const DevicesComponent = () => {
 
       console.log('API Response:', data) // Debugging
 
-      const employeesArray = Array.isArray(data)
+      const devicesArray = Array.isArray(data)
         ? data
-        : data.employees || data.data || []
+        : data.devices || data.data || []
 
-      if (!Array.isArray(employeesArray)) {
-        console.error('Employees data is not an array:', employeesArray)
+      if (!Array.isArray(devicesArray)) {
+        console.error('devices data is not an array:', devicesArray)
         setDevices([]) // Fallback to empty array
       } else {
-        setDevices(employeesArray)
+        setDevices(devicesArray)
       }
     } catch (error) {
-      console.error('Error fetching employees:', error)
+      console.error('Error fetching devices:', error)
       setDevices([])
     } finally {
       setLoading(false) // Stop loading after fetching data
     }
   }
 
-  // UPDATE EMPLOYEE
+  //^ UPDATE EMPLOYEE
   const updateDevices = async () => {
     if (!updatedDevice) return
     setLoading(true) // Start loading
@@ -92,33 +175,41 @@ const DevicesComponent = () => {
         )
       )
 
-      setIsEditModalOpen(false) // Close the edit modal
+      setIsEditDeviceModalOpen(false) // Close the edit modal
       setUpdatedDevice(null) // Clear updated employee data
     } catch (error) {
       console.error(error)
     }
   }
 
-  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (!updatedDevice) return
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!updatedDevice) return
+    setUpdatedDevice({ ...updatedDevice, [e.target.name]: e.target.value })
+  }
 
-  //   if (e.target.name === 'age') {
-  //     setUpdatedDevice({
-  //       ...updatedDevice,
-  //       [e.target.name]: parseInt(e.target.value) || 0,
-  //     })
-  //   } else {
-  //     setUpdatedDevice({
-  //       ...updatedDevice,
-  //       [e.target.name]: e.target.value,
-  //     })
-  //   }
-  // }
+  const handleEmployeeChange = (value: string) => {
+    const selectedEmployee = employees.find((emp) => emp.employee_id === value)
+
+    if (selectedEmployee) {
+      setUpdatedDevice((prev) => ({
+        ...prev,
+        employee: {
+          ...selectedEmployee,
+          middle_name: selectedEmployee.middle_name || '', // Convert null to an empty string
+        },
+        contact_number: selectedEmployee.contact_number, // Automatically update contact number
+        device_id: prev?.device_id || '', // Ensure device_id is not undefined
+        device_name: prev?.device_name || '', // Ensure device_name is not undefined
+        vehicle_plate_num: prev?.vehicle_plate_num || '', // Ensure vehicle_plate_num is not undefined
+        status: prev?.status || '', // Ensure status is not undefined
+      }))
+    }
+  }
 
   const handleEditClick = (devices: Devices) => {
     setEditingDevice(devices)
     setUpdatedDevice(devices) // Load selected employee data for editing
-    setIsEditModalOpen(true) // Open the edit modal
+    setIsEditDeviceModalOpen(true) // Open the edit modal
   }
 
   const filteredDevices = devices.filter(
@@ -143,9 +234,6 @@ const DevicesComponent = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
-
-  const t = useTranslations('Device') // Ensure
-  const pagination = useTranslations('Pagination') // Ensure
 
   if (loading)
     return (
@@ -179,7 +267,7 @@ const DevicesComponent = () => {
             <TableRow>
               <TableHead>{t('Device Name')}</TableHead>
               <TableHead>{t('Vehicle Plate Number')}</TableHead>
-              <TableHead>{t('Phone')}</TableHead>
+              <TableHead>{t('Contact Number')}</TableHead>
               <TableHead>{t('Employee')}</TableHead>
               <TableHead>{t('Status')}</TableHead>
               <TableHead>{t('Action')}</TableHead>
@@ -195,8 +283,13 @@ const DevicesComponent = () => {
                   {device.employee?.first_name}, {device.employee?.last_name}
                 </TableCell>
                 <TableCell>
-                <Badge className={`text-white px-3 text-center ${device.status === 'active' ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17' : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17' } `}>
-
+                  <Badge
+                    className={`text-white px-3 text-center ${
+                      device.status === 'active'
+                        ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17'
+                        : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17'
+                    } `}
+                  >
                     {' '}
                     {device.status === 'active' ? t('active') : t('inactive')}
                   </Badge>
@@ -237,50 +330,88 @@ const DevicesComponent = () => {
         </Button>
       </div>
 
-      {/* <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Device</DialogTitle>
-          </DialogHeader>
-          <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6'>
-            {['device_id', 'vehicle_plate_num', 'status', 'employee_id'].map(
-              (field) => (
-                <div key={field} className='sm:col-span-3'>
-                  <label
-                    htmlFor={field}
-                    className='block text-sm font-medium text-white'
-                  >
-                    {field
-                      .replace('_', ' ') // Replace underscores with spaces
-                      .toLowerCase() // Convert the whole string to lowercase
-                      .replace(/\b\w/g, (char) => char.toUpperCase())}{' '}
+      {/* EDIT DEVICE MODAL */}
+      <div className='relative z-50'>
+        <Dialog
+          open={isEditDeviceModalOpen}
+          onOpenChange={setIsEditDeviceModalOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('Edit Device')}</DialogTitle>
+            </DialogHeader>
+            {updatedDevice && (
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label htmlFor='device_name' className='text-sm'>
+                    {t('Device Name')}
                   </label>
-                  <div className='mt-2'>
-                    <Input
-                      id={field}
-                      name={field}
-                      placeholder={field.replace('_', ' ')}
-                      value={
-                        field === 'employee'
-                          ? updatedDevice?.employee?.employee_id || '' // Extract a specific property
-                          : updatedDevice?.[field as keyof Devices] || ''
-                      }
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                  <Input
+                    name='device_name'
+                    value={updatedDevice.device_name}
+                    onChange={handleInputChange}
+                  />
                 </div>
-              )
+                <div>
+                  <label htmlFor='vehicle_plate_num' className='text-sm'>
+                    {t('Vehicle Plate Number')}
+                  </label>
+                  <Input
+                    name='vehicle_plate_num'
+                    value={updatedDevice.vehicle_plate_num}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor='contact_number' className='text-sm'>
+                    {t('Contact Number')}
+                  </label>
+                  <Input
+                    name='contact_number'
+                    value={updatedDevice.employee?.contact_number || ''}
+                    onChange={handleInputChange}
+                    readOnly // Makes it read-only to prevent manual edits
+                    disabled
+                  />
+                </div>
+                <div>
+                  <label htmlFor='employee' className='text-sm'>
+                    {t('Employee')}
+                  </label>
+                  <Select
+                    name='employee'
+                    value={updatedDevice?.employee?.employee_id || ''}
+                    onValueChange={handleEmployeeChange} // Call the function here
+                  >
+                    <SelectTrigger className='border p-2 rounded-md w-full'>
+                      <SelectValue placeholder='Select Employee' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((employee) => (
+                        <SelectItem
+                          key={employee.employee_id}
+                          value={employee.employee_id}
+                        >
+                          {employee.first_name} {employee.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             )}
-          </div>
-
-          <DialogFooter>
-            <Button onClick={updateDevices}>Save</Button>
-            <Button variant='outline' onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog> */}
+            <DialogFooter>
+              <Button onClick={updateDevices}>{t('Save')}</Button>
+              <Button
+                onClick={() => setIsEditDeviceModalOpen(false)}
+                variant='outline'
+              >
+                {t('Cancel')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }
