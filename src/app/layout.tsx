@@ -26,18 +26,22 @@ export default async function RootLayout({
     >
       <head />
       <body>
-        <SidebarProvider>
-          <NextIntlClientProvider messages={messages}>
-            {/* Show Sidebar unless on the Login Page */}
-            <AppSidebar />
-
-            <main className='relative w-full'>
-              <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='system'
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SidebarProvider>
+            <NextIntlClientProvider messages={messages}>
+              {/* Show Sidebar unless on the Login Page */}
+              <AppSidebar />
+              <main className='relative w-full'>
                 {children}
-              </ThemeProvider>
-            </main>
-          </NextIntlClientProvider>
-        </SidebarProvider>
+              </main>
+            </NextIntlClientProvider>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
