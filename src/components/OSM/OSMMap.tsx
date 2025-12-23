@@ -10,6 +10,7 @@ interface OSMMapProps {
 }
 
 import { useTranslations } from 'next-intl' // Import
+import toast, { Toaster } from 'react-hot-toast'
 
 const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -201,90 +202,89 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
 
   //^   CREATE ROUTE SAVE
   const handleCreateRoute = async () => {
-    if (markersRef.current.length === 0) {
-      setError('No markers to save.')
+    if (markersRef.current.length < 2) {
+      toast.error('Need at least two markers to save a route.')
       return
     }
-
+  
     if (!route_id) {
-      setError('Route ID is missing.')
+      toast.error('Route ID is missing.')
       return
     }
-
+  
     setIsLoading(true)
     try {
+      const checkUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${route_id}`
+      const checkResponse = await fetch(checkUrl)
+      const checkData = await checkResponse.json()
+  
+      if (checkResponse.ok && checkData.data && checkData.data.length > 0) {
+        toast.error('This route already has defined coordinates. Please edit the existing route instead.')
+        return
+      }
+  
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/batch`
-
       const allCoordinates = []
       let sequenceCounter = 1
-
-      const firstMarker = markersRef.current[0]
-      allCoordinates.push({
-        latitude: firstMarker.getLatLng().lat,
-        longitude: firstMarker.getLatLng().lng,
-        route_id,
-        sequence: sequenceCounter++,
-        is_user_waypoint: true,
-      })
-
-      // process each segment between user waypoints
-      for (let i = 0; i < markersRef.current.length - 1; i++) {
-        // If we have OSRM points for this segment
-        if (routeCoordinatesRef.current[i]) {
-          // Add all intermediate OSRM points (skipping first and last which would be duplicates)
-          const segmentPoints = routeCoordinatesRef.current[i].coords
-
-          // Skip the first point (already added as user waypoint)
-          for (let j = 1; j < segmentPoints.length - 1; j++) {
-            const point = segmentPoints[j]
-            // Check if point is a valid LatLngExpression (array with two elements)
-            if (Array.isArray(point) && point.length === 2) {
-              const lat = point[0]
-              const lng = point[1]
-              allCoordinates.push({
-                latitude: lat,
-                longitude: lng,
-                route_id,
-                sequence: sequenceCounter++,
-                is_user_waypoint: false,
-              })
-            }
+  
+      // Process each OSRM route segment
+      for (let i = 0; i < routeCoordinatesRef.current.length; i++) {
+        // Add all OSRM points
+        const segmentPoints = routeCoordinatesRef.current[i].coords
+        
+        for (let j = 0; j < segmentPoints.length; j++) {
+          const point = segmentPoints[j]
+          // Check if point is valid
+          if (Array.isArray(point) && point.length === 2) {
+            const lat = point[0]
+            const lng = point[1]
+            
+            // Save every OSRM point, marking first/last points as waypoints
+            const isFirstOrLastInSegment = j === 0 || j === segmentPoints.length - 1
+            
+            allCoordinates.push({
+              latitude: lat,
+              longitude: lng,
+              route_id,
+              sequence: sequenceCounter++,
+              is_user_waypoint: isFirstOrLastInSegment
+            })
           }
         }
-
-        // Add the next user waypoint
-        const nextMarker = markersRef.current[i + 1]
-        allCoordinates.push({
-          latitude: nextMarker.getLatLng().lat,
-          longitude: nextMarker.getLatLng().lng,
-          route_id,
-          sequence: sequenceCounter++,
-          is_user_waypoint: true,
-        })
       }
-
-      console.log('Sending coordinates batch:', allCoordinates)
-
+  
+      // Check if we have any coordinates to save
+      if (allCoordinates.length === 0) {
+        toast.error('No valid route coordinates were generated.')
+        return
+      }
+  
+      console.log('Sending OSRM-only coordinates batch:', allCoordinates)
+  
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(allCoordinates),
       })
-
+  
       const responseBody = await response.text()
       console.log('API Response:', response.status, responseBody)
-
+  
       if (!response.ok) {
-        throw new Error(
-          `Failed to save coordinates. Server response: ${responseBody}`
-        )
+        throw new Error(`Failed to save coordinates. Server response: ${responseBody}`)
       }
-
-      console.log('All coordinates saved successfully!')
+  
+      toast.success('Route saved successfully!')
       router.push(`/route/view/${route_id}`)
     } catch (error) {
       console.error('Error saving coordinates:', error)
-      setError(`Failed to save coordinates: ${error}`)
+      
+      // User-friendly toast errors
+      if (error instanceof TypeError) {
+        toast.error('Network error. Please check your connection and try again.')
+      } else {
+        toast.error(`Failed to save route: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -354,6 +354,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
           </button>
         </div>
       </div>
+      <Toaster position="top-right" />
     </div>
   )
 }
