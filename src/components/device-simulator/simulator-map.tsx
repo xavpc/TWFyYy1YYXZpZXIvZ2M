@@ -242,7 +242,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       return;
     }
   
-    const loadingToastId = toast.loading('Sending location data...', {
+    const loadingToastId = toast.loading('Preparing location data...', {
       style: {
         background: '#1F2937',
         color: '#FFF',
@@ -255,39 +255,31 @@ const DeviceSimulatorMap = (): JSX.Element => {
       setIsSendingLocations(true);
       setSendingProgress(0);
       
-      // Process each marker in sequence
-      for (let i = 0; i < markers.length; i++) {
-        const marker = markers[i];
-        
-        // Prepare the payload
-        const payload = {
-          device_id: selectedDevice.device_id,
-          latitude: marker.lat,
-          longitude: marker.lng,
-          current_location_timestamp: marker.timestamp,
-          session_id: sessionId
-        };
-        
-        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/device-locations`, payload);
-        
-        const progress = Math.round(((i + 1) / markers.length) * 100);
-        setSendingProgress(progress);
-        
-        // Update loading toast with progress
-        toast.loading(`Sending locations: ${progress}%`, {
-          id: loadingToastId,
-          style: {
-            background: '#1F2937',
-            color: '#FFF',
-            border: '1px solid #374151',
-            borderRadius: '6px',
-          },
-        });
-        
-        if (i < markers.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-      }
+      // Prepare the batch payload
+      const batchPayload = markers.map(marker => ({
+        device_id: selectedDevice.device_id,
+        latitude: marker.lat,
+        longitude: marker.lng,
+        current_location_timestamp: marker.timestamp,
+        session_id: sessionId
+      }));
+      
+      // Update loading toast
+      toast.loading(`Sending ${markers.length} locations in batch...`, {
+        id: loadingToastId,
+        style: {
+          background: '#1F2937',
+          color: '#FFF',
+          border: '1px solid #374151',
+          borderRadius: '6px',
+        },
+      });
+      
+      // Send the batch request
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/device-locations/batch`, batchPayload);
+      
+      // Set progress to 100% since all locations are sent at once
+      setSendingProgress(100);
       
       // Success toast
       toast.success('All locations sent successfully!', {

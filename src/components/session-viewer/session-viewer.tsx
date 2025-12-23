@@ -507,7 +507,7 @@ const SessionViewer = (): JSX.Element => {
               </div>
             </div>
           )}
-          <Map deviceLocations={deviceLocations} routeId={selectedSession?.device_route.route.route_id} viewingSession={viewingSession}/>
+          <Map deviceLocations={deviceLocations} routeId={selectedSession?.device_route.route.route_id} viewingSession={viewingSession} selectedSessionId={selectedSession?.session_id}/>
         </div>
 
         {/* Floating Sessions List Panel */}

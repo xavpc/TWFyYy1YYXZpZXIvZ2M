@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { DeviceLocation } from '@/types/device-location'
 import axios from 'axios'
-import { routeEndIcon, routeStartIcon } from '../device-simulator/client-side-map'
+import { createTrashCanIcon, routeEndIcon, routeStartIcon } from '../device-simulator/client-side-map'
 import { DeviceSession } from '@/types/device-session'
 
 // Fix for Leaflet marker icons
@@ -47,9 +47,10 @@ interface ClientSideMapProps {
   deviceLocations: DeviceLocation[];
   routeId: string |undefined;
   viewingSession:boolean;
+  selectedSessionId: string | undefined;
 }
 
-const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMapProps) => {
+const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessionId}: ClientSideMapProps) => {
   // Default position if no locations are provided
   const defaultPosition: [number, number] = [35.6895, 139.6917]; // Tokyo as default
   
@@ -72,7 +73,44 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMa
       center_longitude: string;
     }
   }>>([]);
-  
+  const [collectionPoints, setCollectionPoints] = useState<Array<{
+    collection_point_id: string;
+    collection_point_name: string;
+    latitude: string;
+    longitude: string;
+    route: {
+      route_id: string;
+      route_name: string;
+      center_latitude: string;
+      center_longitude: string;
+    }
+  }>>([]);
+  const [collectionPointsLoading, setCollectionPointsLoading] = useState(false);
+
+  const [collectedPoints, setCollectedPoints] = useState<Array<{
+    collected_point_id: string;
+    push_timestamp: string;
+    collected_timestamp: string;
+    collection_point: {
+      collection_point_id: string;
+      collection_point_name: string;
+      latitude: string;
+      longitude: string;
+    }
+    device: {
+      device_id: string;
+      device_name: string;
+      vehicle_plate_num: string;
+      status: string;
+    };
+    session: {
+      session_id: string;
+      start: string;
+      end: string;
+    };
+  }>>([]);
+  const [collectedPointsLoading, setCollectedPointsLoading] = useState(false);
+
   // Sort locations by timestamp
   const sortedLocations = useMemo(() => {
     return [...deviceLocations].sort((a, b) => 
@@ -107,39 +145,101 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMa
   useEffect(() => { 
     if(!viewingSession){
       setRouteCoordinates([]);
+      setCollectionPoints([]);
+      setCollectedPoints([]);
     }
   }, [viewingSession]);
 
 
 
-    useEffect(() => {
-      const fetchRouteCoordinates = async (routeId: string | undefined) => {
-        if (!routeId) return;
-        
-        try {
-          setRouteCoordinatesLoading(true);
-          const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${routeId}`;
-          const response = await axios.get(apiUrl);
-          
-          if (response.data.success && response.data.data) {
-            // Sort by sequence to ensure proper order
-            const sortedCoordinates = response.data.data.sort(
-              (a: { sequence: number }, b: { sequence: number }) => a.sequence - b.sequence
-            );
-            setRouteCoordinates(sortedCoordinates);
-          }
-        } catch (error) {
-          console.error('Error fetching route coordinates:', error);
-        } finally {
-          setRouteCoordinatesLoading(false);
-        }
-      };
+  useEffect(() => {
+    const fetchRouteCoordinates = async (routeId: string | undefined) => {
+      if (!routeId) return;
       
-      fetchRouteCoordinates(routeId);
-    }, [routeId]);
+      try {
+        setRouteCoordinatesLoading(true);
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${routeId}`;
+        const response = await axios.get(apiUrl);
+        
+        if (response.data.success && response.data.data) {
+          // Sort by sequence to ensure proper order
+          const sortedCoordinates = response.data.data.sort(
+            (a: { sequence: number }, b: { sequence: number }) => a.sequence - b.sequence
+          );
+          setRouteCoordinates(sortedCoordinates);
+        }
+      } catch (error) {
+        console.error('Error fetching route coordinates:', error);
+      } finally {
+        setRouteCoordinatesLoading(false);
+      }
+    };
+    
+    fetchRouteCoordinates(routeId);
+  }, [routeId]);
+
+  useEffect(() => {
+    const fetchCollectionPoints = async (routeId: string | undefined) => {
+      if (!routeId) return;
+      
+      try {
+        setCollectionPointsLoading(true);
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/collection-points/route/${routeId}`;
+        const response = await axios.get(apiUrl);
+        
+        if (response.data.success && response.data.data) {
+          setCollectionPoints(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching collection points:', error);
+      } finally {
+        setCollectionPointsLoading(false);
+      }
+    };
+    
+    fetchCollectionPoints(routeId);
+  }, [routeId]);
+
+  useEffect(() => {
+    const fetchCollectedPoints = async (sessionId: string | undefined) => {
+      if (!sessionId || !viewingSession) return;
+      
+      try {
+        setCollectedPointsLoading(true);
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/collected-points/session/${sessionId}`;
+        const response = await axios.get(apiUrl);
+        
+        if (response.data.success && response.data.data) {
+          setCollectedPoints(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching collected points:', error);
+      } finally {
+        setCollectedPointsLoading(false);
+      }
+    };
+    
+    fetchCollectedPoints(selectedSessionId);
+  }, [selectedSessionId, viewingSession]);
+
+  const isCollectionPointCollected = useCallback((collectionPointId: string) => {
+    if (!currentLocation || sortedLocations.length === 0) return false;
+    
+    const matchingCollectedPoint = collectedPoints.find(point => 
+      point.collection_point.collection_point_id === collectionPointId
+    );
+    
+    if (!matchingCollectedPoint) return false;
+    
+    // Just use the raw strings and compare them directly
+    const currentTimeStr = currentLocation.current_location_timestamp;
+    const collectedTimeStr = matchingCollectedPoint.collected_timestamp;
+    console.log(`current timestamp: ${currentTimeStr} collectedtimestamp: ${collectedTimeStr}`)
+    console.log(`is collected? ${currentTimeStr >= collectedTimeStr}`)
+    // Add the currentIndex dependency to ensure re-evaluation when timeline moves
+    return currentTimeStr >= collectedTimeStr;  
+  }, [currentLocation, collectedPoints, sortedLocations, currentIndex]);
   
-
-
 
   const formatDisplayTimestamp = (timestamp: string) => {
     if (!timestamp) return '';
@@ -216,6 +316,7 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMa
     setHoverTimestamp(null);
   };
   
+
   // Autoplay functionality
   useEffect(() => {
     if (!isPlaying || sortedLocations.length === 0) return;
@@ -226,7 +327,10 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMa
         
         if (newIndex >= sortedLocations.length) {
           setIsPlaying(false);
-          return prevIndex;
+          // Reset to start position
+          setCurrentIndex(0);
+          setSliderValue(0);
+          return 0;
         }
         
         // Update slider value
@@ -388,6 +492,35 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMa
               </Marker>
             </>
           )}
+
+
+
+          {/* Collection Points */}
+          {collectionPoints.length > 0 && (
+            <>
+              {collectionPoints.map(point => (
+                <Marker
+                  key={point.collection_point_id}
+                  position={[parseFloat(point.latitude), parseFloat(point.longitude)]}
+                  icon={createTrashCanIcon(isCollectionPointCollected(point.collection_point_id))}
+                >
+                  <Popup className="dark-theme-popup">
+                    <div className="text-sm">
+                      <p className="font-bold">{point.collection_point_name}</p>
+                      <p className="mt-1">
+                        <span className="font-semibold">Status:</span> {isCollectionPointCollected(point.collection_point_id) ? 'Collected' : 'Not Collected'}
+                      </p>
+                      <p className="mt-1">
+                        <span className="font-semibold">Coordinates:</span> {parseFloat(point.latitude).toFixed(6)}, {parseFloat(point.longitude).toFixed(6)}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </>
+          )}
+
+
           
           {/* Show only current location marker */}
           {currentLocation && (
