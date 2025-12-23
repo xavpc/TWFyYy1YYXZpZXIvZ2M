@@ -9,8 +9,6 @@ import { createTrashCanIcon, endIcon, midIcon, routeEndIcon, routeStartIcon, sta
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
-// Create a vehicle icon
-
 interface LiveClientSideMapProps {
   routeCoordinates: Array<{
     route_coordinates_id: string;
@@ -46,6 +44,7 @@ const addSecondsToTimestamp = (timestamp: string, seconds: number) => {
   const date = new Date(timestamp);
   return new Date(date.getTime() + (seconds * 1000)).toISOString();
 };
+
 const formatTimestampToISOJST = (utcTimestamp: string) => {
   const date = new Date(utcTimestamp);
   date.setHours(date.getHours() + 9); // Adjust to JST (UTC+9)
@@ -65,8 +64,6 @@ const formatTimestampForDisplay = (utcTimestamp: string) => {
     hour12: true
   }) + ' JST';
 };
-
-
 
 const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({ 
   sessionId, 
@@ -130,10 +127,6 @@ const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({
   return null;
 }
 
-
-
-
-
 const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({ 
   routeCoordinates, 
   collectionPoints,
@@ -149,8 +142,9 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const [deviceLocations, setDeviceLocations] = useState<DeviceLocation[]>([]);
   const [intervalSeconds, setIntervalSeconds] = useState(1);
   const [locationAddingEnabled, setLocationAddingEnabled] = useState(true);
+  const [collectedPointsMap, setCollectedPointsMap] = useState<Record<string, boolean>>({});
+  const [isCollecting, setIsCollecting] = useState<Record<string, boolean>>({});
   const lastTimestampRef = useRef<string | null>(null);
-
 
   useEffect(() => {
     const styleElement = document.createElement('style');
@@ -177,10 +171,9 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       // Reset when session ends
       lastTimestampRef.current = null;
       setDeviceLocations([]);
+      setCollectedPointsMap({});
     }
   }, [sessionId]);
-
-  
 
   const handleAddDeviceLocation = async (location: {
     latitude: number;
@@ -213,12 +206,15 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       
       if (response.data.success && response.data.data) {
         // Add the new location to state
-        setDeviceLocations(prev => [...prev, {
+        const newDeviceLocation = {
           id: response.data.data.device_location_id,
           latitude: location.latitude,
           longitude: location.longitude,
           timestamp: nextTimestamp
-        }]);
+        };
+        
+        // Add the new location to state
+        setDeviceLocations(prev => [...prev, newDeviceLocation]);
         
         toast.success('Location added', {
           duration: 1000,
@@ -249,6 +245,107 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const handleIntervalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(60, value));
     setIntervalSeconds(newValue);
+  };
+
+  const calculateDistance = (
+    lat1: number, 
+    lon1: number, 
+    lat2: number, 
+    lon2: number
+  ): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+  
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  
+    return R * c; // Distance in meters
+  };
+
+  const collectPoint = async (collectionPointId: string) => {
+    if (!sessionId || !selectedDevice?.device_id) {
+      toast.error('No active session or device selected', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Set collecting state for this specific point
+    setIsCollecting(prev => ({
+      ...prev,
+      [collectionPointId]: true
+    }));
+
+    try {
+      // Use the current timestamp from the last device location
+      const currentTimestamp = lastTimestampRef.current || new Date().toISOString();
+      
+      const payload = {
+        device_id: selectedDevice.device_id,
+        collection_point_id: collectionPointId,
+        collected_timestamp: formatTimestampToISOJST(currentTimestamp),
+        session_id: sessionId
+      };
+
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/collected-points`,
+        payload
+      );
+      
+      if (response.data && response.data.success) {
+        // Update the collected points map
+        setCollectedPointsMap(prev => ({
+          ...prev,
+          [collectionPointId]: true
+        }));
+        
+        // Show a success notification
+        toast.success(`Collection point collected successfully`, {
+          duration: 4000,
+          style: {
+            background: '#1F2937',
+            color: '#FFF',
+            border: '1px solid #374151',
+            borderRadius: '6px',
+          },
+          icon: '✅',
+        });
+      } else {
+        toast.error('Failed to collect point: ' + (response.data.message || 'Unknown error'), {
+          duration: 3000,
+        });
+        console.error('Failed to collect point:', response.data.message);
+      }
+    } catch (error) {
+      toast.error('Error collecting point. Please try again.', {
+        duration: 3000,
+      });
+      console.error('Error collecting point:', error);
+    } finally {
+      // Reset collecting state
+      setIsCollecting(prev => ({
+        ...prev,
+        [collectionPointId]: false
+      }));
+    }
+  };
+
+  // Check if a device location is near a collection point
+  const isNearCollectionPoint = (deviceLocation: DeviceLocation, collectionPoint: CollectionPoints): boolean => {
+    if (!deviceLocation) return false;
+    
+    const distance = calculateDistance(
+      deviceLocation.latitude, deviceLocation.longitude,
+      Number(collectionPoint.latitude), Number(collectionPoint.longitude)
+    );
+    
+    // If within 30 meters radius
+    return distance <= 30;
   };
 
   return (
@@ -342,7 +439,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
             opacity={0.4}   
             lineJoin="round"
             lineCap="round"
-            className="preset-route-outline maintain-crosshair" // Added a class here
+            className="preset-route-outline maintain-crosshair" 
           />
         )}
                 
@@ -380,25 +477,64 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         )}
         
         {/* Collection points */}
-        {collectionPoints.map((point) => (
-          <Marker 
-            key={point.collection_point_id}
-            position={[Number(point.latitude), Number(point.longitude)]} 
-            icon={createTrashCanIcon(false)}
-          >
-            <Popup>
-              <div className="text-sm">
-                <p className="font-bold">{point.collection_point_name}</p>
-                <p className="mt-1">
-                  <span className="font-semibold">Status:</span> Not Collected
-                </p>
-                <p className="mt-1">
-                  <span className="font-semibold">Coordinates:</span> {Number(point.latitude).toFixed(6)}, {Number(point.longitude).toFixed(6)}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {collectionPoints.map((point, index) => {
+          // Check if this point has been collected
+          const isCollected = collectedPointsMap[point.collection_point_id] === true;
+          // Check if this point is currently being collected
+          const isCollectingPoint = isCollecting[point.collection_point_id] === true;
+          
+          // Check if the last device location is near this collection point
+          const currentDeviceLocation = deviceLocations.length > 0 ? deviceLocations[deviceLocations.length - 1] : null;
+          const canCollect = currentDeviceLocation ? isNearCollectionPoint(currentDeviceLocation, point) : false;
+          
+          return (
+            <Marker 
+              key={`collection-point-${point.collection_point_id || index}`}
+              position={[Number(point.latitude), Number(point.longitude)]} 
+              icon={createTrashCanIcon(isCollected)}
+            >
+              <Popup>
+                <div className="font-semibold mb-1">Collection Point</div>
+                {point.collection_point_name && <div className="mb-1">Name: {point.collection_point_name}</div>}
+                <div className="text-xs mb-2">
+                  Lat: {point.latitude}, Lng: {point.longitude}
+                </div>
+                
+                {isCollected ? (
+                  <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
+                    ✓ Already Collected
+                  </div>
+                ) : !sessionId || !selectedDevice ? (
+                  <div className="bg-gray-500 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
+                    Start session to collect
+                  </div>
+                ) : !canCollect ? (
+                  <div className="bg-yellow-500 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
+                    Move closer to collect
+                  </div>
+                ) : (
+                  <button 
+                    className={`${isCollectingPoint ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-2 flex justify-center items-center`}
+                    onClick={() => collectPoint(point.collection_point_id)}
+                    disabled={isCollectingPoint}
+                  >
+                    {isCollectingPoint ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Collecting...
+                      </>
+                    ) : (
+                      'Collect Point'
+                    )}
+                  </button>
+                )}
+              </Popup>
+            </Marker>
+          );
+        })}
         
         {/* Device locations */}
         {deviceLocations.map((location, index) => {
