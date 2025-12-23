@@ -46,31 +46,12 @@ const darkPopupStyle = `
 `;
 
 // Fix the marker icons - create actual different colored icons
-const startIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const midIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const endIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+const icon = new L.DivIcon({
+  html: `<div style="background-color: #3B82F6; border: 2px solid white; border-radius: 50%; width: 16px; height: 16px;"></div>`,
+  className: 'vehicle-marker',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -8]
 });
 
 export const routeStartIcon = new L.Icon({
@@ -769,9 +750,9 @@ const ClientSideMap = ({
 
   
   const getMarkerIcon = (index: number, total: number) => {
-    if (index === 0) return startIcon;
-    if (index === total - 1) return endIcon; // Always use the total length to determine the last marker
-    return midIcon;
+    if (index === 0) return icon;
+    if (index === total - 1) return icon; // Always use the total length to determine the last marker
+    return icon;
   };
   
   return (
