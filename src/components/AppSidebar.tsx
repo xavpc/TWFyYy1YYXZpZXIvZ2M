@@ -11,6 +11,7 @@ import {
   User2,
   NotebookText,
   PlaySquare,
+  Navigation,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -72,6 +73,11 @@ export function AppSidebar() {
       title: t('Device Simulator'),
       url: '/device-simulator',
       icon: PlaySquare,
+    },
+    {
+      title: t('View Sessions'),
+      url: '/view-sessions',
+      icon: Navigation,
     },
   ]
 

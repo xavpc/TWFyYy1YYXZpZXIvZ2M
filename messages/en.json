@@ -8,7 +8,9 @@
     "Complaints": "Complaints",
     "Username": "Username",
     "SignOut": "Sign Out",
-    "Device Simulator": "Device Simulator"
+    "Device Simulator": "Device Simulator",
+    "View Sessions": "View Sessions"
+    
   },
   "Dashboard": {
     "Hello there": "Hello there!"
@@ -19,7 +21,9 @@
     "Device": "Device",
     "Route": "Route",
     "Complaints": "Complaints",
-    "Device Simulator": "Device Simulator"
+    "Device Simulator": "Device Simulator",
+    "View Sessions": "View Sessions",
+    "Session Viewer": "Session Viewer"
   },
   "Pagination": {
     "Next": "Next",
@@ -103,6 +107,9 @@
     "Select a Device": "Select a Device",
     "End Session": "End Session",
     "Ending": "Ending"
+  },
+  "Session Viewer": {
+    "Session Viewer": "Session Viewer"
   },
 
   "Dialog": {
