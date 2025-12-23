@@ -12,6 +12,7 @@ import {
   NotebookText,
   PlaySquare,
   Navigation,
+  Satellite,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -77,7 +78,7 @@ export function AppSidebar() {
     {
       title: t('View Sessions'),
       url: '/view-sessions',
-      icon: Navigation,
+      icon: Satellite,
     },
   ]
 
