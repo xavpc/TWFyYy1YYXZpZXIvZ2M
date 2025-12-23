@@ -70,6 +70,7 @@ interface DeviceRoute {
   }
   route: Route
 }
+
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
 import { Devices } from '@/types/devices'
@@ -446,6 +447,37 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     } catch (error) {
       console.error('Error fetching device routes:', error)
       setDeviceRoutes([])
+    } finally {
+      setIsLoading(false) // Stop loading
+    }
+  }
+
+   //^ DELETE DEVICE BY ID
+  const handleDeleteDeviceById = async (device_route_id: string) => {
+    setIsLoading(true) // Start loading
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/device-routes/${device_route_id}`,
+        { method: 'DELETE' }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete device: ${response.status}`)
+      }
+
+      console.log('Device successfully deleted')
+
+      // ✅ Ideally, remove the device from the UI state instead of reloading
+      setDeviceRoutes((prevDevices) =>
+        prevDevices.filter(
+          (device) => device.device_route_id !== device_route_id
+        )
+      )
+
+      setDeviceDeleteOpen(false)
+    } catch (error) {
+      console.error('Error deleting device:', error)
     } finally {
       setIsLoading(false) // Stop loading
     }
