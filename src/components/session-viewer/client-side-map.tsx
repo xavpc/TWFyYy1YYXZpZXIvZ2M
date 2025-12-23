@@ -412,154 +412,191 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     <div className='flex flex-col h-full'>
       {/* Map Timeline Controls */}
       <div 
-  className={`
-    relative overflow-hidden 
-    ${isLive 
-      ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700' 
-      : 'bg-gray-900 border-b border-gray-800'}
-    p-4 shadow-2xl rounded-b-xl transition-all duration-300 ease-in-out
-  `}
->
-  {/* Live Tracking Indicator */}
-  {isLive && (
-    <div className='absolute top-3 right-4 flex items-center space-x-3'>
-      <div className='relative'>
-        <span className='absolute inline-flex h-4 w-4 rounded-full bg-blue-400 opacity-75 animate-ping'></span>
-        <span className='relative inline-flex h-4 w-4 rounded-full bg-blue-500'></span>
-      </div>
-      <div className='flex flex-col'>
-        <span className='text-blue-200 text-xs font-bold uppercase tracking-widest'>
-          Live Tracking
-        </span>
-        <span className='text-blue-300 text-[10px] opacity-75'>
-          Real-time Location Updates
-        </span>
-      </div>
-    </div>
-  )}
-
-  {/* Main Controls Container */}
-  <div className='flex items-center justify-between space-x-4'>
-    {/* Play/Pause Button with Disabled State for Live */}
-    <div className='flex items-center space-x-4'>
-      <button
         className={`
-          group relative flex items-center justify-center
-          w-12 h-12 rounded-full 
+          relative overflow-hidden 
           ${isLive 
-            ? 'bg-gray-700 cursor-not-allowed opacity-50' 
-            : (isPlaying 
-              ? 'bg-red-600/20 hover:bg-red-600/30 border-2 border-red-500/50' 
-              : 'bg-blue-600/20 hover:bg-blue-600/30 border-2 border-blue-500/50')}
-          transition-all duration-300 ease-in-out
-          transform hover:scale-105 active:scale-95
-          focus:outline-none focus:ring-2 focus:ring-offset-2
-          ${isLive 
-            ? '' 
-            : (isPlaying 
-              ? 'focus:ring-red-500/50' 
-              : 'focus:ring-blue-500/50')}
+            ? 'bg-gradient-to-r from-blue-950 via-blue-900 to-blue-950 border-b border-blue-800' 
+            : 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700'}
+          p-4 shadow-2xl rounded-b-xl transition-all duration-300 ease-in-out
         `}
-        onClick={isLive ? undefined : togglePlay}
-        disabled={isLive || sortedLocations.length === 0}
-        aria-label={isLive ? "Live Tracking" : (isPlaying ? "Pause" : "Play")}
       >
-        {isLive ? (
-          <svg 
-            className="w-6 h-6 text-gray-400" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-            />
-          </svg>
-        ) : (
-          isPlaying ? (
-            <svg 
-              className="w-6 h-6 text-red-500 group-hover:rotate-6 transition-transform" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-              />
-            </svg>
-          ) : (
-            <svg 
-              className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" 
-              />
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-              />
-            </svg>
-          )
+        {/* Live Tracking Indicator */}
+        {isLive && (
+          <div className='absolute top-3 right-4 flex items-center space-x-3'>
+            <div className='relative'>
+              <span className='absolute inline-flex h-4 w-4 rounded-full bg-blue-400 opacity-75 animate-ping'></span>
+              <span className='relative inline-flex h-4 w-4 rounded-full bg-blue-500'></span>
+            </div>
+            <div className='flex flex-col'>
+              <span className='text-blue-200 text-xs font-bold uppercase tracking-widest'>
+                Live Tracking
+              </span>
+              <span className='text-blue-300 text-[10px] opacity-75'>
+                Real-time Location Updates
+              </span>
+            </div>
+          </div>
         )}
-      </button>
 
-      {/* Time Display with Advanced Styling */}
-      <div className='flex items-center space-x-2'>
-        {sortedLocations.length > 0 && currentLocation ? (
-          <>
-            <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className='text-xs text-gray-200 font-medium tracking-tight'>
-                {formatDisplayTimestamp(currentLocation.current_location_timestamp)}
-              </span>
-            </div>
-            <span className='text-gray-500 text-xs'>/</span>
-            <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className='text-xs text-gray-200 font-medium tracking-tight'>
-                {formatDisplayTimestamp(endTimestamp)}
-              </span>
-            </div>
-          </>
-        ) : (
-          <span className='text-gray-500 animate-pulse'>No location data</span>
-        )}
+        {/* Main Controls Container */}
+        <div className='flex items-center justify-between space-x-4'>
+          {/* Play/Pause Button with Disabled State for Live */}
+          <div className='flex items-center space-x-4'>
+            <button
+              className={`
+                group relative flex items-center justify-center
+                w-12 h-12 rounded-full 
+                ${isLive 
+                  ? 'bg-blue-900/20 cursor-not-allowed opacity-50' 
+                  : (isPlaying 
+                    ? 'bg-red-600/20 hover:bg-red-600/30 border-2 border-red-500/50' 
+                    : 'bg-blue-600/20 hover:bg-blue-600/30 border-2 border-blue-500/50')}
+                transition-all duration-300 ease-in-out
+                transform hover:scale-105 active:scale-95
+                will-change-transform
+                focus:outline-none focus:ring-2 focus:ring-offset-2
+                ${isLive 
+                  ? '' 
+                  : (isPlaying 
+                    ? 'focus:ring-red-500/50' 
+                    : 'focus:ring-blue-500/50')}
+              `}
+              onClick={isLive ? undefined : togglePlay}
+              disabled={isLive || sortedLocations.length === 0}
+              aria-label={isLive ? "Live Tracking" : (isPlaying ? "Pause" : "Play")}
+            >
+              {isLive ? (
+                <svg 
+                  className="w-6 h-6 text-gray-400" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
+                </svg>
+              ) : (
+                isPlaying ? (
+                  <svg 
+                    className="w-6 h-6 text-red-500 group-hover:rotate-6 transition-transform" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                ) : (
+                  <svg 
+                    className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" 
+                    />
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                )
+              )}
+            </button>
+
+            {/* Time Display with Advanced Styling */}
+            <div className='flex items-center space-x-2'>
+              {sortedLocations.length > 0 && currentLocation ? (
+                <>
+                  {!isLive ? (
+                    <>
+                  <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className='text-xs text-gray-200 font-medium tracking-tight'>
+                      {formatDisplayTimestamp(currentLocation.current_location_timestamp)}
+                    </span>
+                  </div>                    
+                  <span className='text-gray-500 text-xs'>/</span>
+                  <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className='text-xs text-gray-200 font-medium tracking-tight'>
+                      {formatDisplayTimestamp(endTimestamp)}
+                    </span>
+                  </div>
+                  </>
+                  ):(
+                  <>
+ <div className='flex items-center space-x-2'>
+      <span className='text-gray-400 text-xs uppercase tracking-wider'>Navigated Location</span>
+      <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
+        <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className='text-xs text-blue-200 font-medium tracking-tight'>
+          {hoverTimestamp || formatDisplayTimestamp(currentLocation.current_location_timestamp)}
+        </span>
       </div>
     </div>
 
-    {/* Location Count - Hidden during Live Tracking */}
-    {!isLive && sortedLocations.length > 0 && (
-      <div className='flex items-center space-x-2'>
-        <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span className='text-xs text-gray-200 font-medium tracking-tight'>
-            Location {currentIndex + 1} of {sortedLocations.length}
-          </span>
-        </div>
+    {/* Separator */}
+    <div className='w-px h-5 bg-gray-700'></div>
+
+    {/* Live Time Section */}
+    <div className='flex items-center space-x-2'>
+      <span className='text-green-400 text-xs uppercase tracking-wider'>Latest Location</span>
+      <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
+        <svg className="w-4 h-4 text-green-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className='text-xs text-green-200 font-medium tracking-tight'>
+          {formatDisplayTimestamp(endTimestamp)}
+        </span>
       </div>
-    )}
-  </div>
+    </div>
+  
+                  </>
+
+                  )}
+                </>
+              ) : (
+                <span className='text-gray-500 animate-pulse'>No location data</span>
+              )}
+            </div>
+          </div>
+
+          {/* Location Count - Hidden during Live Tracking */}
+          {!isLive && sortedLocations.length > 0 && (
+            <div className='flex items-center space-x-2'>
+              <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className='text-xs text-gray-200 font-medium tracking-tight'>
+                  Location {currentIndex + 1} of {sortedLocations.length}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Timeline slider */}
         <div className='mt-3 relative'>
@@ -657,8 +694,6 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
             </>
           )}
 
-
-
           {/* Collection Points */}
           {collectionPoints.length > 0 && (
             <>
@@ -683,8 +718,6 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
               ))}
             </>
           )}
-
-
           
           {/* Show only current location marker */}
           {currentLocation && (

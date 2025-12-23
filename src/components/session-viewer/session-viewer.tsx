@@ -371,6 +371,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   const handleSessionSelect = (session: DeviceSession) => {
     setSelectedSession(session)
     setViewingSession(true)
+    setDeviceSelectionCollapsed(true)
   }
   
 
@@ -424,10 +425,37 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     <div className='flex flex-col h-[calc(100vh-64px)]'>
       {/* Header Bar */}
       <div className='bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center'>
-        <h1 className='text-xl font-bold text-white'>
-          {t('Session Viewer')}
-        </h1>
-      </div>
+      <h1 className='text-xl font-bold text-white'>
+      {!isLive ? (
+        t('Session Viewer')
+      ):(
+        t('Live Sessions')
+      )}
+      </h1>
+      {isLive && (
+        <button
+          onClick={showAllActiveSessions}
+          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group"
+        >
+          <svg 
+            className="w-5 h-5 transition-transform group-hover:rotate-12" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span className="transition-all duration-300 group-hover:tracking-wider">
+            Show All Active Sessions
+          </span>
+        </button>
+      )}
+    </div>
       
       {/* Main Content */}
       <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden'>
@@ -558,20 +586,6 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
             
 
           </div>
-
-          {isLive && (
-            <div className="px-4 pb-4">
-              <button
-                onClick={showAllActiveSessions}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-md transition-colors flex items-center justify-center space-x-2"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span>Show All Active Sessions</span>
-              </button>
-            </div>
-          )}
 
           
             {/* Add Session Toggle Button at bottom of left panel */}

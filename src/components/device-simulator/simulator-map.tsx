@@ -529,15 +529,30 @@ const DeviceSimulatorMap = (): JSX.Element => {
           {/* Live Session Button - Always visible */}
           <button
             onClick={handleStartLiveSession}
-            className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-4 py-2 rounded-md flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
+            disabled={!!sessionId}
+            className={`
+              bg-gradient-to-r from-green-500 to-teal-500 
+              text-white px-4 py-2 rounded-md 
+              flex items-center gap-2 
+              shadow-md hover:shadow-lg 
+              transform hover:-translate-y-1 
+              transition-all duration-300 
+              relative overflow-hidden 
+              group
+              ${!!sessionId 
+                ? 'opacity-50 cursor-not-allowed pointer-events-none' 
+                : 'hover:shadow-lg hover:-translate-y-1'
+              }`}
           >
-            {/* Pulsing background effect */}
-            <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 rounded-md transform scale-90 group-hover:scale-100 transition-all duration-700"></span>
+            {/* Conditionally render pulsing background effect only when not disabled */}
+            {!sessionId && (
+              <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 rounded-md transform scale-90 group-hover:scale-100 transition-all duration-700"></span>
+            )}
             
-            {/* Animated thunder icon */}
+            {/* Thunder icon */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 group-hover:animate-pulse"
+              className={`h-5 w-5 ${!!sessionId ? 'opacity-50' : 'group-hover:animate-pulse'}`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -548,27 +563,33 @@ const DeviceSimulatorMap = (): JSX.Element => {
               />
             </svg>
             
-            {/* Text with subtle shimmer on hover */}
+            {/* Text with conditional styling */}
             <span className="relative">
               {devsim('Live Session')}
-              <span className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 animate-shimmer"></span>
+              {!sessionId && (
+                <span className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 animate-shimmer"></span>
+              )}
             </span>
             
-            {/* Lightning particle effects on hover */}
-            <span className="absolute -right-1 top-1/3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <svg className="h-3 w-3 text-yellow-300 animate-ping" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                />
-              </svg>
-            </span>
-            <span className="absolute -right-2 top-2/3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-              <svg className="h-2 w-2 text-yellow-300 animate-ping animation-delay-200" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                />
-              </svg>
-            </span>
+            {/* Conditionally render lightning effects only when not disabled */}
+            {!sessionId && (
+              <>
+                <span className="absolute -right-1 top-1/3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <svg className="h-3 w-3 text-yellow-300 animate-ping" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                    />
+                  </svg>
+                </span>
+                <span className="absolute -right-2 top-2/3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <svg className="h-2 w-2 text-yellow-300 animate-ping animation-delay-200" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                    />
+                  </svg>
+                </span>
+              </>
+            )}
           </button>
           
           {/* Session-dependent buttons */}
