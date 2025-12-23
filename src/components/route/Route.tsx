@@ -432,7 +432,7 @@ const Route = () => {
                     addDeviceToRoute(selectedDeviceId, selectedRouteId)
                   }
                 }}
-                disabled={!selectedDeviceId || !selectedRouteId} // Disable button if values are missing
+                disabled={isLoading || !selectedDeviceId || !selectedRouteId}  // Disable button if values are missing
               >
                 {t('Save')}
               </Button>
