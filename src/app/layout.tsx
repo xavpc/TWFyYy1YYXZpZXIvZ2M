@@ -1,12 +1,15 @@
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { ThemeProvider } from '@/components/theme-provider'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 
 import './globals.css'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { FloatingTrigger } from '@/components/floating-trigger'
+
+
 
 export default async function RootLayout({
   children,
@@ -33,9 +36,12 @@ export default async function RootLayout({
             <NextIntlClientProvider messages={messages}>
               {/* Show Sidebar unless on the Login Page */}
               <AppSidebar />
-              <main className='relative w-full'>
-                {children}
-              </main>
+              <SidebarInset>
+                <FloatingTrigger />
+                <main className="relative w-full pl-7">
+                  {children}
+                </main>
+              </SidebarInset>
             </NextIntlClientProvider>
           </SidebarProvider>
         </ThemeProvider>

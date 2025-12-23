@@ -24,7 +24,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarTrigger, 
+  
 } from '@/components/ui/sidebar'
+
 import Link from 'next/link'
 import {
   DropdownMenu,
@@ -84,10 +87,16 @@ export function AppSidebar() {
   ]
 
   return (
+    <>
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t('Title')}</SidebarGroupLabel>
+        <SidebarGroupLabel>
+          <div className="flex w-full items-center justify-between">
+            <span>{t('Title')}</span>
+            <SidebarTrigger />
+          </div>
+        </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className='mt-5'>
               {items.map((item) => {
@@ -145,5 +154,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+    </>
   )
 }
