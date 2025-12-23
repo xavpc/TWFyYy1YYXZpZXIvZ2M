@@ -69,29 +69,30 @@ const SessionViewer = (): JSX.Element => {
       </div>
 
       {/* Main Content */}
-      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-auto' style={{ height: 'calc(100vh - 132px)' }}>
+      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden'>
         {/* Left Panel */}
-        <div className='lg:col-span-1 flex flex-col overflow-auto'>
-          <div className='bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col h-full'>
-            <div className='p-4 border-b border-gray-700'>
-              <h3 className='font-semibold text-blue-400 text-lg'>
-                {devsim('Session Information')}
-              </h3>
-            </div>
-            
-            {/* Device Selection using matching UI style */}
-            <div className='p-4'>
-              <DeviceCombobox 
-                devices={devices} 
-                devicesLoading={devicesLoading}
-                onSelectDevice={handleDeviceSelect}
-                selectedDevice={selectedDevice}
-              />
-            </div>
-            
-            {/* Device Information - With Your Preferred Theme */}
+        <div className='lg:col-span-1 bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-hidden'>
+          <div className='p-4 border-b border-gray-700'>
+            <h3 className='font-semibold text-blue-400 text-lg'>
+              {devsim('Session Information')}
+            </h3>
+          </div>
+          
+          {/* Device Selection */}
+          <div className='p-4'>
+            <DeviceCombobox 
+              devices={devices} 
+              devicesLoading={devicesLoading}
+              onSelectDevice={handleDeviceSelect}
+              selectedDevice={selectedDevice}
+            />
+          </div>
+          
+          {/* Scrollable content area */}
+          <div className='px-4 pb-4 overflow-y-auto flex-1'>
             {selectedDevice && (
-              <div className='px-4 pb-4'>
+              <>
+                {/* Device Information */}
                 <div className='mb-4 bg-gray-900 rounded-md p-3 border border-gray-700'>
                   <h4 className='text-white text-sm font-medium mb-2'>
                     Device Information
@@ -138,7 +139,7 @@ const SessionViewer = (): JSX.Element => {
                   </div>
                 </div>
 
-                {/* Employee Information - With Your Preferred Theme */}
+                {/* Employee Information */}
                 {selectedDevice.employee && (
                   <div className='mb-4 bg-gray-900 rounded-md p-3 border border-gray-700'>
                     <h4 className='text-white text-sm font-medium mb-2'>
@@ -180,7 +181,7 @@ const SessionViewer = (): JSX.Element => {
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
