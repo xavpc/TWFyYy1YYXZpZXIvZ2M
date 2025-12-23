@@ -787,7 +787,7 @@ const ClientSideMap = ({
         const isNearCollectionPoint = hasEndMarker && endMarker && calculateDistance(
           endMarker.lat, endMarker.lng, 
           point.latitude, point.longitude
-        ) < 0.01; // 100 meters threshold (0.03 km)
+        ) < 0.02; // 100 meters threshold (0.03 km)
         
         // Check if this point has been collected
         const isCollected = collectedPointsMap[point.collection_point_id] === true;
