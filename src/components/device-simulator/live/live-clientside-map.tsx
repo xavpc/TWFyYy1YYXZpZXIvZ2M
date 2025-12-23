@@ -5,18 +5,11 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { CollectionPoints } from '@/types/collection-points'
 import { Device } from '@/types/device'
-import { createTrashCanIcon, routeEndIcon, routeStartIcon } from '../client-side-map'
+import { createTrashCanIcon, endIcon, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
 // Create a vehicle icon
-const defaultVehicleIcon = new L.DivIcon({
-  html: `<div style="background-color: #3B82F6; border: 2px solid white; border-radius: 50%; width: 16px; height: 16px;"></div>`,
-  className: 'vehicle-marker',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-  popupAnchor: [0, -8]
-});
 
 interface LiveClientSideMapProps {
   routeCoordinates: Array<{
@@ -112,7 +105,6 @@ const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({
     }
   });
   
-  // Rest of the component remains the same
   useEffect(() => {
     mapRef.current = map;
     
@@ -120,20 +112,27 @@ const DeviceLocationTracker: React.FC<DeviceLocationTrackerProps> = ({
     if (map && map.getContainer()) {
       if (isActive) {
         map.getContainer().style.cursor = 'crosshair';
+        map.getContainer().classList.add('crosshair-cursor'); // Add this class
       } else {
         map.getContainer().style.cursor = '';
+        map.getContainer().classList.remove('crosshair-cursor'); // Remove when inactive
       }
     }
     
     return () => {
       if (map && map.getContainer()) {
         map.getContainer().style.cursor = '';
+        map.getContainer().classList.remove('crosshair-cursor'); // Clean up
       }
     };
   }, [map, isActive]);
   
   return null;
 }
+
+
+
+
 
 const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({ 
   routeCoordinates, 
@@ -151,6 +150,24 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const [intervalSeconds, setIntervalSeconds] = useState(1);
   const [locationAddingEnabled, setLocationAddingEnabled] = useState(true);
   const lastTimestampRef = useRef<string | null>(null);
+
+
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = `
+      .leaflet-container.crosshair-cursor,
+      .leaflet-container.crosshair-cursor .leaflet-interactive,
+      .leaflet-container.crosshair-cursor .maintain-crosshair {
+        cursor: crosshair !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    // Clean up
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
   
   useEffect(() => {
     if (sessionId) {
@@ -162,6 +179,8 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       setDeviceLocations([]);
     }
   }, [sessionId]);
+
+  
 
   const handleAddDeviceLocation = async (location: {
     latitude: number;
@@ -323,7 +342,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
             opacity={0.4}   
             lineJoin="round"
             lineCap="round"
-            className="preset-route-outline"
+            className="preset-route-outline maintain-crosshair" // Added a class here
           />
         )}
                 
@@ -382,25 +401,39 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         ))}
         
         {/* Device locations */}
-        {deviceLocations.map((location, index) => (
-          <Marker 
-            key={location.id || `device-location-${index}`}
-            position={[location.latitude, location.longitude]} 
-            icon={defaultVehicleIcon}
-          >
-            <Popup>
-              <div className="text-sm">
-                <p className="font-bold">Device Location</p>
-                <p className="mt-1">
-                  <span className="font-semibold">Timestamp:</span> {formatTimestampForDisplay(location.timestamp)}
-                </p>
-                <p className="mt-1">
-                  <span className="font-semibold">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {deviceLocations.map((location, index) => {
+          // Determine which icon to use based on position
+          let iconToUse = midIcon;
+          let locationLabel = "Device Location";
+          
+          if (index === 0) {
+            iconToUse = startIcon;
+            locationLabel = "Start Location";
+          } else if (index === deviceLocations.length - 1) {
+            iconToUse = endIcon;
+            locationLabel = "Current Location";
+          }
+          
+          return (
+            <Marker 
+              key={location.id || `device-location-${index}`}
+              position={[location.latitude, location.longitude]} 
+              icon={iconToUse}
+            >
+              <Popup>
+                <div className="text-sm">
+                  <p className="font-bold">{locationLabel}</p>
+                  <p className="mt-1">
+                    <span className="font-semibold">Timestamp:</span> {formatTimestampForDisplay(location.timestamp)}
+                  </p>
+                  <p className="mt-1">
+                    <span className="font-semibold">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
         
         {/* Device location tracker */}
         {sessionId && (

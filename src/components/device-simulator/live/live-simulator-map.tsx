@@ -287,7 +287,7 @@ const LiveSimulatorMap = (): JSX.Element => {
                 {sessionEnding ? (
                     <>
                     <Loader2 size={16} className='animate-spin mr-2' />
-                    {devsim('Ending...')}
+                    {devsim('Ending')}
                     </>
                 ) : (
                     devsim('End Session')

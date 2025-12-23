@@ -138,7 +138,6 @@
     "Device Simulator": "Device Simulator",
     "Select a Device": "Select a Device",
     "End Session": "End Session",
-    "Ending": "Ending",
     "Live Map": "Live Map",
     "Settings": "Settings",
     "Loading map data": "Loading map data",
@@ -149,7 +148,8 @@
     "Live Simulation": "Live Simulation",
     "Device": "Device",
     "Route": "Route",
-    "Loading": "Loading..."
+    "Loading": "Loading...",
+    "Ending": "Ending..."
   },
   "Session Viewer": {
     "Session Viewer": "Session Viewer",
