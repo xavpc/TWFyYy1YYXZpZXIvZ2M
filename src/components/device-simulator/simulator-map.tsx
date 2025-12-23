@@ -437,7 +437,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
         try {
           let totalDistance = 0
           let totalDuration = 0
-
+//asdasd
           // Calculate route info for each segment
           for (let i = 0; i < markers.length - 1; i++) {
             const startPoint = markers[i]
