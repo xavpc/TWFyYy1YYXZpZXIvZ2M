@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap, Circle } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
@@ -9,6 +9,7 @@ import 'leaflet-easybutton';
 import 'leaflet-easybutton/src/easy-button.css';
 import MapButtons from './map-buttons'
 import toast from 'react-hot-toast'
+import { calculateBearing, midIcon, startIcon, createCarIcon } from './live/live-clientside-map'
 
 
 // Custom CSS for dark theme popups
@@ -46,23 +47,6 @@ export const darkPopupStyle = `
 `;
 
 // Fix the marker icons - create actual different colored icons
-export const startIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-export const midIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
 
 export const endIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -758,10 +742,42 @@ const ClientSideMap = ({
 
 
   
-  const getMarkerIcon = (index: number, total: number) => {
-    if (index === 0) return startIcon;
-    if (index === total - 1) return endIcon; 
-    return midIcon;
+  const getMarkerIcon = (index: number, total: number, markers: Position[]) => {
+    if (total === 1) {
+      return createCarIcon(0, 13); 
+    }
+    
+    
+    if (index === 0) {  
+      // Calculate bearing from the first marker to the second marker
+      const bearing = calculateBearing(
+        markers[index].lat,
+        markers[index].lng,
+        markers[index + 1]?.lat,
+        markers[index + 1]?.lng
+      );
+      return startIcon(bearing);
+    }
+  
+    if (index === total - 1) {
+      // Calculate bearing for the car icon (end marker)
+      const bearing = calculateBearing(
+        markers[index - 1]?.lat,
+        markers[index - 1]?.lng,
+        markers[index]?.lat,
+        markers[index]?.lng
+      );
+      return createCarIcon(bearing, 13); // Replace endIcon with car icon
+    }
+  
+    // Calculate bearing for intermediate markers
+    const bearing = calculateBearing(
+      markers[index - 1]?.lat,
+      markers[index - 1]?.lng,
+      markers[index]?.lat,
+      markers[index]?.lng
+    );
+    return midIcon(bearing);
   };
   
   return (
@@ -973,10 +989,10 @@ const ClientSideMap = ({
       
       {/* Draw markers for user-clicked points (device locations) */}
       {markers.map((position, index) => (
-        <Marker 
-          key={`marker-${index}-${position.lat}-${position.lng}`}
-          position={[position.lat, position.lng]} 
-          icon={getMarkerIcon(index, markers.length)}
+      <Marker
+        key={`marker-${index}-${position.lat}-${position.lng}`}
+        position={[position.lat, position.lng]}
+        icon={getMarkerIcon(index, markers.length, markers)}
           // Add this eventHandlers prop to disable click events
           eventHandlers={{
             click: (e) => {
@@ -1043,8 +1059,20 @@ const ClientSideMap = ({
           </Popup>
         )}
         </Marker>
+        
       ))}
-  
+      {markers.length > 0 && (
+        <Circle
+          center={[markers[markers.length - 1].lat, markers[markers.length - 1].lng]} // Center at the last marker
+          radius={20} // 20 meters
+          pathOptions={{
+            color: '#3b82f6', // Blue color for the circle
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2, // Slightly transparent
+          }}
+        />
+      )}
+        
       {/* Legend for the map */}
       {showLegend && (
         <div className="absolute bottom-6 right-2 bg-black bg-opacity-80 text-white p-3 rounded-md text-xs z-[9999] pointer-events-auto shadow-lg">

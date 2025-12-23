@@ -5,13 +5,13 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { CollectionPoints } from '@/types/collection-points'
 import { Device } from '@/types/device'
-import { createTrashCanIcon, darkPopupStyle, endIcon, MapCenterUpdater, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
+import { createTrashCanIcon, darkPopupStyle, MapCenterUpdater, routeEndIcon, routeStartIcon } from '../client-side-map'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import MapButtons from '../map-buttons'
 import { Fullscreen } from 'lucide-react'
 import { DeviceRoute } from '@/types/device-route'
-
+import { Circle } from 'react-leaflet';
 interface LiveClientSideMapProps {
   routeCoordinates: Array<{
     route_coordinates_id: string;
@@ -46,7 +46,92 @@ interface DeviceLocation {
   timestamp: string;
 }
 
-export const createGlowingGreenDot = () => {
+//arrow start and mid
+// export const startIcon = (bearing: number) => {
+//   return L.divIcon({
+//     className: 'custom-start-icon',
+//     html: `
+//       <div 
+//         style="
+//           position: relative;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//           transform: rotate(${bearing - 90}deg); /* Rotate to face forward */
+//           transform-origin: center;
+//         "
+//       >
+//         <div 
+//           style="
+//             width: 16px; /* Slightly smaller length for the arrow line */
+//             height: 3px; /* Slightly thinner line */
+//             background-color: #22c55e; /* Green color for the arrow */
+//             position: relative;
+//           "
+//         ></div>
+//         <div 
+//           style="
+//             width: 0;
+//             height: 0;
+//             border-top: 5px solid transparent; /* Top side of the arrowhead */
+//             border-bottom: 5px solid transparent; /* Bottom side of the arrowhead */
+//             border-left: 6px solid #22c55e; /* Arrowhead color */
+//             position: absolute;
+//             right: -3px; /* Position the arrowhead at the end of the line */
+//           "
+//         ></div>
+//       </div>
+//     `,
+//     iconSize: [18, 6], // Adjusted size
+//     iconAnchor: [9, 3], // Anchor the arrow at its center
+//   });
+// };
+
+// export const midIcon = (bearing: number) => {
+//   return L.divIcon({
+//     className: 'custom-mid-icon',
+//     html: `
+//       <div 
+//         style="
+//           position: relative;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//           transform: rotate(${bearing - 90}deg); /* Rotate to face forward */
+//           transform-origin: center;
+//         "
+//       >
+//         <div 
+//           style="
+//             width: 16px; /* Slightly smaller length for the arrow line */
+//             height: 3px; /* Slightly thinner line */
+//             background-color: #3b82f6; /* Blue color for the arrow */
+//             position: relative;
+//           "
+//         ></div>
+//         <div 
+//           style="
+//             width: 0;
+//             height: 0;
+//             border-top: 5px solid transparent; /* Top side of the arrowhead */
+//             border-bottom: 5px solid transparent; /* Bottom side of the arrowhead */
+//             border-left: 6px solid #3b82f6; /* Arrowhead color */
+//             position: absolute;
+//             right: -3px; /* Position the arrowhead at the end of the line */
+//           "
+//         ></div>
+//       </div>
+//     `,
+//     iconSize: [18, 6], // Adjusted size
+//     iconAnchor: [9, 3], // Anchor the arrow at its center
+//   });
+// };
+
+
+
+//dot start and mid
+
+export const startIcon = (bearing: number) => {
   return L.divIcon({
     className: 'custom-start-icon',
     html: `
@@ -66,7 +151,7 @@ export const createGlowingGreenDot = () => {
   });
 };
 
-export const createGlowingBlueDot = () => {
+export const midIcon = (bearing: number) => {
   return L.divIcon({
     className: 'custom-mid-icon',
     html: `
@@ -85,69 +170,40 @@ export const createGlowingBlueDot = () => {
     iconAnchor: [5, 5], // Center the icon
   });
 };
+
 export const createCarIcon = (bearing: number, mapZoom: number) => {
-  // Function to convert meters to pixels based on zoom level
-  const metersToPixels = (meters: number, zoom: number) => {
-    const earthCircumference = 40075017; // Earth's circumference in meters
-    const mapWidthInPixels = 256 * Math.pow(2, zoom); // Map width in pixels at the given zoom level
-    return (meters / earthCircumference) * mapWidthInPixels;
-  };
-
-  const glowSize = metersToPixels(40, mapZoom); // 40 meters (20m radius * 2)
-
   return L.divIcon({
     className: 'custom-car-icon',
     html: `
       <div 
         style="
           position: relative;
-          width: ${glowSize}px; 
-          height: ${glowSize}px; 
-          display: flex; 
-          align-items: center; 
+          display: flex;
+          align-items: center;
           justify-content: center;
         "
       >
-        <!-- Glowing Circle -->
-        <div 
+        <img 
+          src="/images/garbage-truck-icon.png" 
+          alt="Garbage Truck Icon" 
           style="
-            position: absolute;
-            width: 100%; 
-            height: 100%; 
-            background-color: rgba(0, 123, 255, 0.2);
-            border: 2px solid rgba(0, 123, 255, 0.3);
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-            pointer-events: none;
-          "
-        ></div>
-        <!-- Garbage Truck Icon -->
-        <div
-          style="
-            position: relative;
+            width: 50px; 
+            height: 50px; 
+            transform: rotate(${bearing}deg);
+            transform-origin: center;
             z-index: 1;
           "
-        >
-          <img 
-            src="/images/garbage-truck-icon.png" 
-            alt="Garbage Truck Icon" 
-            style="
-              width: 40px; 
-              height: 40px; 
-              transform: rotate(${bearing}deg); 
-              transform-origin: center;
-            "
-          />
-        </div>
+        />
       </div>
     `,
-    iconSize: [glowSize, glowSize],
-    iconAnchor: [glowSize / 2, glowSize / 2], // Center the icon
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
   });
 };
 
 
-const calculateBearing = (
+
+export const calculateBearing = (
   lat1: number, 
   lon1: number, 
   lat2: number, 
@@ -851,64 +907,83 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         
         {/* Device locations */}
         {deviceLocations.map((location, index) => {
-  let iconToUse;
-  let locationLabel = "Device Location";
+          let iconToUse;
+          let locationLabel = "Device Location";
 
-  // Calculate bearing for current location
-  let bearing = 0;
-  if (index < deviceLocations.length - 1) {
-    // Calculate bearing to next location
-    bearing = calculateBearing(
-      location.latitude,
-      location.longitude,
-      deviceLocations[index + 1].latitude,
-      deviceLocations[index + 1].longitude
-    );
-  } else if (index > 0) {
-    // For last location, use bearing from previous location
-    bearing = calculateBearing(
-      deviceLocations[index - 1].latitude,
-      deviceLocations[index - 1].longitude,
-      location.latitude,
-      location.longitude
-    );
-  }
+          // Calculate bearing for current location
+          let bearing = 0;
+          if (index < deviceLocations.length - 1) {
+            // Calculate bearing to next location
+            bearing = calculateBearing(
+              location.latitude,
+              location.longitude,
+              deviceLocations[index + 1].latitude,
+              deviceLocations[index + 1].longitude
+            );
+          } else if (index > 0) {
+            // For last location, use bearing from previous location
+            bearing = calculateBearing(
+              deviceLocations[index - 1].latitude,
+              deviceLocations[index - 1].longitude,
+              location.latitude,
+              location.longitude
+            );
+          }
 
-  if (index === 0) {
-    iconToUse = createGlowingGreenDot();
-    locationLabel = "Start Location";
-  } else if (index === deviceLocations.length - 1) {
-    iconToUse = createCarIcon(bearing, 13); // Use calculated bearing
-    locationLabel = "Current Location";
-  } else {
-    iconToUse = createGlowingBlueDot();
-    locationLabel = "Device Location";
-  }
+          if (index === 0 && deviceLocations.length === 1) {
+            // If it's the only location, use the car icon
+            iconToUse = createCarIcon(bearing, 13);
+            locationLabel = "Current Location";
+          } else if (index === 0) {
+            iconToUse = startIcon(bearing); // Pass bearing to startIcon
+            locationLabel = "Start Location";
+          } else if (index === deviceLocations.length - 1) {
+            iconToUse = createCarIcon(bearing, 13); // Use calculated bearing
+            locationLabel = "Current Location";
+          } else {
+            iconToUse = midIcon(bearing); // Pass bearing to midIcon
+            locationLabel = "Device Location";
+          }
 
-  return (
-    <Marker 
-      key={location.id || `device-location-${index}`}
-      position={[location.latitude, location.longitude]} 
-      icon={iconToUse}
-    >
-      <Popup>
-        <div className="text-sm">
-          <p className="font-bold">{locationLabel}</p>
-          <p className="mt-1">
-            <span className="font-semibold">Timestamp:</span> {formatTimestampForDisplay(location.timestamp)}
-          </p>
-          <p className="mt-1">
-            <span className="font-semibold">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-          </p>
-          <p className="mt-1">
-            <span className="font-semibold">Bearing:</span> {bearing.toFixed(2)}°
-          </p>
-        </div>
-      </Popup>
-    </Marker>
-  );
-})}
-        
+          return (
+            <React.Fragment key={location.id || `device-location-${index}`}>
+              <Marker 
+                position={[location.latitude, location.longitude]} 
+                icon={iconToUse}
+              >
+                <Popup>
+                  <div className="text-sm">
+                    <p className="font-bold">{locationLabel}</p>
+                    <p className="mt-1">
+                      <span className="font-semibold">Timestamp:</span> {formatTimestampForDisplay(location.timestamp)}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold">Bearing:</span> {bearing.toFixed(2)}°
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+
+            {/* Add a 20-meter radius circle around the current location */}
+              {index === deviceLocations.length - 1 && (
+                <Circle
+                  center={[location.latitude, location.longitude]} // Center at the car's current location
+                  radius={20} // 20 meters
+                  pathOptions={{
+                    color: '#3b82f6', // Blue color for the circle
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.2, // Slightly transparent
+                  }}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
+
+
         {/* Device location tracker */}
         {sessionId && (
           <DeviceLocationTracker 

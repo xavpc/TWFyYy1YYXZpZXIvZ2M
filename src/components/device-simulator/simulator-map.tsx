@@ -431,50 +431,50 @@ const DeviceSimulatorMap = (): JSX.Element => {
   }
 
   // Fetch route information when markers change
-  useEffect(() => {
-    const fetchRouteInfo = async () => {
-      if (markers.length >= 2) {
-        try {
-          let totalDistance = 0
-          let totalDuration = 0
-//asdasd
-          // Calculate route info for each segment
-          for (let i = 0; i < markers.length - 1; i++) {
-            const startPoint = markers[i]
-            const endPoint = markers[i + 1]
+//   useEffect(() => {
+//     const fetchRouteInfo = async () => {
+//       if (markers.length >= 2) {
+//         try {
+//           let totalDistance = 0
+//           let totalDuration = 0
+// //asdasd
+//           // Calculate route info for each segment
+//           for (let i = 0; i < markers.length - 1; i++) {
+//             const startPoint = markers[i]
+//             const endPoint = markers[i + 1]
 
-            // Build the URL with query parameters
-            const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`
+//             // Build the URL with query parameters
+//             const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`
 
-            const response = await axios.get(routeUrl)
+//             const response = await axios.get(routeUrl)
 
-            if (
-              response.data &&
-              response.data.routes &&
-              response.data.routes.length > 0
-            ) {
-              const route = response.data.routes[0]
-              totalDistance += route.distance
-              totalDuration += route.duration
-            }
-          }
+//             if (
+//               response.data &&
+//               response.data.routes &&
+//               response.data.routes.length > 0
+//             ) {
+//               const route = response.data.routes[0]
+//               totalDistance += route.distance
+//               totalDuration += route.duration
+//             }
+//           }
 
-          setRouteInfo({
-            distance: totalDistance,
-            duration: totalDuration,
-          })
-          console.log('Route info updated, total distance:', totalDistance)
-        } catch (error) {
-          console.error('Error fetching route info:', error)
-        }
-      } else {
-        // Reset route info when we have fewer than 2 markers
-        setRouteInfo({ distance: null, duration: null })
-      }
-    }
+//           setRouteInfo({
+//             distance: totalDistance,
+//             duration: totalDuration,
+//           })
+//           console.log('Route info updated, total distance:', totalDistance)
+//         } catch (error) {
+//           console.error('Error fetching route info:', error)
+//         }
+//       } else {
+//         // Reset route info when we have fewer than 2 markers
+//         setRouteInfo({ distance: null, duration: null })
+//       }
+//     }
 
-    fetchRouteInfo()
-  }, [markers])
+//     fetchRouteInfo()
+//   }, [markers])
 
   // Format the session start time for display
   const formatTime = (timeString: string) => {

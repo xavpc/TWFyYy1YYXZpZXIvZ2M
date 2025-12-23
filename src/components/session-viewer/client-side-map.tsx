@@ -27,7 +27,7 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
     return (meters / earthCircumference) * mapWidthInPixels;
   };
 
-  const glowSize = metersToPixels(20, mapZoom); // 20 meters radius in pixels
+  const glowSize = metersToPixels(40, mapZoom); // 20 meters radius in pixels
 
   return L.divIcon({
     className: 'custom-car-icon',
