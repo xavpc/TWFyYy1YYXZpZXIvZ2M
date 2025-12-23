@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CenterCoordinates } from '@/types/center-coordinates'
+
 interface OSMMapProps {
   route_id?: string
   route_name: string
@@ -13,14 +14,14 @@ interface OSMMapProps {
 const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
-  const markersRef = useRef<L.Marker[]>([])
+  const collectionPointsMarkerRef = useRef<L.Marker[]>([])
   const routesRef = useRef<L.Polyline[]>([]) // Store drawn routes
-  const [clickCoords, setClickCoords] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [center, setCenter] = useState<CenterCoordinates>({
     latitude: 10.3157,
     longitude: 123.8854,
   })
+  const [clickCoords, setClickCoords] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const t = useTranslations('Route')
   const router = useRouter()
 
@@ -59,7 +60,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       map.on('click', handleMapClick)
 
       return () => {
-        markersRef.current.forEach((marker) => marker.remove())
+        collectionPointsMarkerRef.current.forEach((marker) => marker.remove())
         routesRef.current.forEach((route) => route.remove()) // Remove drawn routes
         map.remove()
         mapInstanceRef.current = null
@@ -88,13 +89,13 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       }),
     }).addTo(map)
 
-    markersRef.current.push(marker)
+    collectionPointsMarkerRef.current.push(marker)
     marker.on('click', () => handleDeleteMarker(marker))
   }
 
   const handleDeleteMarker = (marker: L.Marker) => {
     marker.remove()
-    markersRef.current = markersRef.current.filter((m) => m !== marker)
+    collectionPointsMarkerRef.current = collectionPointsMarkerRef.current.filter((m) => m !== marker)
   }
 
   const fetchCenterCoordinates = async () => {
@@ -113,10 +114,14 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       const { data } = await response.json()
-      setCenter({
+      const newCenter = {
         latitude: parseFloat(data.center_latitude),
         longitude: parseFloat(data.center_longitude),
-      })
+      }
+      setCenter(newCenter)
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setView([newCenter.latitude, newCenter.longitude], 15)
+      }
       console.log(`route data`, data)
     } catch (error) {
       console.error('Error fetching center coordinates:', error)
@@ -130,7 +135,6 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
     setIsLoading(true)
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-    const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving/'
 
     try {
       const response = await fetch(
@@ -143,22 +147,13 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       const sortedCoordinates = data.sort(
         (a: any, b: any) => a.sequence - b.sequence
       )
-      const waypoints = sortedCoordinates
-        .map((coord: any) => `${coord.longitude},${coord.latitude}`)
-        .join(';')
-
-      const osrmResponse = await fetch(
-        `${OSRM_BASE_URL}${waypoints}?overview=full&geometries=geojson`
-      )
-      const osrmData = await osrmResponse.json()
-
-      if (!osrmData.routes?.length)
-        throw new Error('OSRM did not return a valid route')
-
-      const routeCoordinates = osrmData.routes[0].geometry.coordinates.map(
-        ([lng, lat]: [number, number]) => [lat, lng]
+      
+      // Create array of coordinates for the polyline
+      const routeCoordinates = sortedCoordinates.map(
+        (coord: any) => [parseFloat(coord.latitude), parseFloat(coord.longitude)]
       )
 
+      // Draw the polyline directly with the coordinates
       const route = L.polyline(routeCoordinates, {
         color: 'blue',
         weight: 3,
@@ -166,57 +161,43 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       }).addTo(mapInstanceRef.current as L.Map)
       routesRef.current.push(route)
 
-      sortedCoordinates.forEach(({ latitude, longitude, sequence }: any) => {
-        const sequenceIcon = L.divIcon({
-          html: `<div style="
-            background-color: white;
-            border: 2px solid blue;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            line-height: 24px;
-            color: black;">
-            ${sequence}
-          </div>`,
-          className: 'sequence-label',
-          iconSize: [20, 20],
-          iconAnchor: [10, -10],
-        })
-
-        const markerIcon = L.icon({
-          iconUrl:
-            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      // Add only start marker (blue)
+      const startPoint = routeCoordinates[0]
+      L.marker(startPoint, {
+        icon: L.icon({
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
         })
+      }).addTo(mapInstanceRef.current!)
 
-        L.marker([parseFloat(latitude), parseFloat(longitude)], {
-          icon: sequenceIcon,
-        }).addTo(mapInstanceRef.current!)
-        L.marker([parseFloat(latitude), parseFloat(longitude)], {
-          icon: markerIcon,
-        }).addTo(mapInstanceRef.current!)
+      // Add only end marker (red)
+      const endPoint = routeCoordinates[routeCoordinates.length - 1]
+      const redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
       })
+      
+      L.marker(endPoint, { icon: redIcon }).addTo(mapInstanceRef.current!)
     } catch (error) {
       console.error('Error fetching route:', error)
     } finally {
       setIsLoading(false)
     }
   }
-
   // ^ ADD COLLECTION
   const handleCreateCollection = async () => {
-    if (!route_id || markersRef.current.length === 0) return
+    if (!route_id || collectionPointsMarkerRef.current.length === 0) return
 
     setIsLoading(true)
 
     try {
-      for (let index = 0; index < markersRef.current.length; index++) {
-        const marker = markersRef.current[index]
+      for (let index = 0; index < collectionPointsMarkerRef.current.length; index++) {
+        const marker = collectionPointsMarkerRef.current[index]
         const { lat, lng } = marker.getLatLng()
 
         const response = await fetch(
