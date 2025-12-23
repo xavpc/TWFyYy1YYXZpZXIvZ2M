@@ -1,10 +1,14 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
 import { CollectionPoints } from '@/types/collection-points'
+import 'leaflet-easybutton';
+import 'leaflet-easybutton/src/easy-button.css';
+import MapButtons from './map-buttons'
+
 
 // Custom CSS for dark theme popups
 const darkPopupStyle = `
@@ -35,6 +39,8 @@ const darkPopupStyle = `
   }
   .custom-trash-icon {
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
+
+
 }
 `;
 
@@ -158,6 +164,7 @@ interface MapProps {
   selectedDevice?: Device | null;
 }
 
+
 const createTrashCanIcon = (isCollected: boolean) => {
   // Create a custom divIcon with an embedded SVG trash can
   return L.divIcon({
@@ -278,6 +285,8 @@ const MarkerManager = ({
     }
   });
 
+  
+  
   // Add style to head
   useEffect(() => {
     const styleElement = document.createElement('style');
@@ -329,6 +338,8 @@ const ClientSideMap = ({
   const [collectedPointsMap, setCollectedPointsMap] = useState<{[key: string]: boolean}>({});
   const [isCollecting, setIsCollecting] = useState<{[key: string]: boolean}>({});
   const [isAnyPointCollecting, setIsAnyPointCollecting] = useState<boolean>(false);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const mapContainerRef = useRef(null);
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -338,14 +349,92 @@ const ClientSideMap = ({
   }, []);
   // Update center when selectedRoute changes
 
-    // Reset markers when session becomes inactive
-    useEffect(() => {
-      if (!sessionActive) {
-        setPositions([]);
-        setCollectedPointsMap({});
-        setIsCollecting({});
+  const toggleFullScreen = useCallback((e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsFullScreen(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    // Find the map container element safely
+    const mapElement = document.querySelector('.leaflet-container');
+    if (!mapElement) return; // Exit if not found
+    
+    const mapContainer = mapElement.parentElement;
+    if (!mapContainer) return; // Exit if parent not found
+    
+    if (isFullScreen) {
+      // Store original styles
+      const originalPosition = mapContainer.style.position;
+      const originalZIndex = mapContainer.style.zIndex;
+      const originalWidth = mapContainer.style.width;
+      const originalHeight = mapContainer.style.height;
+      const originalTop = mapContainer.style.top;
+      const originalLeft = mapContainer.style.left;
+      const originalRight = mapContainer.style.right;
+      const originalBottom = mapContainer.style.bottom;
+  
+      // Apply full-screen styles
+      mapContainer.style.position = 'fixed';
+      mapContainer.style.top = '0';
+      mapContainer.style.left = '0';
+      mapContainer.style.right = '0';
+      mapContainer.style.bottom = '0';
+      mapContainer.style.width = '100vw';
+      mapContainer.style.height = '100vh';
+      mapContainer.style.zIndex = '9999';
+  
+      // Store original styles as data attributes
+      mapContainer.dataset.originalPosition = originalPosition;
+      mapContainer.dataset.originalZIndex = originalZIndex;
+      mapContainer.dataset.originalWidth = originalWidth;
+      mapContainer.dataset.originalHeight = originalHeight;
+      mapContainer.dataset.originalTop = originalTop;
+      mapContainer.dataset.originalLeft = originalLeft;
+      mapContainer.dataset.originalRight = originalRight;
+      mapContainer.dataset.originalBottom = originalBottom;
+    } else {
+      // Only restore if we have stored original values
+      if (mapContainer.dataset.originalPosition !== undefined) {
+        // Restore original styles
+        mapContainer.style.position = mapContainer.dataset.originalPosition || '';
+        mapContainer.style.zIndex = mapContainer.dataset.originalZIndex || '';
+        mapContainer.style.width = mapContainer.dataset.originalWidth || '';
+        mapContainer.style.height = mapContainer.dataset.originalHeight || '';
+        mapContainer.style.top = mapContainer.dataset.originalTop || '';
+        mapContainer.style.left = mapContainer.dataset.originalLeft || '';
+        mapContainer.style.right = mapContainer.dataset.originalRight || '';
+        mapContainer.style.bottom = mapContainer.dataset.originalBottom || '';
+        
+        // Clean up dataset
+        delete mapContainer.dataset.originalPosition;
+        delete mapContainer.dataset.originalZIndex;
+        delete mapContainer.dataset.originalWidth;
+        delete mapContainer.dataset.originalHeight;
+        delete mapContainer.dataset.originalTop;
+        delete mapContainer.dataset.originalLeft;
+        delete mapContainer.dataset.originalRight;
+        delete mapContainer.dataset.originalBottom;
       }
-    }, [sessionActive]);
+    }
+    
+    // Trigger a resize event to update the map
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
+  }, [isFullScreen]);
+
+  
+
+  // Reset markers when session becomes inactive
+  useEffect(() => {
+    if (!sessionActive) {
+      setPositions([]);
+      setCollectedPointsMap({});
+      setIsCollecting({});
+    }
+  }, [sessionActive]);
 
   useEffect(() => {
     if (selectedRoute && selectedRoute.center_latitude && selectedRoute.center_longitude) {
@@ -445,6 +534,8 @@ const ClientSideMap = ({
     setEditableTimestamps(initialTimestamps);
   }, [markers.length]);
   
+
+
   // Format date for datetime-local input
   const formatDateTimeForInput = (date: Date) => {
     return date.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:MM
@@ -651,9 +742,15 @@ const ClientSideMap = ({
     <MapContainer 
       center={center} 
       zoom={13} 
+      maxZoom={19}
       style={{ height: '100%', width: '100%' }}
       className="z-0"
     >
+      <MapButtons 
+        setIsFullScreen={setIsFullScreen}
+        setShowLegend={setShowLegend}
+      />
+      
       {routeLoading && (
         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]">
           <div className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center">
@@ -665,9 +762,11 @@ const ClientSideMap = ({
           </div>
         </div>
       )}
+      
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png" 
+        maxZoom={19}
       />
       
       <MarkerManager 
@@ -679,6 +778,7 @@ const ClientSideMap = ({
       />
       
       <MapCenterUpdater selectedRoute={selectedRoute} />
+      
       {/* Display collection points markers */}
       {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
         // Check if we have markers and if the last marker is close enough to this collection point
@@ -752,7 +852,8 @@ const ClientSideMap = ({
           )}
           </Marker>
         );
-      })}      
+      })}
+      
       {/* Draw the preset route coordinates */}
       {presetRoutePath.length > 0 && (
         <Polyline 
@@ -885,32 +986,7 @@ const ClientSideMap = ({
         )}
         </Marker>
       ))}
-
-      {/* TODO: fix button for legend, still has bugs when clicking(generate markers behind it), small hitbox?*/}
-    <div 
-      className="absolute top-2 right-2 z-[9999]"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation(); 
-      }} 
-    >
-      <button 
-        className="bg-gray-800 bg-opacity-80 text-white p-2 rounded-md hover:bg-gray-700 transition-all shadow-md"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation(); // Prevent click from propagating to the map
-          setShowLegend(!showLegend);
-        }}
-        title="Show/Hide Map Legend"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-          <path d="M11.625 16.5a1.875 1.875 0 100-3.75 1.875 1.875 0 000 3.75z" />
-          <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 013.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 013.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875zm6 16.5c.66 0 1.277-.28 1.705-.783l1.44 1.44a.75.75 0 001.06-1.06l-1.44-1.44A2.625 2.625 0 1011.625 18z" clipRule="evenodd" />
-        </svg>
-      </button>
-    </div>
-
-
+  
       {/* Legend for the map - now with adjusted opacity */}
       {showLegend && (
         <div className="absolute bottom-6 right-2 bg-black bg-opacity-80 text-white p-2 rounded-md text-xs z-[9999] pointer-events-auto shadow-lg">
@@ -952,9 +1028,8 @@ const ClientSideMap = ({
             <span>Collected Point</span>
           </div>
         </div>
-      )}    
-
-
+      )}
+  
     </MapContainer>
   )
 }
