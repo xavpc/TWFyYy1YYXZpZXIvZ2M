@@ -13,6 +13,7 @@ import {
   PlaySquare,
   Navigation,
   Satellite,
+  Activity
 } from 'lucide-react'
 import {
   Sidebar,
@@ -79,9 +80,14 @@ export function AppSidebar() {
       icon: PlaySquare,
     },
     {
-      title: t('View Sessions'),
+      title: t('Archived Sessions'),
       url: '/view-sessions',
       icon: Satellite,
+    },
+    {
+      title: t('Live Sessions'),
+      url: '/view-sessions-active',
+      icon: Activity,
     },
   ]
 
