@@ -47,90 +47,6 @@ interface DeviceLocation {
 }
 
 //arrow start and mid
-// export const startIcon = (bearing: number) => {
-//   return L.divIcon({
-//     className: 'custom-start-icon',
-//     html: `
-//       <div 
-//         style="
-//           position: relative;
-//           display: flex;
-//           align-items: center;
-//           justify-content: center;
-//           transform: rotate(${bearing - 90}deg); /* Rotate to face forward */
-//           transform-origin: center;
-//         "
-//       >
-//         <div 
-//           style="
-//             width: 16px; /* Slightly smaller length for the arrow line */
-//             height: 3px; /* Slightly thinner line */
-//             background-color: #22c55e; /* Green color for the arrow */
-//             position: relative;
-//           "
-//         ></div>
-//         <div 
-//           style="
-//             width: 0;
-//             height: 0;
-//             border-top: 5px solid transparent; /* Top side of the arrowhead */
-//             border-bottom: 5px solid transparent; /* Bottom side of the arrowhead */
-//             border-left: 6px solid #22c55e; /* Arrowhead color */
-//             position: absolute;
-//             right: -3px; /* Position the arrowhead at the end of the line */
-//           "
-//         ></div>
-//       </div>
-//     `,
-//     iconSize: [18, 6], // Adjusted size
-//     iconAnchor: [9, 3], // Anchor the arrow at its center
-//   });
-// };
-
-// export const midIcon = (bearing: number) => {
-//   return L.divIcon({
-//     className: 'custom-mid-icon',
-//     html: `
-//       <div 
-//         style="
-//           position: relative;
-//           display: flex;
-//           align-items: center;
-//           justify-content: center;
-//           transform: rotate(${bearing - 90}deg); /* Rotate to face forward */
-//           transform-origin: center;
-//         "
-//       >
-//         <div 
-//           style="
-//             width: 16px; /* Slightly smaller length for the arrow line */
-//             height: 3px; /* Slightly thinner line */
-//             background-color: #3b82f6; /* Blue color for the arrow */
-//             position: relative;
-//           "
-//         ></div>
-//         <div 
-//           style="
-//             width: 0;
-//             height: 0;
-//             border-top: 5px solid transparent; /* Top side of the arrowhead */
-//             border-bottom: 5px solid transparent; /* Bottom side of the arrowhead */
-//             border-left: 6px solid #3b82f6; /* Arrowhead color */
-//             position: absolute;
-//             right: -3px; /* Position the arrowhead at the end of the line */
-//           "
-//         ></div>
-//       </div>
-//     `,
-//     iconSize: [18, 6], // Adjusted size
-//     iconAnchor: [9, 3], // Anchor the arrow at its center
-//   });
-// };
-
-
-
-//dot start and mid
-
 export const startIcon = (bearing: number) => {
   return L.divIcon({
     className: 'custom-start-icon',
@@ -138,16 +54,36 @@ export const startIcon = (bearing: number) => {
       <div 
         style="
           position: relative;
-          width: 10px; 
-          height: 10px; 
-          background-color: #22c55e; /* Solid green */
-          border: 2px solid #166534; /* Darker green border */
-          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: rotate(${bearing - 90}deg); /* Rotate to face forward */
+          transform-origin: center;
         "
-      ></div>
+      >
+        <div 
+          style="
+            width: 16px; /* Slightly smaller length for the arrow line */
+            height: 3px; /* Slightly thinner line */
+            background-color: #22c55e; /* Green color for the arrow */
+            position: relative;
+          "
+        ></div>
+        <div 
+          style="
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent; /* Top side of the arrowhead */
+            border-bottom: 5px solid transparent; /* Bottom side of the arrowhead */
+            border-left: 6px solid #22c55e; /* Arrowhead color */
+            position: absolute;
+            right: -3px; /* Position the arrowhead at the end of the line */
+          "
+        ></div>
+      </div>
     `,
-    iconSize: [10, 10],
-    iconAnchor: [5, 5], // Center the icon
+    iconSize: [18, 6], // Adjusted size
+    iconAnchor: [9, 3], // Anchor the arrow at its center
   });
 };
 
@@ -158,22 +94,88 @@ export const midIcon = (bearing: number) => {
       <div 
         style="
           position: relative;
-          width: 10px; 
-          height: 10px; 
-          background-color: #3b82f6; /* Solid blue */
-          border: 2px solid #1d4ed8; /* Darker blue border */
-          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: rotate(${bearing - 90}deg); /* Rotate to face forward */
+          transform-origin: center;
         "
-      ></div>
+      >
+        <div 
+          style="
+            width: 16px; /* Slightly smaller length for the arrow line */
+            height: 3px; /* Slightly thinner line */
+            background-color: #3b82f6; /* Blue color for the arrow */
+            position: relative;
+          "
+        ></div>
+        <div 
+          style="
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent; /* Top side of the arrowhead */
+            border-bottom: 5px solid transparent; /* Bottom side of the arrowhead */
+            border-left: 6px solid #3b82f6; /* Arrowhead color */
+            position: absolute;
+            right: -3px; /* Position the arrowhead at the end of the line */
+          "
+        ></div>
+      </div>
     `,
-    iconSize: [10, 10],
-    iconAnchor: [5, 5], // Center the icon
+    iconSize: [18, 6], // Adjusted size
+    iconAnchor: [9, 3], // Anchor the arrow at its center
   });
 };
 
+
+
+//dot start and mid
+
+// export const startIcon = (bearing: number) => {
+//   return L.divIcon({
+//     className: 'custom-start-icon',
+//     html: `
+//       <div 
+//         style="
+//           position: relative;
+//           width: 10px; 
+//           height: 10px; 
+//           background-color: #22c55e; /* Solid green */
+//           border: 2px solid #166534; /* Darker green border */
+//           border-radius: 50%;
+//         "
+//       ></div>
+//     `,
+//     iconSize: [10, 10],
+//     iconAnchor: [5, 5], // Center the icon
+//   });
+// };
+
+// export const midIcon = (bearing: number) => {
+//   return L.divIcon({
+//     className: 'custom-mid-icon',
+//     html: `
+//       <div 
+//         style="
+//           position: relative;
+//           width: 10px; 
+//           height: 10px; 
+//           background-color: #3b82f6; /* Solid blue */
+//           border: 2px solid #1d4ed8; /* Darker blue border */
+//           border-radius: 50%;
+//         "
+//       ></div>
+//     `,
+//     iconSize: [10, 10],
+//     iconAnchor: [5, 5], // Center the icon
+//   });
+// };
+
 export const createCarIcon = (bearing: number, mapZoom: number) => {
+  const visualSize = 85; // The visual size of the icon
+
   return L.divIcon({
-    className: 'custom-car-icon',
+    className: 'custom-car-icon pointer-events-auto', // Combined classes in one property
     html: `
       <div 
         style="
@@ -181,27 +183,30 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
           display: flex;
           align-items: center;
           justify-content: center;
+          width: ${visualSize}px;
+          height: ${visualSize}px;
+          background-color: transparent;
+          pointer-events: all;
         "
       >
         <img 
           src="/images/garbage-truck-icon.png" 
           alt="Garbage Truck Icon" 
           style="
-            width: 50px; 
-            height: 50px; 
+            width: ${visualSize}px; 
+            height: ${visualSize}px; 
             transform: rotate(${bearing}deg);
             transform-origin: center;
             z-index: 1;
+            pointer-events: all;
           "
         />
       </div>
     `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [visualSize, visualSize],
+    iconAnchor: [visualSize / 2, visualSize / 2]
   });
 };
-
-
 
 export const calculateBearing = (
   lat1: number, 
@@ -219,8 +224,8 @@ export const calculateBearing = (
   const y = Math.sin(Δλ) * Math.cos(φ2);
   const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   
-  let bearingRad = Math.atan2(y, x);
-  let bearingDeg = toDegrees(bearingRad);
+  const bearingRad = Math.atan2(y, x);
+  const bearingDeg = toDegrees(bearingRad);
   
   return (bearingDeg + 360) % 360;
 };
@@ -971,7 +976,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
               {index === deviceLocations.length - 1 && (
                 <Circle
                   center={[location.latitude, location.longitude]} // Center at the car's current location
-                  radius={20} // 20 meters
+                  radius={20} 
                   pathOptions={{
                     color: '#3b82f6', // Blue color for the circle
                     fillColor: '#3b82f6',

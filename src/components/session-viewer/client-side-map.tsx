@@ -58,9 +58,9 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
           src="/images/garbage-truck-icon.png" 
           alt="Garbage Truck Icon" 
           style="
-            width: 50px; 
-            height: 50px; 
-            transform: rotate(${bearing}deg); 
+            width: 85px; 
+            height: 85px; 
+            transform: rotate(${bearing + 180}deg); /* Reverse the icon */
             transform-origin: center;
           "
         />
@@ -109,8 +109,8 @@ const calculateBearing = (
   const y = Math.sin(Δλ) * Math.cos(φ2);
   const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   
-  let bearingRad = Math.atan2(y, x);
-  let bearingDeg = toDegrees(bearingRad);
+  const bearingRad = Math.atan2(y, x);
+  const bearingDeg = toDegrees(bearingRad);
   
   return (bearingDeg + 360) % 360;
 };

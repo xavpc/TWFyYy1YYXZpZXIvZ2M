@@ -99,6 +99,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>
               <div className='flex w-full items-center justify-between'>
                 <span>{t('Title')}</span>
+                <SidebarTrigger />
               </div>
             </SidebarGroupLabel>
             <SidebarGroupContent>
