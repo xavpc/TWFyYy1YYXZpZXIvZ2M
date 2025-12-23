@@ -117,9 +117,14 @@ const SessionViewer = (): JSX.Element => {
   
 
   const organizeSessionsByMonthAndWeek = (sessions: DeviceSession[]): GroupedSessions => {
+    // Sort sessions by start date (newest first)
+    const sortedSessions = [...sessions].sort((a, b) => {
+      return new Date(b.start).getTime() - new Date(a.start).getTime();
+    });
+    
     const grouped: GroupedSessions = {};
     
-    sessions.forEach(session => {
+    sortedSessions.forEach(session => {
       const date = new Date(session.start);
       const monthYear = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       const weekNum = getWeekOfMonth(date).toString();
@@ -137,7 +142,7 @@ const SessionViewer = (): JSX.Element => {
     
     return grouped;
   }
-  
+
   // Helper to get week of month
   const getWeekOfMonth = (date: Date): number => {
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
@@ -197,84 +202,199 @@ const SessionViewer = (): JSX.Element => {
           </div>
           
           {/* Sessions List - Now the main focus of the left panel */}
-          <div className='px-4 pb-4 flex-1 overflow-y-auto'>
-            {selectedDevice && (
-              <div className='bg-gray-900 rounded-md p-3 border border-gray-700'>
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className='text-white text-sm font-medium'>
-                    Available Sessions
-                  </h4>
-                  <span className='text-xs text-gray-500'>
-                    {deviceSessions.length} session{deviceSessions.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                
-                {sessionsLoading ? (
-                  <div className='flex items-center justify-center py-8'>
-                    <svg className='animate-spin h-6 w-6 text-blue-500' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
-                      <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
-                      <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
-                    </svg>
-                  </div>
-                ) : deviceSessions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <svg className="h-10 w-10 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className='text-gray-400 text-sm'>No sessions found for this device</p>
-                  </div>
-                ) : (
-                  <div className='space-y-4'>
-                    {Object.entries(organizeSessionsByMonthAndWeek(deviceSessions)).map(([monthYear, weeks]) => (
-                      <div key={monthYear} className="space-y-2">
-                        <h5 className="text-sm font-medium text-gray-300 px-1">{monthYear}</h5>
-                        
-                        {Object.entries(weeks).map(([weekNum, sessions]) => (
-                          <div key={`${monthYear}-${weekNum}`} className="space-y-1 mb-3">
-                            <h6 className="text-xs text-gray-500 px-1">Week {weekNum}</h6>
-                            
-                            {sessions.map((session) => (
-                              <div key={session.session_id} className="group mb-1">
-                                <button
-                                  onClick={() => handleSessionSelect(session)}
-                                  className={`w-full block text-left p-3 rounded-t-md border-t border-l border-r transition-colors ${
-                                    selectedSession?.session_id === session.session_id
-                                      ? 'bg-blue-900/30 border-blue-500'
-                                      : 'border-gray-700 hover:bg-gray-800'
-                                  }`}
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-blue-400">
-                                      {new Date(session.start).toLocaleDateString('en-US', { weekday: 'long' })}
-                                    </span>
-                                    <span className="text-xs text-gray-400">
-                                      {new Date(session.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                      {' - '}
-                                      {new Date(session.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </span>
-                                  </div>
-                                </button>
-                                <button 
-                                  onClick={() => openSessionDetail(session)}
-                                  className={`w-full text-center py-1 text-xs rounded-b-md border-b border-l border-r transition-colors ${
-                                    selectedSession?.session_id === session.session_id 
-                                      ? 'bg-blue-900/20 border-blue-500 text-blue-400'
-                                      : 'border-gray-700 bg-gray-900/30 text-gray-500 hover:text-gray-300'
-                                  }`}
-                                >
-                                  View Details
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
+<div className='px-4 pb-4 flex-1 overflow-y-auto'>
+  {selectedDevice && (
+    <div className='space-y-4'>
+      {/* Header with session count moved outside */}
+      <div className="flex justify-between items-center">
+        <h4 className='text-white text-sm font-medium'>
+          Available Sessions
+        </h4>
+        <span className='text-xs text-gray-500'>
+          {deviceSessions.length} session{deviceSessions.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      
+      {/* Today's sessions section */}
+      <div className='bg-gray-900 rounded-md p-3 border border-gray-700'>
+        <h5 className="text-xs font-medium text-blue-400 mb-2">Today's Sessions</h5>
+        {sessionsLoading ? (
+          <div className='flex items-center justify-center py-4'>
+            <svg className='animate-spin h-5 w-5 text-blue-500' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+              <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+              <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+            </svg>
+          </div>
+        ) : (
+          <>
+            {deviceSessions.filter(session => {
+              const sessionDate = new Date(session.start).toLocaleDateString();
+              const today = new Date().toLocaleDateString();
+              return sessionDate === today;
+            }).length > 0 ? (
+              <div className='space-y-2'>
+                {deviceSessions.filter(session => {
+                  const sessionDate = new Date(session.start).toLocaleDateString();
+                  const today = new Date().toLocaleDateString();
+                  return sessionDate === today;
+                }).map((session) => (
+                  <div key={session.session_id} className="group mb-1">
+                    <button
+                      onClick={() => handleSessionSelect(session)}
+                      className={`w-full block text-left p-3 rounded-t-md border-t border-l border-r transition-colors ${
+                        selectedSession?.session_id === session.session_id
+                          ? 'bg-blue-900/30 border-blue-500'
+                          : 'border-gray-700 hover:bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-blue-400">
+                          {new Date(session.start).toLocaleDateString('en-US', { weekday: 'long' })}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(session.start).toLocaleDateString()}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(session.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {' - '}
+                          {new Date(session.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
                       </div>
-                    ))}
+                    </button>
+                    <button 
+                      onClick={() => openSessionDetail(session)}
+                      className={`w-full text-center py-1 text-xs rounded-b-md border-b border-l border-r transition-colors ${
+                        selectedSession?.session_id === session.session_id 
+                          ? 'bg-blue-900/20 border-blue-500 text-blue-400'
+                          : 'border-gray-700 bg-gray-900/30 text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      View Details
+                    </button>
                   </div>
-                )}
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-4 text-center">
+                <p className='text-gray-400 text-sm'>No sessions today</p>
               </div>
             )}
+          </>
+        )}
+      </div>
+      
+      {/* Session filtering */}
+      <div className='bg-gray-900 rounded-md p-3 border border-gray-700'>
+        <h5 className="text-xs font-medium text-blue-400 mb-2">Filter Sessions</h5>
+        <div className="space-y-2">
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">Date</label>
+            <div className="flex">
+              <input 
+                type="date" 
+                className="rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1 w-full"
+                onChange={(e) => {
+                  // TODO: add afiletering here
+                }}
+              />
+            </div>
           </div>
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">Session Duration</label>
+            <select 
+              className="w-full rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1"
+              onChange={(e) => {
+                // TODO: add filterin g here
+              }}
+            >
+              <option value="all">All Sessions</option>
+              <option value="short">Short (&lt; 1 hour)</option>
+              <option value="medium">Medium (1-3 hours)</option>
+              <option value="long">Long (&gt; 3 hours)</option>
+            </select>
+          </div>
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors mt-1">
+            Apply Filters
+          </button>
+        </div>
+      </div>
+      
+      {/* All available sessions */}
+      <div className='bg-gray-900 rounded-md p-3 border border-gray-700'>
+        <h5 className="text-xs font-medium text-blue-400 mb-2">All Sessions</h5>
+        {sessionsLoading ? (
+          <div className='flex items-center justify-center py-8'>
+            <svg className='animate-spin h-6 w-6 text-blue-500' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+              <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+              <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+            </svg>
+          </div>
+        ) : deviceSessions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <svg className="h-10 w-10 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className='text-gray-400 text-sm'>No sessions found for this device</p>
+          </div>
+        ) : (
+          <div className='space-y-4 max-h-80 overflow-y-auto pr-1 custom-scrollbar'>
+            {Object.entries(organizeSessionsByMonthAndWeek(deviceSessions)).map(([monthYear, weeks]) => (
+              <div key={monthYear} className="space-y-2">
+                <h5 className="text-sm font-medium text-gray-300 px-1 sticky top-0 bg-gray-900 py-1 z-10">{monthYear}</h5>
+                
+                {Object.entries(weeks)
+                  // Sort weeks in descending order (newest first)
+                  .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                  .map(([weekNum, sessions]) => (
+                    <div key={`${monthYear}-${weekNum}`} className="space-y-1 mb-3">
+                      <h6 className="text-xs text-gray-500 px-1">Week {weekNum}</h6>
+                      
+                      {sessions.map((session) => (
+                        <div key={session.session_id} className="group mb-1">
+                          <button
+                            onClick={() => handleSessionSelect(session)}
+                            className={`w-full block text-left p-3 rounded-t-md border-t border-l border-r transition-colors ${
+                              selectedSession?.session_id === session.session_id
+                                ? 'bg-blue-900/30 border-blue-500'
+                                : 'border-gray-700 hover:bg-gray-800'
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-blue-400">
+                                {new Date(session.start).toLocaleDateString('en-US', { weekday: 'long' })}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(session.start).toLocaleDateString()}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(session.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                {' - '}
+                                {new Date(session.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              </span>
+                            </div>
+                          </button>
+                          <button 
+                            onClick={() => openSessionDetail(session)}
+                            className={`w-full text-center py-1 text-xs rounded-b-md border-b border-l border-r transition-colors ${
+                              selectedSession?.session_id === session.session_id 
+                                ? 'bg-blue-900/20 border-blue-500 text-blue-400'
+                                : 'border-gray-700 bg-gray-900/30 text-gray-500 hover:text-gray-300'
+                            }`}
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
         </div>
   
         {/* Map Panel */}
