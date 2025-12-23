@@ -9,8 +9,7 @@
     "Username": "Username",
     "SignOut": "Sign Out",
     "Device Simulator": "Device Simulator",
-    "Archived Sessions": "Archived Sessions",
-    "Live Sessions": "Live Sessions"
+    "View Sessions": "View Sessions"
   },
   "Dashboard": {
     "Hello there": "Hello there!",
@@ -35,7 +34,7 @@
     "Complaints": "Complaints",
     "Device Simulator": "Device Simulator",
     "View Sessions": "View Sessions",
-    "Session Viewer": "Archive Sessions"
+    "Session Viewer": "Session Viewer"
   },
   "Pagination": {
     "Next": "Next",
@@ -157,8 +156,7 @@
     "Session Viewer": "Session Viewer",
     "Session Information": "Session Information",
     "Device Selection": "Device Selection",
-    "Sessions": "Sessions",
-    "Live Session":"View Live Sessions"
+    "Sessions": "Sessions"
   },
 
   "Dialog": {

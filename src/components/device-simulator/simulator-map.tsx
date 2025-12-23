@@ -529,46 +529,21 @@ const DeviceSimulatorMap = (): JSX.Element => {
           {/* Live Session Button - Always visible */}
           <button
             onClick={handleStartLiveSession}
-            className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-4 py-2 rounded-md flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
+            className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2'
           >
-            {/* Pulsing background effect */}
-            <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 rounded-md transform scale-90 group-hover:scale-100 transition-all duration-700"></span>
-            
-            {/* Animated thunder icon */}
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 group-hover:animate-pulse"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              xmlns='http://www.w3.org/2000/svg'
+              className='h-5 w-5'
+              viewBox='0 0 20 20'
+              fill='currentColor'
             >
               <path
-                fillRule="evenodd"
-                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                clipRule="evenodd"
+                fillRule='evenodd'
+                d='M10 18a8 8 0 100-16 8 8 0 000 16zm-1-11a1 1 0 112 0v4a1 1 0 11-2 0V7zm1-5a1 1 0 100 2 1 1 0 000-2z'
+                clipRule='evenodd'
               />
             </svg>
-            
-            {/* Text with subtle shimmer on hover */}
-            <span className="relative">
-              {devsim('Live Session')}
-              <span className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 animate-shimmer"></span>
-            </span>
-            
-            {/* Lightning particle effects on hover */}
-            <span className="absolute -right-1 top-1/3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <svg className="h-3 w-3 text-yellow-300 animate-ping" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                />
-              </svg>
-            </span>
-            <span className="absolute -right-2 top-2/3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-              <svg className="h-2 w-2 text-yellow-300 animate-ping animation-delay-200" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                />
-              </svg>
-            </span>
+            {devsim('Live Session')}
           </button>
           
           {/* Session-dependent buttons */}
