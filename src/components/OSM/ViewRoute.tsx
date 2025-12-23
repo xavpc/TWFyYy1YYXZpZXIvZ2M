@@ -38,43 +38,22 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 
+import { Button } from '@/components/ui/button'
+
 import { Trash, MapPin, Ellipsis, Slash } from 'lucide-react' // Import icons
 import { CenterCoordinates } from '@/types/center-coordinates'
+
 interface OSMMapProps {
   route_id?: string
   route_name: string
 }
 
-interface CollectionPoint {
-  id: string
-  latitude: number
-  longitude: number
-  collection_point_name: string
-}
-
-interface Route {
-  route_id: string
-  route_name: string
-  center_latitude: string
-  center_longitude: string
-}
-
-interface DeviceRoute {
-  device_route_id: string
-  day_assigned: string
-  device: {
-    device_id: string
-    device_name: string
-    vehicle_plate_num: string
-    status: string
-  }
-  route: Route
-}
-
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
-import { Devices } from '@/types/devices'
 import { Badge } from '../ui/badge'
+
+import { DeviceRoute } from '@/types/device-route'
+import { CollectionPoints } from '@/types/collection-points'
 
 const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -93,19 +72,20 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isCollectionOpen, setIsCollectionOpen] = useState(false)
   const [isDeviceOpen, setIsDeviceOpen] = useState(false)
-  const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>(
+  const [collectionPoints, setCollectionPoints] = useState<CollectionPoints[]>(
     []
   )
 
   const [showMarkers, setShowMarkers] = useState(true)
   const [showRoutes, setShowRoutes] = useState(true)
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([])
+  const [isDeviceDeleteOpen, setDeviceDeleteOpen] = useState(false)
 
   const router = useRouter()
 
   const t = useTranslations('Route')
   const dialog = useTranslations('Dialog')
-  const device = useTranslations('Device')
+  const deviceTranslate = useTranslations('Device')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -300,7 +280,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
       // Add markers to the map
       data.forEach(
-        ({ latitude, longitude, collection_point_name }: CollectionPoint) => {
+        ({ latitude, longitude, collection_point_name }: CollectionPoints) => {
           const markerIcon = L.icon({
             iconUrl:
               '/images/trash-can-with-cover-from-side-view-svgrepo-com.svg',
@@ -452,7 +432,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
-   //^ DELETE DEVICE BY ID
+  //^ DELETE DEVICE BY ID
   const handleDeleteDeviceById = async (device_route_id: string) => {
     setIsLoading(true) // Start loading
 
@@ -592,10 +572,13 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{device('Device Name')}</TableHead>
-                    <TableHead>{device('Vehicle Plate Number')}</TableHead>
-                    <TableHead>{device('Day Assigned')}</TableHead>
-                    <TableHead>{device('Status')}</TableHead>
+                    <TableHead>{deviceTranslate('Device Name')}</TableHead>
+                    <TableHead>
+                      {deviceTranslate('Vehicle Plate Number')}
+                    </TableHead>
+                    <TableHead>{deviceTranslate('Day Assigned')}</TableHead>
+                    <TableHead>{deviceTranslate('Status')}</TableHead>
+                    <TableHead>{deviceTranslate('Action')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -612,23 +595,32 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                           {route.device?.vehicle_plate_num || 'No Plate'}
                         </TableCell>
                         <TableCell>
-                          {device(route.day_assigned) || 'No Day Assigned'}
+                          {deviceTranslate(route.day_assigned) ||
+                            'No Day Assigned'}
                         </TableCell>
                         <Badge
-                          className={`text-white px-3 text-center my-2 ${
+                          className={`text-white px-3 text-center my-4 ${
                             route.device?.status === 'active'
-                              ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17'
+                              ? 'bg-green-500 hover:bg-green-600 text-xs py-1 w-17'
                               : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17'
                           } `}
                         >
-                          {device(route.device?.status) || 'No Status'}
+                          {deviceTranslate(route.device?.status) || 'No Status'}
                         </Badge>
+                        <TableCell>
+                          <button
+                            onClick={() => setDeviceDeleteOpen(true)}
+                            className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                          >
+                            Delete
+                          </button>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className='text-center'>
-                        {device('No Device Found')}
+                      <TableCell colSpan={5} className='text-center'>
+                        {deviceTranslate('No Device Found')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -693,6 +685,39 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* DELETE DEVICE BY ID */}
+        <div className='relative z-50'>
+          <Dialog open={isDeviceDeleteOpen} onOpenChange={setDeviceDeleteOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{dialog('Sure')}</DialogTitle>
+                <DialogDescription>
+                  <div className='my-5'>{dialog('Delete Paragraph')}</div>
+                </DialogDescription>
+                <div className='flex gap-2 mt-4 items-center justify-center'>
+                  <button
+                    onClick={() =>
+                      deviceRoutes.length > 0 &&
+                      handleDeleteDeviceById(deviceRoutes[0].device_route_id)
+                    }
+                    className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Deleting...' : t('Delete Device')}
+                  </button>
+                  <button
+                    onClick={() => setDeviceDeleteOpen(false)}
+                    className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
+                  >
+                    {dialog('Cancel')}
+                  </button>
+                </div>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </div>
+
         <div className='relative z-50'>
           <Dialog open={isCollectionOpen} onOpenChange={setIsCollectionOpen}>
             <DialogContent>
