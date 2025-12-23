@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
-
+import { CenterCoordinates } from '@/types/center-coordinates'
 interface OSMMapProps {
   route_id?: string
   route_name: string
@@ -17,6 +17,10 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
   const routesRef = useRef<L.Polyline[]>([]) // Store drawn routes
   const [clickCoords, setClickCoords] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [center, setCenter] = useState<CenterCoordinates>({
+    latitude: 10.3157,
+    longitude: 123.8854,
+  })
   const t = useTranslations('Route')
   const router = useRouter()
 
@@ -43,7 +47,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       })
 
       const map = L.map(mapContainerRef.current, {
-        center: [10.3157, 123.8854], // Cebu
+        center: [center.latitude, center.longitude],
         zoom: 15,
       })
 
@@ -109,6 +113,10 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       }
 
       const { data } = await response.json()
+      setCenter({
+        latitude: parseFloat(data.center_latitude),
+        longitude: parseFloat(data.center_longitude),
+      })
       console.log(`route data`, data)
     } catch (error) {
       console.error('Error fetching center coordinates:', error)

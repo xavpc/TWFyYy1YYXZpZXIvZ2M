@@ -20,15 +20,12 @@ import {
 } from '@/components/ui/dialog'
 
 import { Trash, MapPin, EllipsisVertical } from 'lucide-react' // Import icons
-
+import { CenterCoordinates } from '@/types/center-coordinates'
 interface OSMMapProps {
   route_id?: string
   route_name: string
 }
-interface CenterCoordinates {
-  latitude: number
-  longitude: number
-}
+
 
 interface CollectionPoint {
   id: string
@@ -168,106 +165,88 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   //^ FETCHES AND DISPLAY ROUTE
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
-
-    setIsLoading(false)
-
+  
+    setIsLoading(true)
+  
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-    const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving/'
-
+  
     try {
       const response = await fetch(
         `${API_URL}/route-coordinates/route/${route_id}`
       )
       const { data } = await response.json()
-
+  
       if (!data?.length) {
         setNoData(true)
         return
       }
-
+  
+      // Sort coordinates by sequence
       const sortedCoordinates = data.sort(
         (a: any, b: any) => a.sequence - b.sequence
       )
-      const waypoints = sortedCoordinates
-        .map((coord: any) => `${coord.longitude},${coord.latitude}`)
-        .join(';')
-
-      const osrmResponse = await fetch(
-        `${OSRM_BASE_URL}${waypoints}?overview=full&geometries=geojson`
-      )
-      const osrmData = await osrmResponse.json()
-
-      if (!osrmData.routes?.length)
-        throw new Error('OSRM did not return a valid route')
-
-      const routeCoordinates = osrmData.routes[0].geometry.coordinates.map(
-        ([lng, lat]: [number, number]) => [lat, lng]
-      )
-
+  
+      // Create route polyline from all coordinates
+      const routePoints = sortedCoordinates.map((coord: any) => [
+        parseFloat(coord.latitude),
+        parseFloat(coord.longitude)
+      ])
+  
       // Remove previous routes before adding new ones
       routesRef.current.forEach((route) => route.remove())
       routesRef.current = []
-
-      const route = L.polyline(routeCoordinates, {
+  
+      const route = L.polyline(routePoints, {
         color: 'blue',
         weight: 3,
         opacity: 0.7,
       }).addTo(mapInstanceRef.current)
-
+  
       // Store the route reference
       routesRef.current.push(route)
-
+  
       // Remove previous markers
       routesMarkerRef.current.forEach((marker) => marker.remove())
       routesMarkerRef.current = []
-
-      // Add markers for each coordinate
-      sortedCoordinates.forEach(
-        ({ latitude, longitude, sequence }: Coordinate) => {
-          const sequenceIcon = L.divIcon({
-            html: `<div style="
-          background-color: white;
-          border: 2px solid blue;
-          border-radius: 50%;
-          width: 24px;
-          height: 24px;
-          text-align: center;
-          font-weight: bold;
-          font-size: 14px;
-          line-height: 24px;
-          color: black;">
-          ${sequence}
-        </div>`,
-            className: 'sequence-label',
-            iconSize: [20, 20],
-            iconAnchor: [10, -10],
-          })
-
-          const markerIcon = L.icon({
-            iconUrl:
-              'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-          })
-
-          const sequenceMarker = L.marker(
-            [parseFloat(latitude), parseFloat(longitude)],
-            {
-              icon: sequenceIcon,
-            }
-          ).addTo(mapInstanceRef.current!)
-
-          const actualMarker = L.marker(
-            [parseFloat(latitude), parseFloat(longitude)],
-            {
-              icon: markerIcon,
-            }
-          ).addTo(mapInstanceRef.current!)
-
-          routesMarkerRef.current.push(sequenceMarker, actualMarker)
-        }
-      )
+  
+      // Only add start and end point markers
+      const startPoint = routePoints[0]
+      const endPoint = routePoints[routePoints.length - 1]
+  
+      // Create start marker (blue)
+      const startIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+      })
+  
+      // Create end marker (red)
+      const endIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+      })
+  
+      // Add start marker
+      const startMarker = L.marker(startPoint, { icon: startIcon })
+        .addTo(mapInstanceRef.current)
+        .bindPopup('Start Point')
+  
+      // Add end marker
+      const endMarker = L.marker(endPoint, { icon: endIcon })
+        .addTo(mapInstanceRef.current)
+        .bindPopup('End Point')
+  
+      routesMarkerRef.current.push(startMarker, endMarker)
+  
+      // Fit the map to show the entire route
+      const bounds = L.latLngBounds(routePoints)
+      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] })
+  
     } catch (error) {
       console.error('Error fetching route:', error)
       setError('Error fetching route')
