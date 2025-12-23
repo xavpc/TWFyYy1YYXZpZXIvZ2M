@@ -1,5 +1,5 @@
 export interface Devices {
-  device_id: string
+  device_id?: string
   device_name: string
   employee: {
     employee_id: string

@@ -31,9 +31,9 @@ import {
 
 import {
   Select,
+  SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
 
@@ -46,7 +46,11 @@ const DevicesComponent = () => {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [editingDevice, setEditingDevice] = useState<Devices | null>(null)
   const [updatedDevice, setUpdatedDevice] = useState<Devices | null>(null)
+
   const [isEditDeviceModalOpen, setIsEditDeviceModalOpen] = useState(false) // New state for edit modal
+  const [isAddDeviceModalOpen, setIsAddDeviceModalOpen] = useState(false)
+
+  const [newDevice, setNewDevice] = useState<Devices | null>(null)
 
   const t = useTranslations('Device') // Ensure
   const pagination = useTranslations('Pagination') // Ensure
@@ -55,12 +59,15 @@ const DevicesComponent = () => {
     fetchDevices()
   }, [])
 
-  //^ Runs when isEditDeviceModalOpen changes
   useEffect(() => {
     if (isEditDeviceModalOpen) {
       fetchEmployees()
     }
-  }, [isEditDeviceModalOpen])
+
+    if (isAddDeviceModalOpen) {
+      fetchEmployees()
+    }
+  }, [isEditDeviceModalOpen, isAddDeviceModalOpen])
 
   //^ FETCH EMPLOYEES
   const fetchEmployees = async () => {
@@ -148,7 +155,7 @@ const DevicesComponent = () => {
     }
   }
 
-  //^ UPDATE EMPLOYEE
+  //^ UPDATE DEVICE
   const updateDevices = async () => {
     if (!updatedDevice) return
     setLoading(true) // Start loading
@@ -170,9 +177,7 @@ const DevicesComponent = () => {
       }
 
       setDevices((prev) =>
-        prev.map((emp) =>
-          emp.device_id === updatedDevice.device_id ? updatedDevice : emp
-        )
+        prev.filter((emp) => emp.device_id !== updatedDevice.device_id)
       )
 
       setIsEditDeviceModalOpen(false) // Close the edit modal
@@ -187,11 +192,21 @@ const DevicesComponent = () => {
     setUpdatedDevice({ ...updatedDevice, [e.target.name]: e.target.value })
   }
 
-  const handleEmployeeChange = (value: string) => {
+  const handleNewDeviceInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target
+    setNewDevice((prev) => ({
+      ...prev!,
+      [name]: value,
+    }))
+  }
+
+  const handleNewDeviceChange = (value: string) => {
     const selectedEmployee = employees.find((emp) => emp.employee_id === value)
 
     if (selectedEmployee) {
-      setUpdatedDevice((prev) => ({
+      setNewDevice((prev) => ({
         ...prev,
         employee: {
           ...selectedEmployee,
@@ -201,7 +216,25 @@ const DevicesComponent = () => {
         device_id: prev?.device_id || '', // Ensure device_id is not undefined
         device_name: prev?.device_name || '', // Ensure device_name is not undefined
         vehicle_plate_num: prev?.vehicle_plate_num || '', // Ensure vehicle_plate_num is not undefined
-        status: prev?.status || '', // Ensure status is not undefined
+        status: prev?.status || 'active', // Ensure status is not undefined
+      }))
+    }
+  }
+
+  const handleEmployeeChange = (value: string) => {
+    const selectedEmployee = employees.find((emp) => emp.employee_id === value)
+
+    if (selectedEmployee) {
+      setNewDevice((prev) => ({
+        ...prev,
+        employee: {
+          ...selectedEmployee,
+          middle_name: selectedEmployee.middle_name || '',
+        },
+        contact_number: selectedEmployee.contact_number, // Auto-update contact number
+        device_name: prev?.device_name || '',
+        vehicle_plate_num: prev?.vehicle_plate_num || '',
+        status: prev?.status || '',
       }))
     }
   }
@@ -256,9 +289,9 @@ const DevicesComponent = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {/* <Button variant='outline' onClick={() => setIsAddModalOpen(true)}>
-          Add Device
-        </Button> */}
+        <Button variant='outline' onClick={() => setIsAddDeviceModalOpen(true)}>
+          {t('Add Device')}
+        </Button>
       </div>
 
       <div className='border rounded-lg'>
@@ -284,14 +317,16 @@ const DevicesComponent = () => {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    className={`text-white px-3 text-center ${
+                    className={`text-white px-3 text-center text-xs ${
                       device.status === 'active'
-                        ? 'bg-green-500 hover:bg-green-600 text-sm py-1 w-17'
-                        : 'bg-red-500 hover:bg-red-600 text-xs py-1.5 w-17'
+                        ? 'bg-green-500 hover:bg-green-600  py-1 w-17'
+                        : 'bg-red-500 hover:bg-red-600  py-1 w-17'
                     } `}
                   >
                     {' '}
-                    {device.status === 'active' ? t('active') : t('inactive')}
+                    {device.status === 'active'
+                      ? t('active').toLowerCase()
+                      : t('inactive').toLowerCase()}
                   </Badge>
                 </TableCell>
                 <TableCell className='space-x-2'>
@@ -404,6 +439,97 @@ const DevicesComponent = () => {
               <Button onClick={updateDevices}>{t('Save')}</Button>
               <Button
                 onClick={() => setIsEditDeviceModalOpen(false)}
+                variant='outline'
+              >
+                {t('Cancel')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* ADD DEVICE MODAL */}
+      <div className='relative z-50'>
+        <Dialog
+          open={isAddDeviceModalOpen}
+          onOpenChange={setIsAddDeviceModalOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('Add Device')}</DialogTitle>
+            </DialogHeader>
+            <div className='grid grid-cols-2 gap-4'>
+              {/* Device Name */}
+              <div>
+                <label htmlFor='device_name' className='text-sm'>
+                  {t('Device Name')}
+                </label>
+                <Input
+                  name='device_name'
+                  value={newDevice?.device_name}
+                  onChange={handleNewDeviceInputChange}
+                />
+              </div>
+
+              {/* Vehicle Plate Number */}
+              <div>
+                <label htmlFor='vehicle_plate_num' className='text-sm'>
+                  {t('Vehicle Plate Number')}
+                </label>
+                <Input
+                  name='vehicle_plate_num'
+                  value={newDevice?.vehicle_plate_num}
+                  onChange={handleNewDeviceInputChange}
+                />
+              </div>
+
+              {/* Contact Number (Auto-filled from selected Employee) */}
+              <div>
+                <label htmlFor='contact_number' className='text-sm'>
+                  {t('Contact Number')}
+                </label>
+                <Input
+                  name='contact_number'
+                  value={newDevice?.employee?.contact_number}
+                  readOnly
+                  disabled
+                />
+              </div>
+
+              {/* Employee Selection */}
+              <div>
+                <label htmlFor='employee' className='text-sm'>
+                  {t('Employee')}
+                </label>
+                <Select
+                  name='employee'
+                  value={newDevice?.employee?.employee_id}
+                  onValueChange={handleNewDeviceChange}
+                >
+                  <SelectTrigger className='border p-2 rounded-md w-full'>
+                    <SelectValue placeholder='Select Employee' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((employee) => (
+                      <SelectItem
+                        key={employee.employee_id}
+                        value={employee.employee_id}
+                      >
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Dialog Footer */}
+            <DialogFooter>
+              <Button onClick={() => newDevice && addDevice(newDevice)}>
+                {t('Add')}
+              </Button>
+              <Button
+                onClick={() => setIsAddDeviceModalOpen(false)}
                 variant='outline'
               >
                 {t('Cancel')}

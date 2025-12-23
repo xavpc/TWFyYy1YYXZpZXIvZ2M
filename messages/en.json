@@ -12,7 +12,19 @@
     "View Sessions": "View Sessions"
   },
   "Dashboard": {
-    "Hello there": "Hello there!"
+    "Hello there": "Hello there!",
+    "Showing": "Showing total employees, devices, route, complaints and others for the year 2025.",
+    "Chart": "Chart",
+    "Year of 2025": "Year of 2025",
+    "Total": "Total",
+    "Employees": "Employees",
+    "Devices": "Devices",
+    "Route": "Route",
+    "Complaints": "Complaints",
+    "Others": "Others",
+    "Lorem": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pulvinar leo magna",
+    "Area Chart": "Area Chart",
+    "Bar Chart": "Bar Chart"
   },
   "Layout": {
     "Dashboard": "Dashboard",
@@ -83,6 +95,8 @@
   "Device": {
     "Device Name": "Device Name",
     "Vehicle Plate Number": "Vehicle Plate Number",
+    "Add Device": " Add Device",
+    "Add": "Add",
     "Contact Number": "Contact Number",
     "Phone": "Phone",
     "Employee": "Employee",

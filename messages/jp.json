@@ -12,7 +12,20 @@
     "View Sessions": "セッションを表示"
   },
   "Dashboard": {
-    "Hello there": "こんにちは!"
+    "Hello there": "こんにちは!",
+    "Showing": "2025 年の総従業員数、デバイス数、ルート数、苦情数などを表示します。",
+    "Chart": "チャート",
+    "Year of 2025": "2025年",
+    "Total": "合計",
+    "Dashboard": "ダッシュボード",
+    "Employees": "従業員",
+    "Devices": "デバイス",
+    "Route": "ルート",
+    "Complaints": "苦情",
+    "Others": "その他",
+    "Lorem": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pulvinar leo magna",
+    "Area Chart": "面グラフ",
+    "Bar Chart": "棒グラフ"
   },
   "Layout": {
     "Dashboard": "ダッシュボード",
@@ -82,6 +95,8 @@
     "Device Name": "デバイス名",
     "Vehicle Plate Number": "車両番号",
     "Contact Number": "連絡先番号",
+    "Add Device": "デバイスの追加",
+    "Add": "追加",
     "Phone": "電話番号",
     "Employee": "従業員",
     "Status": "ステータス",
