@@ -172,10 +172,16 @@ export const midIcon = (bearing: number) => {
 // };
 
 export const createCarIcon = (bearing: number, mapZoom: number) => {
-  const visualSize = 85; // The visual size of the icon
-
+  // Define actual image dimensions
+  const imageWidth = 125;
+  const imageHeight = 225;
+  
+  // Define the desired display size (adjust these values to make the icon smaller)
+  const displayHeight = 40; // Desired height in pixels
+  const displayWidth = (imageWidth * displayHeight) / imageHeight; // Maintain aspect ratio
+  
   return L.divIcon({
-    className: 'custom-car-icon pointer-events-auto', // Combined classes in one property
+    className: 'custom-car-icon pointer-events-auto',
     html: `
       <div 
         style="
@@ -183,8 +189,8 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: ${visualSize}px;
-          height: ${visualSize}px;
+          width: ${displayWidth}px;
+          height: ${displayHeight}px;
           background-color: transparent;
           pointer-events: all;
         "
@@ -193,8 +199,8 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
           src="/images/garbage-truck-icon.png" 
           alt="Garbage Truck Icon" 
           style="
-            width: ${visualSize}px; 
-            height: ${visualSize}px; 
+            width: ${displayWidth}px; 
+            height: ${displayHeight}px; 
             transform: rotate(${bearing}deg);
             transform-origin: center;
             z-index: 1;
@@ -203,8 +209,8 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
         />
       </div>
     `,
-    iconSize: [visualSize, visualSize],
-    iconAnchor: [visualSize / 2, visualSize / 2]
+    iconSize: [displayWidth, displayHeight],
+    iconAnchor: [displayWidth / 2, displayHeight / 2]
   });
 };
 
