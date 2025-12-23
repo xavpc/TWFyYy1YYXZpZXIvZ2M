@@ -145,7 +145,11 @@
     "Please select a device and route" : "Please select a device and route",
     "Please select a device" : "Please select a device",
     "Please select a route" : "Please select a route",
-    "Initializing map" : "Initializing map..."
+    "Initializing map" : "Initializing map...",
+    "Live Simulation": "Live Simulation",
+    "Device": "Device",
+    "Route": "Route",
+    "Loading": "Loading..."
   },
   "Session Viewer": {
     "Session Viewer": "Session Viewer",

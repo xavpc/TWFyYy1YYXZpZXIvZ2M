@@ -530,7 +530,6 @@ const DeviceSimulatorMap = (): JSX.Element => {
           <button
             onClick={handleStartLiveSession}
             className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2'
-            disabled={!selectedDevice || !selectedDeviceRoute}
           >
             <svg
               xmlns='http://www.w3.org/2000/svg'
