@@ -61,7 +61,12 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
   const [isTimestampUpdate, setIsTimeStampUpdate] = useState(false);
-  
+  const [currentTimestamp, setCurrentTimestamp] = useState<Date>(
+    () => {
+      const now = new Date();
+      return new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    }
+  );
   useEffect(() => {
     if (selectedDeviceRoute && selectedDeviceRoute.route.route_id) {
       fetchCollectionPoints(selectedDeviceRoute.route.route_id);
@@ -376,17 +381,19 @@ const DeviceSimulatorMap = (): JSX.Element => {
     }
   }
 
+
   const handleAddMarker = (position: { lat: number; lng: number }) => {
-    const now = new Date();
-    // Convert to Japan Standard Time (JST)
-    const jstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    // Increment timestamp by 1 minute for each new marker
+    const newTimestamp = new Date(currentTimestamp.getTime() + 60000);
+    setCurrentTimestamp(newTimestamp);
     
     setMarkers((prev) => [...prev, {
       ...position,
-      timestamp: jstTime.toISOString()
+      timestamp: newTimestamp.toISOString()
     }]);
-    console.log('Added marker at:', position);
-   };
+    
+    console.log('Added marker at:', position, 'with timestamp:', newTimestamp.toISOString());
+  };
 
   const handleRemoveMarker = (index: number) => {
     setMarkers((prev) => {
