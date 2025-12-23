@@ -8,6 +8,7 @@ import { CollectionPoints } from '@/types/collection-points'
 import 'leaflet-easybutton';
 import 'leaflet-easybutton/src/easy-button.css';
 import MapButtons from './map-buttons'
+import toast from 'react-hot-toast'
 
 
 // Custom CSS for dark theme popups
@@ -162,6 +163,9 @@ interface MapProps {
   collectionPoints?: CollectionPoints[];
   sessionId?:string | null;
   selectedDevice?: Device | null;
+  isTimeStampUpdate?: boolean;
+  setIsTimeStampUpdate?: React.Dispatch<React.SetStateAction<boolean>>;
+
 }
 
 
@@ -326,6 +330,8 @@ const ClientSideMap = ({
   selectedRoute = null,
   sessionId,
   selectedDevice,
+  isTimeStampUpdate,
+  setIsTimeStampUpdate
 }: MapProps) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]); // Tokyo as default
@@ -621,35 +627,38 @@ const ClientSideMap = ({
       // Check if we have at least 2 markers to calculate a route
       if (markers.length >= 2) {
         try {
-          setRouteLoading(true); // Set route loading state to true
+          if(!isTimeStampUpdate)
+          {
+            setRouteLoading(true); // Set route loading state to true
           
-          // Clear previous route path
-          setRoutePath([]);
-          
-          // Fetch routes between consecutive waypoints
-          const routeSegments = [];
-          
-          for (let i = 0; i < markers.length - 1; i++) {
-            const startPoint = markers[i];
-            const endPoint = markers[i + 1];
+            // Clear previous route path
+            setRoutePath([]);
             
-            // Build the URL with query parameters
-            const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+            // Fetch routes between consecutive waypoints
+            const routeSegments = [];
             
-            const response = await axios.get(routeUrl);
-            
-            if (response.data && response.data.routes && response.data.routes.length > 0) {
-              // OSRM returns coordinates as [lng, lat], but Leaflet expects [lat, lng]
-              const routeCoordinates = response.data.routes[0].geometry.coordinates.map(
-                (coord: number[]) => [coord[1], coord[0]] as [number, number]
-              );
+            for (let i = 0; i < markers.length - 1; i++) {
+              const startPoint = markers[i];
+              const endPoint = markers[i + 1];
               
-              routeSegments.push(...routeCoordinates);
+              // Build the URL with query parameters
+              const routeUrl = `${process.env.NEXT_PUBLIC_API_URL}/osrm/route?start=${startPoint.lat},${startPoint.lng}&end=${endPoint.lat},${endPoint.lng}`;
+              
+              const response = await axios.get(routeUrl);
+              
+              if (response.data && response.data.routes && response.data.routes.length > 0) {
+                // OSRM returns coordinates as [lng, lat], but Leaflet expects [lat, lng]
+                const routeCoordinates = response.data.routes[0].geometry.coordinates.map(
+                  (coord: number[]) => [coord[1], coord[0]] as [number, number]
+                );
+                
+                routeSegments.push(...routeCoordinates);
+              }
             }
+            
+            setRoutePath(routeSegments);
+            console.log('Routes fetched and combined');
           }
-          
-          setRoutePath(routeSegments);
-          console.log('Routes fetched and combined');
           
         } catch (error) {
           console.error('Error fetching route:', error);
@@ -657,6 +666,17 @@ const ClientSideMap = ({
           setRoutePath(markers.map(pos => [pos.lat, pos.lng] as [number, number]));
         } finally {
           setRouteLoading(false); // Set route loading state back to false
+          setIsTimeStampUpdate?.(false)
+          // toast.success(`timestamp set successfully! timestamp update:${isTimeStampUpdate}`, {
+          //   duration: 4000,
+          //   style: {
+          //     background: '#1F2937',
+          //     color: '#FFF',
+          //     border: '1px solid #374151',
+          //     borderRadius: '6px',
+          //   },
+          //   icon: '✅',
+          // });
         }
       } else {
         // Reset route when we have fewer than 2 markers
@@ -751,7 +771,7 @@ const ClientSideMap = ({
         setShowLegend={setShowLegend}
       />
       
-      {routeLoading && (
+      {/* {routeLoading && (
         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]">
           <div className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center">
             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -761,7 +781,7 @@ const ClientSideMap = ({
             <span className="text-white">Calculating route...</span>
           </div>
         </div>
-      )}
+      )} */}
       
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

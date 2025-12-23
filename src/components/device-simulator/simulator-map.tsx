@@ -59,7 +59,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
   }>>([]);
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
-
+  const [isTimestampUpdate, setIsTimeStampUpdate] = useState(false);
+  
   useEffect(() => {
     if (selectedRoute && selectedRoute.route_id) {
       fetchCollectionPoints(selectedRoute.route_id);
@@ -238,6 +239,17 @@ const DeviceSimulatorMap = (): JSX.Element => {
           current_location_timestamp: marker.timestamp,
           session_id: sessionId
         };
+
+        toast.success(`location sent, timestamp: ${marker.timestamp}`, {
+          duration: 4000,
+          style: {
+            background: '#1F2937',
+            color: '#FFF',
+            border: '1px solid #374151',
+            borderRadius: '6px',
+          },
+          icon: '✅',
+        });
         
         await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/device-locations`, payload);
         
@@ -355,13 +367,16 @@ const DeviceSimulatorMap = (): JSX.Element => {
 
   const handleAddMarker = (position: { lat: number; lng: number }) => {
     const now = new Date();
+    // Convert to Japan Standard Time (JST)
+    const jstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    
     setMarkers((prev) => [...prev, {
       ...position,
-      timestamp: now.toISOString()
+      timestamp: jstTime.toISOString()
     }]);
     console.log('Added marker at:', position);
-  };
-
+   };
+   //TODO: make the collection point time sync with the marker that coollected it
   const handleRemoveMarker = (index: number) => {
     setMarkers((prev) => {
       const newMarkers = [...prev]
@@ -385,6 +400,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       }
       return newMarkers;
     });
+    setIsTimeStampUpdate(true)
     console.log(`Updated timestamp for marker ${index} to ${newTimestamp}`);
   };
 
@@ -447,13 +463,13 @@ const DeviceSimulatorMap = (): JSX.Element => {
     return new Date(timeString).toLocaleString()
   }
 
-  // Format the distance in meters to a more readable format
-  const formatDistance = (meters: number | null) => {
-    if (meters === null) return '-'
-    return meters < 1000
-      ? `${meters.toFixed(1)} m`
-      : `${(meters / 1000).toFixed(2)} km`
-  }
+  // // Format the distance in meters to a more readable format
+  // const formatDistance = (meters: number | null) => {
+  //   if (meters === null) return '-'
+  //   return meters < 1000
+  //     ? `${meters.toFixed(1)} m`
+  //     : `${(meters / 1000).toFixed(2)} km`
+  // }
 
   // Format the duration in seconds to a more readable format
   const formatDuration = (seconds: number | null) => {
@@ -834,12 +850,14 @@ const DeviceSimulatorMap = (): JSX.Element => {
                         type='datetime-local'
                         value={new Date(marker.timestamp).toISOString().slice(0, 16)}
                         onChange={(e) => {
-                          // Store the datetime value temporarily
+                          // Get the input value (YYYY-MM-DDTHH:MM format)
                           const tempDateTime = e.target.value;
-                          const date = new Date(tempDateTime);
-                          const tzOffset = date.getTimezoneOffset() * 60000; // offset in milliseconds
-                          const localISOTime = new Date(date.getTime() - tzOffset).toISOString();
-                          handleUpdateMarkerTimestamp(index, localISOTime);
+                          
+                          // Convert to a proper ISO string while preserving the time as entered
+                          // Add "Z" to make it a complete ISO string (indicating UTC)
+                          const isoString = new Date(tempDateTime + ":00.000Z").toISOString();
+                          
+                          handleUpdateMarkerTimestamp(index, isoString);
                         }}
                         className='bg-gray-800 border border-gray-700 text-gray-300 rounded-sm text-xs px-1 py-0.5 w-full mb-2'
                       />
@@ -1135,6 +1153,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
           collectionPoints={collectionPoints}
           sessionId={sessionId}
           selectedDevice={selectedDevice}
+          isTimeStampUpdate={isTimestampUpdate}
+          setIsTimeStampUpdate={setIsTimeStampUpdate}
         />
         </div>
       </div>

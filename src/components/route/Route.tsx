@@ -53,7 +53,7 @@ const Route = () => {
 
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null) // Track selected route
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
-  const [selectedDay, setSelectedDay] = useState<string>('monday')
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [devices, setDevices] = useState<Devices[]>([])
 
   const t = useTranslations('Route') // Ensure
@@ -463,15 +463,15 @@ const Route = () => {
             <DialogFooter>
               <Button
                 onClick={() => {
-                  if (selectedDeviceId && selectedRouteId && selectedDay) {
+                  if (selectedDeviceId && selectedDay) {
                     addDeviceToRoute(
-                      selectedDeviceId,
-                      selectedRouteId,
-                      selectedDay
+                      selectedDeviceId as string,
+                      selectedRouteId as string,
+                      selectedDay as string
                     )
                   }
                 }}
-                disabled={!selectedDeviceId || !selectedRouteId || !selectedDay} // Button disabled if any one value is missing
+                disabled={!selectedDeviceId || !selectedDay} // Button is disabled if either is missing
               >
                 {t('Save')}
               </Button>
