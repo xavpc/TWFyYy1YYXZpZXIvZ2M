@@ -35,7 +35,8 @@
     "Complaints": "Complaints",
     "Device Simulator": "Device Simulator",
     "View Sessions": "View Sessions",
-    "Session Viewer": "Archive Sessions"
+    "Session Viewer": "Archive Sessions",
+    "Live Sessions": "Live Sessions"
   },
   "Pagination": {
     "Next": "Next",
@@ -158,7 +159,8 @@
     "Session Information": "Session Information",
     "Device Selection": "Device Selection",
     "Sessions": "Sessions",
-    "Live Session":"View Live Sessions"
+    "Live Session":"View Live Sessions",
+    "Active Sessions": "Active Sessions"
   },
 
   "Dialog": {

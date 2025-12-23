@@ -36,6 +36,70 @@
   background: #6b7280; /* Tailwind's gray-500 */
 }
 
+/* Custom scrollbar styles for Today's Sessions */
+.today-sessions-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.today-sessions-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937; /* Tailwind's gray-800 */
+  border-radius: 4px;
+}
+
+.today-sessions-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563; /* Tailwind's gray-600 */
+  border-radius: 4px;
+}
+
+.today-sessions-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* Tailwind's gray-500 */
+}
+
+/* Custom scrollbar styles for All Sessions */
+.all-sessions-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.all-sessions-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937; /* Tailwind's gray-800 */
+  border-radius: 8px;
+}
+
+.all-sessions-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563; /* Tailwind's gray-600 */
+  border-radius: 8px;
+}
+
+.all-sessions-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* Tailwind's gray-500 */
+}
+
+.sessions-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sessions-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.today-sessions-scrollbar,
+.all-sessions-scrollbar {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+
+
+
+
 .leaflet-popup-content-wrapper {
   background-color: white;
   color: #333;

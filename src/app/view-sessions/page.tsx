@@ -8,7 +8,7 @@ const DashboardPage = () => {
 
   return (
     <div className='p-5'>
-        <SessionViewer/>
+        <SessionViewer isLive={false}/>
 
     </div>
   )
