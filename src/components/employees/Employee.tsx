@@ -46,7 +46,7 @@ export default function EmployeeList() {
     contact_number: '',
     address: '',
     age: 18,
-    status: 'active',
+    status: 'active'
   })
 
   const t = useTranslations('Employees') // Ensure
@@ -58,7 +58,7 @@ export default function EmployeeList() {
     fetchEmployees()
   }, [])
 
-  //^ GET EMPLOYEE
+  // GET EMPLOYEE
   const fetchEmployees = async () => {
     setLoading(true) // Start loading
 
@@ -88,7 +88,7 @@ export default function EmployeeList() {
     }
   }
 
-  //^ ADD EMPLOYEE
+  // ADD EMPLOYEE
   const addEmployee = async () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { employee_id, ...employeeWithoutId } = newEmployee // Exclude employee_id
@@ -122,14 +122,14 @@ export default function EmployeeList() {
         contact_number: '',
         address: '',
         age: 20,
-        status: 'active',
+        status: 'active'
       })
     } catch (error) {
       console.error('Error adding employee:', error)
     }
   }
 
-  //^ UPDATE EMPLOYEE
+  // UPDATE EMPLOYEE
   const updateEmployee = async () => {
     if (!updatedEmployee) return
     setIsLoading(true) // Start loading
@@ -193,7 +193,8 @@ export default function EmployeeList() {
       employee.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  //^ EDIT EMPLOYEE
+  // EDIT EMPLOYEE
+
   const handleNewEmployeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
 
@@ -239,7 +240,7 @@ export default function EmployeeList() {
     <div className='space-y-4'>
       <div className='flex justify-between items-center'>
         <Input
-          placeholder={t('Search employees')}
+          placeholder= {t('Search employees')}
           className='max-w-sm'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

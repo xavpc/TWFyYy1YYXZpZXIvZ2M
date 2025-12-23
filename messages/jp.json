@@ -81,7 +81,6 @@
   "Device": {
     "Device Name": "デバイス名",
     "Vehicle Plate Number": "車両番号",
-    "Contact Number": "連絡先番号",
     "Phone": "電話番号",
     "Employee": "従業員",
     "Status": "ステータス",
@@ -90,7 +89,6 @@
     "active": "稼働中",
     "inactive": "オフライン",
     "Edit": "編集",
-    "Edit Device": "デバイスの編集",
     "No Device Found": "デバイスが見つかりません",
     "Day Assigned": "割り当てられた日",
     "Days": "日",
@@ -100,9 +98,7 @@
     "thursday": "木曜日",
     "friday": "金曜日",
     "saturday": "土曜日",
-    "sunday": "日曜日",
-    "Save": "保存",
-    "Cancel": "キャンセル"
+    "sunday": "日曜日"
   },
   "Complaints": {
     "Mark as in progress": "進行中としてマーク",

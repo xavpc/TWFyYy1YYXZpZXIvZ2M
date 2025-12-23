@@ -41,9 +41,10 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [routes, setRoutes] = useState<Array<Route>>([]);
   const [collectionPoints, setCollectionPoints] = useState<Array<CollectionPoints>>([])
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([]);
+  const [selectedDeviceRoute, setSelectedDeviceRoute] = useState<DeviceRoute | null>(null);
+  const [route, setRoute] = useState<Route | null>(null);
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false);
   const [routesLoading, setRoutesLoading] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [deviceSearchQuery, setDeviceSearchQuery] = useState<string>('');
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{
     route_coordinates_id: string;
@@ -62,13 +63,40 @@ const DeviceSimulatorMap = (): JSX.Element => {
   const [isTimestampUpdate, setIsTimeStampUpdate] = useState(false);
   
   useEffect(() => {
-    if (selectedRoute && selectedRoute.route_id) {
-      fetchCollectionPoints(selectedRoute.route_id);
+    if (selectedDeviceRoute && selectedDeviceRoute.route.route_id) {
+      fetchCollectionPoints(selectedDeviceRoute.route.route_id);
     } else {
       // Clear collection points if no route is selected
       setCollectionPoints([]);
     }
-  }, [selectedRoute]);
+  }, [selectedDeviceRoute]);
+
+
+  useEffect(() => {
+    const fetchRoute = async (routeId: string| undefined) => {
+      if (!routeId) return;
+  
+      try {
+        setRoutesLoading(true);
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/routes/${routeId}`;
+        const response = await axios.get(apiUrl);
+        
+        // For better debugging, use JSON.stringify
+        console.log(`response data:`, JSON.stringify(response.data.data));
+        
+        if (response.data.success && response.data.data) {
+          // Set just the data property, not the whole response
+          setRoute(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching route:', error);
+      } finally {
+        setRoutesLoading(false);
+      }
+    };
+  
+    fetchRoute(selectedDeviceRoute?.route.route_id);
+  }, [selectedDeviceRoute]);
 
   useEffect(() => {
     const fetchRoutes = async () => {
@@ -331,13 +359,15 @@ const DeviceSimulatorMap = (): JSX.Element => {
       return
     }
 
+
     try {
       setLoading(true)
-      console.log('Start session clicked for route:', selectedRoute?.route_id)
-
+      console.log('Start session clicked for route:', selectedDeviceRoute?.route.route_id)
+      console.log(`route data: ${route?.center_latitude, route?.center_longitude}`)
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/`
       const response = await axios.post(apiUrl, {
-        route_id: selectedRoute?.route_id
+        route_id: selectedDeviceRoute?.route.route_id,
+        device_route_id: selectedDeviceRoute?.device_route_id
       })
       console.log('Session started successfully:', response.data)
 
@@ -499,7 +529,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
           <button
             onClick={handleStartSession}
             className='bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center gap-2'
-            disabled={loading || !selectedDevice || !selectedRoute}
+            disabled={loading || !selectedDevice || !selectedDeviceRoute}
           >
             {loading ? (
               <>
@@ -667,8 +697,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
               </div>
             </div>
           )}
-          {/*route information */}
-          {selectedRoute && sessionId && (
+          {/*device route information */}
+          {selectedDeviceRoute && sessionId && route && !routesLoading &&(
             <div className='mb-4 bg-gray-900 rounded-md p-3 border border-gray-700'>
               <h4 className='text-white text-sm font-medium mb-2'>
                 Route Information
@@ -679,7 +709,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
                     Route Name
                   </p>
                   <p className='text-indigo-300 text-xs'>
-                    {selectedRoute.route_name}
+                    {selectedDeviceRoute.route.route_name}
                   </p>
                 </div>
                 <div>
@@ -687,7 +717,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
                     Center Coordinates
                   </p>
                   <p className='text-gray-300 text-xs font-mono'>
-                    {selectedRoute.center_latitude.slice(0, 7)}, {selectedRoute.center_longitude.slice(0, 7)}
+                    {route.center_latitude.slice(0, 7)}, {route.center_longitude.slice(0, 7)}
                   </p>
                 </div>
               </div>
@@ -980,7 +1010,8 @@ const DeviceSimulatorMap = (): JSX.Element => {
                       onClick={() => {
                         setSelectedDevice(device)
                         setIsDropdownOpen(false)
-                        setSelectedRoute(null) 
+                        setSelectedDeviceRoute(null) 
+                        setRoute(null)
                         fetchDeviceRoutes(device.device_id)
                         setDeviceSearchQuery('') // Reset search query
                       }}
@@ -1032,7 +1063,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                   <span className="block truncate">
-                    {selectedRoute ? selectedRoute.route_name : 'Select a route...'}
+                    {selectedDeviceRoute ? `${selectedDeviceRoute.route.route_name} (${selectedDeviceRoute.day_assigned.slice(0, 3).toUpperCase()})`: 'Select a route...'}
                   </span>
                   <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                     <svg
@@ -1071,12 +1102,12 @@ const DeviceSimulatorMap = (): JSX.Element => {
                         <button
                           key={deviceRoute.device_route_id}
                           className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-800 ${
-                            selectedRoute?.route_id === deviceRoute.route.route_id
+                            selectedDeviceRoute?.device_route_id === deviceRoute.device_route_id
                               ? 'bg-gray-800 text-blue-400'
                               : 'text-white'
                           }`}
                           onClick={() => {
-                            setSelectedRoute(deviceRoute.route);
+                            setSelectedDeviceRoute(deviceRoute)
                             setIsRouteDropdownOpen(false);
                             fetchRouteCoordinates(deviceRoute.route.route_id);
                           }}
@@ -1138,7 +1169,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
           markers={markers}
           onClearMarkers={handleClearAllWaypoints}
           routeCoordinates={routeCoordinates} 
-          selectedRoute={selectedRoute}
+          selectedRoute={route}
           collectionPoints={collectionPoints}
           sessionId={sessionId}
           selectedDevice={selectedDevice}

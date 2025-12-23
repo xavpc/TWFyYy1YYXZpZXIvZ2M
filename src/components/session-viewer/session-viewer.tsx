@@ -9,14 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DeviceRoute } from '@/types/device-route'
 import toast from 'react-hot-toast'
 import { DeviceLocation } from '@/types/device-location'
+import { DeviceSession } from '@/types/device-session'
 
-// Define a type for the session data
-interface DeviceSession {
-  session_id: string;
-  start: string;
-  end: string;
-  device_locations?: any[]; // Optional if you want to use this later
-}
+
+
 interface GroupedSessions {
   [monthYear: string]: {
     [weekNum: string]: DeviceSession[];
@@ -39,7 +35,7 @@ const SessionViewer = (): JSX.Element => {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([])
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false)
-  const [selectedRouteFilter, setSelectedRouteFilter] = useState<string>("all");
+  const [selectedDeviceRouteFilter, setSelectedDeviceRouteFilter] = useState<string>("all");
 
 
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -77,11 +73,17 @@ const SessionViewer = (): JSX.Element => {
     fetchDevices()
   }, [])
 
+  
   useEffect(() => {
     if (selectedSession) {
       fetchDeviceLocationsBySessionId(selectedSession.session_id);
     }
   }, [selectedSession]);
+
+
+
+
+
 
   const clearSelectedSession = () => {
     setSelectedSession(null);
@@ -90,7 +92,7 @@ const SessionViewer = (): JSX.Element => {
   };
 
   const resetFilters = () => {
-    setSelectedRouteFilter("all");
+    setSelectedDeviceRouteFilter("all");
     setSelectedDate("");
     if (selectedDevice) {
       fetchDeviceSessions(selectedDevice.device_id);
@@ -128,10 +130,10 @@ const SessionViewer = (): JSX.Element => {
   }
 
 
-  const fetchSessionsByRouteAndDate = async (routeId: string, date: string) => {
+  const fetchSessionsByDeviceRouteAndDate = async (routeId: string, date: string) => {
     try {
       setSessionsLoading(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/filter/by-route-and-date?routeId=${routeId}&date=${date}&deviceId=${selectedDevice?.device_id}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/filter/by-device-route-and-date?deviceRouteId=${selectedDeviceRouteFilter}&date=${date}&deviceId=${selectedDevice?.device_id}`;
       const response = await axios.get(apiUrl);
   
       if (response.data.success && response.data.data) {
@@ -141,9 +143,9 @@ const SessionViewer = (): JSX.Element => {
         setDeviceSessions([]);
       }
     } catch (error) {
-      console.error('Error fetching sessions by route and date:', error);
+      console.error('Error fetching sessions by device route and date:', error);
       setDeviceSessions([]);
-      toast.error('Failed to load sessions for this route and date', {
+      toast.error('Failed to load sessions for this deviceroute and date', {
         duration: 3000,
         style: {
           background: '#1F2937',
@@ -187,10 +189,10 @@ const SessionViewer = (): JSX.Element => {
   };
 
 
-  const fetchSessionsByRoute = async (routeId: string) => {
+  const fetchSessionsByDeviceRoute = async (routeId: string) => {
     try {
       setSessionsLoading(true);
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/route/${routeId}?deviceId=${selectedDevice?.device_id}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/device-route/${selectedDeviceRouteFilter}?deviceId=${selectedDevice?.device_id}`;
       const response = await axios.get(apiUrl);
 
       if (response.data.success && response.data.data) {
@@ -200,9 +202,9 @@ const SessionViewer = (): JSX.Element => {
         setDeviceSessions([]);
       }
     } catch (error) {
-      console.error('Error fetching sessions by route:', error);
+      console.error('Error fetching sessions by device route:', error);
       setDeviceSessions([]);
-      toast.error('Failed to load sessions for this route', {
+      toast.error('Failed to load sessions for this device route', {
         duration: 3000,
         style: {
           background: '#1F2937',
@@ -267,7 +269,7 @@ const SessionViewer = (): JSX.Element => {
   const handleDeviceSelect = (device: Device | null) => {
     setSelectedDevice(device);
     setSelectedSession(null); // Reset selected session when device changes
-    setSelectedRouteFilter("all");
+    setSelectedDeviceRouteFilter("all");
     
     if (device) {
       fetchDeviceSessions(device.device_id);
@@ -423,13 +425,13 @@ const SessionViewer = (): JSX.Element => {
                       <label className="text-xs text-gray-400 block mb-1">Route</label>
                       <select 
                         className="w-full rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1"
-                        value={selectedRouteFilter}
-                        onChange={(e) => setSelectedRouteFilter(e.target.value)}
+                        value={selectedDeviceRouteFilter}
+                        onChange={(e) => setSelectedDeviceRouteFilter(e.target.value)}
                       >
                         <option value="all">All Routes</option>
                         {deviceRoutes.map(deviceRoute => (
-                          <option key={deviceRoute.route.route_id} value={deviceRoute.route.route_id}>
-                            {deviceRoute.route.route_name}
+                          <option key={deviceRoute.device_route_id} value={deviceRoute.device_route_id}>
+                            {deviceRoute.route.route_name} ({deviceRoute.day_assigned})
                           </option>
                         ))}
                       </select>
@@ -440,12 +442,12 @@ const SessionViewer = (): JSX.Element => {
                       <button 
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors"
                         onClick={() => {
-                          if (selectedDate && selectedRouteFilter !== "all") {
-                            fetchSessionsByRouteAndDate(selectedRouteFilter, selectedDate);
+                          if (selectedDate && selectedDeviceRouteFilter !== "all") {
+                            fetchSessionsByDeviceRouteAndDate(selectedDeviceRouteFilter, selectedDate);
                           } else if (selectedDate) {
                             fetchSessionsByDate(selectedDate);
-                          } else if (selectedRouteFilter !== "all") {
-                            fetchSessionsByRoute(selectedRouteFilter);
+                          } else if (selectedDeviceRouteFilter !== "all") {
+                            fetchSessionsByDeviceRoute(selectedDeviceRouteFilter);
                           } else if (selectedDevice) {
                             fetchDeviceSessions(selectedDevice.device_id);
                           }
@@ -505,7 +507,7 @@ const SessionViewer = (): JSX.Element => {
               </div>
             </div>
           )}
-          <Map deviceLocations={deviceLocations} />
+          <Map deviceLocations={deviceLocations} routeId={selectedSession?.device_route.route.route_id} viewingSession={viewingSession}/>
         </div>
 
         {/* Floating Sessions List Panel */}
@@ -582,16 +584,9 @@ const SessionViewer = (): JSX.Element => {
                               }`}
                             >
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium text-blue-400">
-                                  {new Date(session.start).toLocaleDateString('en-US', { weekday: 'long' })}
-                                </span>
                                 <span className="text-xs text-gray-400">
-                                  {new Date(session.start).toLocaleDateString()}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  {new Date(session.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                  {' - '}
-                                  {new Date(session.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Day assigned: </p>
+                                  {session.device_route.day_assigned.toUpperCase()}
                                 </span>
                               </div>
                             </button>
@@ -658,16 +653,13 @@ const SessionViewer = (): JSX.Element => {
                                     }`}
                                   >
                                     <div className="flex flex-col">
-                                      <span className="text-sm font-medium text-blue-400">
-                                        {new Date(session.start).toLocaleDateString('en-US', { weekday: 'long' })}
-                                      </span>
                                       <span className="text-xs text-gray-400">
+                                        <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Date</p>
                                         {new Date(session.start).toLocaleDateString()}
                                       </span>
                                       <span className="text-xs text-gray-400">
-                                        {new Date(session.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                        {' - '}
-                                        {new Date(session.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                        <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Day Assigned:</p>
+                                        {session.device_route.day_assigned.toUpperCase()}
                                       </span>
                                     </div>
                                   </button>
@@ -780,21 +772,14 @@ const SessionViewer = (): JSX.Element => {
                   <h4 className="text-sm font-medium text-gray-300">Time Information</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Day</p>
-                      <p className="text-sm text-blue-300">{new Date(selectedSession.start).toLocaleDateString('en-US', { weekday: 'long' })}</p>
-                    </div>
-                    <div>
                       <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Date</p>
                       <p className="text-sm text-blue-300">{new Date(selectedSession.start).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Start Time</p>
-                      <p className="text-sm text-blue-300">{new Date(selectedSession.start).toLocaleTimeString()}</p>
+                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Day Assigned</p>
+                      <p className="text-sm text-blue-300">{selectedSession.device_route.day_assigned.toUpperCase()}</p>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">End Time</p>
-                      <p className="text-sm text-blue-300">{new Date(selectedSession.end).toLocaleTimeString()}</p>
-                    </div>
+
                   </div>
                 </div>
                 
@@ -804,19 +789,6 @@ const SessionViewer = (): JSX.Element => {
                     <div>
                       <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Session ID</p>
                       <p className="text-sm text-purple-300 font-mono">{selectedSession.session_id}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">Duration</p>
-                      <p className="text-sm text-purple-300">
-                        {(() => {
-                          const start = new Date(selectedSession.start);
-                          const end = new Date(selectedSession.end);
-                          const diffMs = end.getTime() - start.getTime();
-                          const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                          const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                          return `${diffHrs} hr${diffHrs !== 1 ? 's' : ''} ${diffMins} min${diffMins !== 1 ? 's' : ''}`;
-                        })()}
-                      </p>
                     </div>
                   </div>
                 </div>

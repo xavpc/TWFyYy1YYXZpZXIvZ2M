@@ -73,7 +73,7 @@ const endIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const routeStartIcon = new L.Icon({
+export const routeStartIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -82,7 +82,7 @@ const routeStartIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const routeEndIcon = new L.Icon({
+export const routeEndIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -345,6 +345,7 @@ const ClientSideMap = ({
   const [isCollecting, setIsCollecting] = useState<{[key: string]: boolean}>({});
   const [isAnyPointCollecting, setIsAnyPointCollecting] = useState<boolean>(false);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [currentCollectedTimestamp, setCurrentCollectedTimestamp] = useState<string>("");
   const mapContainerRef = useRef(null);
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
@@ -361,7 +362,7 @@ const ClientSideMap = ({
     
     setIsFullScreen(prev => !prev);
   }, []);
-
+  
   useEffect(() => {
     // Find the map container element safely
     const mapElement = document.querySelector('.leaflet-container');
@@ -441,6 +442,13 @@ const ClientSideMap = ({
       setIsCollecting({});
     }
   }, [sessionActive]);
+  
+  useEffect(() => {
+    if (markers.length > 0 && editableTimestamps[markers.length-1]) {
+      setCurrentCollectedTimestamp(editableTimestamps[markers.length-1])
+      console.log(`setting timestamp from ${editableTimestamps[markers.length-1]} to: ${currentCollectedTimestamp}`)
+    }
+  }, [markers.length, editableTimestamps]);
 
   useEffect(() => {
     if (selectedRoute && selectedRoute.center_latitude && selectedRoute.center_longitude) {
@@ -690,7 +698,7 @@ const ClientSideMap = ({
   }, [markers]);
 
 
-  const collectPoint = async (collectionPointId: string) => {
+  const collectPoint = async (collectionPointId: string, timestamp: string) => {
 
     if (isAnyPointCollecting) {
       // Show an error message
@@ -715,10 +723,10 @@ const ClientSideMap = ({
       const payload = {
         device_id: selectedDevice.device_id,
         collection_point_id: collectionPointId,
-        collected_timestamp: new Date().toISOString(),
+        collected_timestamp: timestamp,
         session_id: sessionId
       };
-      
+      console.log(`collected with timestamp: ${timestamp}`)
 
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/collected-points`,
@@ -771,17 +779,7 @@ const ClientSideMap = ({
         setShowLegend={setShowLegend}
       />
       
-      {/* {routeLoading && (
-        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]">
-          <div className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="text-white">Calculating route...</span>
-          </div>
-        </div>
-      )} */}
+
       
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -845,27 +843,36 @@ const ClientSideMap = ({
               ) : (
                 // Show collect button only when end marker is near and not already collected
                 isNearCollectionPoint && (
-                  <button 
-                    className={`${isCollectingPoint || isAnyPointCollecting ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3 flex justify-center items-center`}
-                    onClick={() => collectPoint(point.collection_point_id)}
-                    disabled={isCollectingPoint || isAnyPointCollecting || !selectedDevice}
-                  >
-                    {isCollectingPoint ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </>
-                    ) : isAnyPointCollecting ? (
-                      'Collection in progress...'
-                    ) : !selectedDevice ? (
-                      'Select a device first'
-                    ) : (
-                      'Collect Point'
-                    )}
-                  </button>
+                  <>
+                    <input 
+                      type="datetime-local"
+                      value={currentCollectedTimestamp}
+                      onChange={(e) => setCurrentCollectedTimestamp(e.target.value)}
+                      className="w-full text-xs p-1 border border-gray-700 rounded-sm bg-gray-900 text-gray-300 mb-1"
+                    />
+          
+                    <button 
+                      className={`${isCollectingPoint || isAnyPointCollecting ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3 flex justify-center items-center`}
+                      onClick={() => collectPoint(point.collection_point_id, currentCollectedTimestamp)}
+                      disabled={isCollectingPoint || isAnyPointCollecting || !selectedDevice}
+                    >
+                      {isCollectingPoint ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : isAnyPointCollecting ? (
+                        'Collection in progress...'
+                      ) : !selectedDevice ? (
+                        'Select a device first'
+                      ) : (
+                        'Collect Point'
+                      )}
+                    </button>
+                  </>
                 )
               )}
             </Popup>

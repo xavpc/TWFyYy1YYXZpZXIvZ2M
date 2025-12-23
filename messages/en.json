@@ -83,7 +83,6 @@
   "Device": {
     "Device Name": "Device Name",
     "Vehicle Plate Number": "Vehicle Plate Number",
-    "Contact Number": "Contact Number",
     "Phone": "Phone",
     "Employee": "Employee",
     "Status": "Status",
@@ -92,7 +91,6 @@
     "active": "Active",
     "inactive": "Inactive",
     "Edit": "Edit",
-    "Edit Device": "Edit Device",
     "No Device Found": "No Device Found",
     "Day Assigned": "Day Assigned",
     "Days": "Days",
@@ -102,9 +100,7 @@
     "thursday": "Thursday",
     "friday": "Friday",
     "saturday": "Saturday",
-    "sunday": "Sunday",
-    "Save": "Save",
-    "Cancel": "Cancel"
+    "sunday": "Sunday"
   },
   "Complaints": {
     "Mark as in progress": "Mark as In Progress",
@@ -129,7 +125,7 @@
     "Session Viewer": "Session Viewer",
     "Session Information": "Session Information",
     "Device Selection": "Device Selection",
-    "Sessions": "Sessions"
+    "Sessions":"Sessions"
   },
 
   "Dialog": {

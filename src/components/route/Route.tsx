@@ -242,6 +242,7 @@ const Route = () => {
       // Refresh list after successful delete
       await fetchRoutes()
       setIsDialogOpen(false)
+      setSelectedRouteId(null) // Reset selected route
     } catch (error) {
       console.error('Error deleting route:', error)
     } finally {

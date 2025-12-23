@@ -1,9 +1,12 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { DeviceLocation } from '@/types/device-location'
+import axios from 'axios'
+import { routeEndIcon, routeStartIcon } from '../device-simulator/client-side-map'
+import { DeviceSession } from '@/types/device-session'
 
 // Fix for Leaflet marker icons
 const icon = L.icon({
@@ -42,9 +45,11 @@ function MapViewControl({ locations, currentLocation }: { locations: DeviceLocat
 
 interface ClientSideMapProps {
   deviceLocations: DeviceLocation[];
+  routeId: string |undefined;
+  viewingSession:boolean;
 }
 
-const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
+const ClientSideMap = ({ deviceLocations, routeId, viewingSession}: ClientSideMapProps) => {
   // Default position if no locations are provided
   const defaultPosition: [number, number] = [35.6895, 139.6917]; // Tokyo as default
   
@@ -54,6 +59,19 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
   const [sliderValue, setSliderValue] = useState(0);
   const [sliderHover, setSliderHover] = useState<number | null>(null);
   const [hoverTimestamp, setHoverTimestamp] = useState<string | null>(null);
+  const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
+  const [routeCoordinates, setRouteCoordinates] = useState<Array<{
+    route_coordinates_id: string;
+    latitude: string;
+    longitude: string;
+    sequence: number;
+    route: {
+      route_id: string;
+      route_name: string;
+      center_latitude: string;
+      center_longitude: string;
+    }
+  }>>([]);
   
   // Sort locations by timestamp
   const sortedLocations = useMemo(() => {
@@ -75,6 +93,53 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
   const startTimestamp = sortedLocations.length > 0 ? sortedLocations[0].current_location_timestamp : '';
   const endTimestamp = sortedLocations.length > 0 ? sortedLocations[sortedLocations.length - 1].current_location_timestamp : '';
   
+
+
+//TODO for the session modal/list change the duration to use hte device location first and last timestap
+
+  useEffect(() => { 
+    setSliderValue(0);
+    setCurrentIndex(0);
+    setSliderHover(null);
+    setHoverTimestamp(null);
+  }, [deviceLocations]); 
+
+  useEffect(() => { 
+    if(!viewingSession){
+      setRouteCoordinates([]);
+    }
+  }, [viewingSession]);
+
+
+
+    useEffect(() => {
+      const fetchRouteCoordinates = async (routeId: string | undefined) => {
+        if (!routeId) return;
+        
+        try {
+          setRouteCoordinatesLoading(true);
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${routeId}`;
+          const response = await axios.get(apiUrl);
+          
+          if (response.data.success && response.data.data) {
+            // Sort by sequence to ensure proper order
+            const sortedCoordinates = response.data.data.sort(
+              (a: { sequence: number }, b: { sequence: number }) => a.sequence - b.sequence
+            );
+            setRouteCoordinates(sortedCoordinates);
+          }
+        } catch (error) {
+          console.error('Error fetching route coordinates:', error);
+        } finally {
+          setRouteCoordinatesLoading(false);
+        }
+      };
+      
+      fetchRouteCoordinates(routeId);
+    }, [routeId]);
+  
+
+
 
   const formatDisplayTimestamp = (timestamp: string) => {
     if (!timestamp) return '';
@@ -281,6 +346,48 @@ const ClientSideMap = ({ deviceLocations }: ClientSideMapProps) => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {routeCoordinates.length > 0 && (
+            <Polyline 
+              positions={routeCoordinates.map(coord => [parseFloat(coord.latitude), parseFloat(coord.longitude)])} 
+              color="#4338CA" 
+              weight={8}      
+              opacity={0.4}   
+              lineJoin="round"
+              lineCap="round"
+              className="preset-route-outline"
+            />
+          )}
+
+          {routeCoordinates.length > 0 && (
+            <>
+              <Marker 
+                position={[parseFloat(routeCoordinates[0].latitude), parseFloat(routeCoordinates[0].longitude)]} 
+                icon={routeStartIcon}
+              >
+                <Popup className="dark-theme-popup">
+                  Route Start
+                  <br />
+                  Lat: {parseFloat(routeCoordinates[0].latitude).toFixed(6)}, 
+                  Lng: {parseFloat(routeCoordinates[0].longitude).toFixed(6)}
+                </Popup>
+              </Marker>
+              
+              <Marker 
+                position={[
+                  parseFloat(routeCoordinates[routeCoordinates.length - 1].latitude), 
+                  parseFloat(routeCoordinates[routeCoordinates.length - 1].longitude)
+                ]} 
+                icon={routeEndIcon}
+              >
+                <Popup className="dark-theme-popup">
+                  Route End
+                  <br />
+                  Lat: {parseFloat(routeCoordinates[routeCoordinates.length - 1].latitude).toFixed(6)}, 
+                  Lng: {parseFloat(routeCoordinates[routeCoordinates.length - 1].longitude).toFixed(6)}
+                </Popup>
+              </Marker>
+            </>
+          )}
           
           {/* Show only current location marker */}
           {currentLocation && (
