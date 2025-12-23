@@ -13,12 +13,28 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function ModeButton() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
-    console.log('Current theme:', theme)
-    console.log('Resolved theme:', resolvedTheme)
-  }, [theme, resolvedTheme])
+    setMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    if (mounted) {
+      console.log('Current theme:', theme)
+      console.log('Resolved theme:', resolvedTheme)
+    }
+  }, [mounted, theme, resolvedTheme])
+
+  if (!mounted) {
+    return (
+      <Button variant='outline' size='icon'>
+        <Moon className='h-[1.2rem] w-[1.2rem]' />
+        <span className='sr-only'>Loading theme</span>
+      </Button>
+    )
+  }
 
   return (
     <DropdownMenu>

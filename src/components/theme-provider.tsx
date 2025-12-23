@@ -9,14 +9,13 @@ export function ThemeProvider({
 }: React.ComponentProps<typeof NextThemesProvider>) {
   const [mounted, setMounted] = React.useState(false)
 
-  // Force dark mode on initial load
+  // Only handle mounting, don't manipulate localStorage directly
   React.useEffect(() => {
     setMounted(true)
-    document.documentElement.classList.add('dark')
   }, [])
 
   return (
-    <NextThemesProvider {...props} forcedTheme="dark">
+    <NextThemesProvider {...props}>
       {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
     </NextThemesProvider>
   )
