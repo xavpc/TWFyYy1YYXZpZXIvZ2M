@@ -92,7 +92,7 @@ const DevicesComponent = () => {
   }
 
   //^ ADD DEVICE
-  const addDevice = async ({ device_id, ...newAddDevice }: Devices) => {
+  const addDevice = async ({ device_id, ...newDeviceWithoutId }: Devices) => {
     setLoading(true) // Start loading
 
     try {
@@ -101,7 +101,7 @@ const DevicesComponent = () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newAddDevice),
+          body: JSON.stringify(newDeviceWithoutId), // Send without `device_id`
         }
       )
 

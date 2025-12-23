@@ -23,7 +23,7 @@ const RouteCombobox: React.FC<RouteComboboxProps> = ({
   const enhancedRoutes = routes.map(route => ({
     ...route,
     displayName: route.route.route_name,
-    routeInfo: `Route ID: ${route.route.route_id}`
+    routeInfo: `Day Assigned: ${route.day_assigned}`
   }))
 
   return (
