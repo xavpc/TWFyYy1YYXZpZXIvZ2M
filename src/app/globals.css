@@ -15,7 +15,25 @@
   animation: shimmer 2s infinite;
 }
 
+@keyframes pulse-live {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleX(1.02);
+    opacity: 0.8;
+  }
+}
 
+@keyframes animate-pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
 
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {

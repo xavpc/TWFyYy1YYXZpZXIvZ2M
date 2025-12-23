@@ -83,37 +83,41 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     fetchDevices()
   }, [])
 
+
+
+  const locationUpdateChannel = new BroadcastChannel('device-location-updates');
   
   useEffect(() => {
     let isMounted = true;
   
-    const continuousFetch = async () => {
-      if (selectedSession && isLive && !deviceLocationsLoading) {
+    const fetchLocations = async () => {
+      if (selectedSession && !deviceLocationsLoading) {
         try {
           await fetchDeviceLocationsBySessionId(selectedSession.session_id);
-          
-          if (isMounted) {
-            await continuousFetch();
-          }
         } catch (error) {
-          console.error('Error in continuous location fetching:', error);
-          
-          if (isMounted) {
-            await new Promise(resolve => setTimeout(resolve, 10000));
-            await continuousFetch();
-          }
+          console.error('Error fetching device locations:', error);
         }
       }
     };
   
-    if (selectedSession && isLive) {
-      continuousFetch();
+    if (selectedSession) {
+      fetchLocations();
     }
+  
+    const handleLocationUpdate = (event: MessageEvent) => {
+      if (event.data === 'device_location_updated' && isMounted) {
+        fetchLocations();
+      }
+    };
+  
+    locationUpdateChannel.addEventListener('message', handleLocationUpdate);
   
     return () => {
       isMounted = false;
+      locationUpdateChannel.removeEventListener('message', handleLocationUpdate);
     };
-  }, [selectedSession, isLive, deviceLocationsLoading]);
+  }, [selectedSession, isLive]);
+  
   
   const showAllActiveSessions = async () => {
     // Reset all selections and filters
@@ -607,7 +611,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
               </div>
             </div>
           )}
-          <Map deviceLocations={deviceLocations} routeId={selectedSession?.device_route.route.route_id} viewingSession={viewingSession} selectedSessionId={selectedSession?.session_id}/>
+          <Map deviceLocations={deviceLocations} routeId={selectedSession?.device_route.route.route_id} viewingSession={viewingSession} selectedSessionId={selectedSession?.session_id} isLive={isLive}/>
         </div>
 
         {/* Floating Sessions List Panel */}
