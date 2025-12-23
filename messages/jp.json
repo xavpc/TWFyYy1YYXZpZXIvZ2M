@@ -71,7 +71,8 @@
     "Create Collection": "コレクションを作成する",
     "Delete Collection": "コレクションを削除する",
     "Device Name": "デバイス名",
-    "Search Route Name": "ルート名を検索する"
+    "Search Route Name": "ルート名を検索する",
+    "Delete Device": "デバイスの削除"
   },
   "Device": {
     "Device Name": "デバイス名",
@@ -83,7 +84,8 @@
     "Search devices": "デバイスを検索... ",
     "active": "稼働中",
     "inactive": "オフライン",
-    "Edit": "編集"
+    "Edit": "編集",
+    "No Device Found": "デバイスが見つかりません"
   },
   "Complaints": {
     "Mark as in progress": "進行中としてマーク",

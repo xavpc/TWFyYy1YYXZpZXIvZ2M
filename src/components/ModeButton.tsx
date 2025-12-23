@@ -13,7 +13,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function ModeButton() {
-  const { setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
+
+  React.useEffect(() => {
+    console.log('Current theme:', theme)
+    console.log('Resolved theme:', resolvedTheme)
+  }, [theme, resolvedTheme])
 
   return (
     <DropdownMenu>

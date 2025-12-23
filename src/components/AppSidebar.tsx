@@ -35,6 +35,7 @@ import {
 import LanguageSwitcher from './LanguageSwitcher'
 
 import { logout } from '@/lib/auth'
+import { ModeButton } from './ModeButton'
 
 // Menu items.
 export function AppSidebar() {
@@ -113,7 +114,11 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>   <LanguageSwitcher />
+          <SidebarMenuItem>
+            <div className='flex justify-between'>
+              <ModeButton />
+              <LanguageSwitcher />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
@@ -133,9 +138,7 @@ export function AppSidebar() {
                     {t('SignOut')}
                   </button>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-               
-                </DropdownMenuItem>
+                <DropdownMenuItem></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

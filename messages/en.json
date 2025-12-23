@@ -10,7 +10,6 @@
     "SignOut": "Sign Out",
     "Device Simulator": "Device Simulator",
     "View Sessions": "View Sessions"
-    
   },
   "Dashboard": {
     "Hello there": "Hello there!"
@@ -75,7 +74,8 @@
     "Create Collection": "Create Collection",
     "Delete Collection": "Delete Collection",
     "Device Name": "Device Name",
-    "Search Route Name": "Search Route Name"
+    "Search Route Name": "Search Route Name",
+    "Delete Device": "Delete Device"
   },
   "Device": {
     "Device Name": "Device Name",
@@ -87,7 +87,8 @@
     "Search devices": "Search devices... ",
     "active": "active",
     "inactive": "inactive",
-    "Edit": "Edit"
+    "Edit": "Edit",
+    "No Device Found": "No Device Found"
   },
   "Complaints": {
     "Mark as in progress": "Mark as In Progress",

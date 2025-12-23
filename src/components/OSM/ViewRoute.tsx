@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+
 import {
   Table,
   TableBody,
@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+
 import {
   Dialog,
   DialogContent,
@@ -19,13 +20,30 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 
-import { Trash, MapPin, EllipsisVertical } from 'lucide-react' // Import icons
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+
+import { Trash, MapPin, Ellipsis, Slash } from 'lucide-react' // Import icons
 import { CenterCoordinates } from '@/types/center-coordinates'
 interface OSMMapProps {
   route_id?: string
   route_name: string
 }
-
 
 interface CollectionPoint {
   id: string
@@ -35,23 +53,22 @@ interface CollectionPoint {
 }
 
 interface Route {
-  route_id: string;
-  route_name: string;
-  center_latitude: string;
-  center_longitude: string;
+  route_id: string
+  route_name: string
+  center_latitude: string
+  center_longitude: string
 }
 
-
 interface DeviceRoute {
-  device_route_id: string;
-  day_assigned: string;
+  device_route_id: string
+  day_assigned: string
   device: {
-    device_id: string;
-    device_name: string;
-    vehicle_plate_num: string;
-    status: string;
-  };
-  route: Route;
+    device_id: string
+    device_name: string
+    vehicle_plate_num: string
+    status: string
+  }
+  route: Route
 }
 import { useTranslations } from 'next-intl' // Import
 import { useRouter } from 'next/navigation'
@@ -74,6 +91,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const [noData, setNoData] = useState(false) // Add state for tracking no data
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isCollectionOpen, setIsCollectionOpen] = useState(false)
+  const [isDeviceOpen, setIsDeviceOpen] = useState(false)
   const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>(
     []
   )
@@ -86,6 +104,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
   const t = useTranslations('Route')
   const dialog = useTranslations('Dialog')
+  const device = useTranslations('Device')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -165,88 +184,91 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   //^ FETCHES AND DISPLAY ROUTE
   const fetchAndDisplayRoute = async () => {
     if (!route_id || !mapInstanceRef.current) return
-  
+
     setIsLoading(true)
-  
+
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-  
+
     try {
       const response = await fetch(
         `${API_URL}/route-coordinates/route/${route_id}`
       )
       const { data } = await response.json()
-  
+
       if (!data?.length) {
         setNoData(true)
         return
       }
-  
+
       // Sort coordinates by sequence
       const sortedCoordinates = data.sort(
         (a: any, b: any) => a.sequence - b.sequence
       )
-  
+
       // Create route polyline from all coordinates
       const routePoints = sortedCoordinates.map((coord: any) => [
         parseFloat(coord.latitude),
-        parseFloat(coord.longitude)
+        parseFloat(coord.longitude),
       ])
-  
+
       // Remove previous routes before adding new ones
       routesRef.current.forEach((route) => route.remove())
       routesRef.current = []
-  
+
       const route = L.polyline(routePoints, {
         color: 'blue',
-        weight: 3,
+        weight: 5,
         opacity: 0.7,
       }).addTo(mapInstanceRef.current)
-  
+
       // Store the route reference
       routesRef.current.push(route)
-  
+
       // Remove previous markers
       routesMarkerRef.current.forEach((marker) => marker.remove())
       routesMarkerRef.current = []
-  
+
       // Only add start and end point markers
       const startPoint = routePoints[0]
       const endPoint = routePoints[routePoints.length - 1]
-  
+
       // Create start marker (blue)
       const startIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconUrl:
+          'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+        shadowUrl:
+          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
       })
-  
+
       // Create end marker (red)
       const endIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconUrl:
+          'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl:
+          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
       })
-  
+
       // Add start marker
       const startMarker = L.marker(startPoint, { icon: startIcon })
         .addTo(mapInstanceRef.current)
         .bindPopup('Start Point')
-  
+
       // Add end marker
       const endMarker = L.marker(endPoint, { icon: endIcon })
         .addTo(mapInstanceRef.current)
         .bindPopup('End Point')
-  
+
       routesMarkerRef.current.push(startMarker, endMarker)
-  
+
       // Fit the map to show the entire route
       const bounds = L.latLngBounds(routePoints)
       mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] })
-  
     } catch (error) {
       console.error('Error fetching route:', error)
       setError('Error fetching route')
@@ -392,7 +414,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     setShowRoutes(!showRoutes)
   }
 
- //^ FETCH DEVICE ROUTE
+  //^ FETCH DEVICE ROUTE
   const fetchDeviceRoute = async () => {
     setIsLoading(true) // Start loading
 
@@ -429,10 +451,45 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
+  //^ DELETE DEVICE
+  const handleDeleteDevice = async () => {
+    setIsLoading(true) // Start loading
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/device-routes/route/${route_id}`,
+        { method: 'DELETE' }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete device: ${response.status}`)
+      }
+
+      console.log('Device successfully deleted')
+      window.location.reload()
+    } catch (error) {
+      console.error('Error deleting device:', error)
+    } finally {
+      setIsLoading(false) // Stop loading
+    }
+  }
 
   return (
     <div className='relative'>
       <div>
+        <Breadcrumb className='mb-5'>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href='/'>Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <Slash />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink href='/route'>Route</BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <div>
           <div
             ref={mapContainerRef}
@@ -449,9 +506,9 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Device Name</TableHead>
-                    <TableHead>Vehicle Plate Number</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{device('Device Name')}</TableHead>
+                    <TableHead>{device('Vehicle Plate Number')}</TableHead>
+                    <TableHead>{device('Status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -480,7 +537,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={4} className='text-center'>
-                        No devices found.
+                        {device('No Device Found')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -505,21 +562,68 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             </button>
           </div>
           <div className='flex gap-2'>
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-xs float-right'
-              disabled={isLoading}
-            >
-              {t('Delete Route')}
-            </button>
-            <button
-              onClick={() => setIsCollectionOpen(true)}
-              className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-xs float-right'
-              disabled={isLoading}
-            >
-              {t('Delete Collection')}
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className='p-2 bg-gray-500 rounded-full'>
+                  <Ellipsis
+                    className='cursor-pointer bg-gray-500 rounded-full text-white '
+                    size={20}
+                  />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end' className='w-40'>
+                <DropdownMenuItem
+                  onClick={() => setIsDialogOpen(true)}
+                  disabled={isLoading}
+                  className='cursor-pointer'
+                >
+                  {t('Delete Route')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsCollectionOpen(true)}
+                  disabled={isLoading}
+                  className='cursor-pointer'
+                >
+                  {t('Delete Collection')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsDeviceOpen(true)}
+                  disabled={isLoading}
+                  className='cursor-pointer'
+                >
+                  {t('Delete Device')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+        </div>
+
+        <div className='relative z-50'>
+          <Dialog open={isDeviceOpen} onOpenChange={setIsDeviceOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{dialog('Sure')}</DialogTitle>
+                <DialogDescription>
+                  <div className='my-5'>{dialog('Delete Paragraph')}</div>
+                </DialogDescription>
+                <div className='flex gap-2 mt-4 items-center justify-center'>
+                  <button
+                    onClick={handleDeleteDevice}
+                    className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Loading...' : t('Delete Device')}
+                  </button>
+                  <button
+                    onClick={() => setIsDeviceOpen(false)}
+                    className='bg-gray-500 text-white px-4 py-2 rounded text-sm'
+                  >
+                    {dialog('Cancel')}
+                  </button>
+                </div>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className='relative z-50'>

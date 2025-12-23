@@ -3,10 +3,10 @@ import { getLocale, getMessages } from 'next-intl/server'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
+
 import './globals.css'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { ModeButton } from '@/components/ModeButton'
 
 export default async function RootLayout({
   children,
@@ -30,13 +30,9 @@ export default async function RootLayout({
           <NextIntlClientProvider messages={messages}>
             {/* Show Sidebar unless on the Login Page */}
             <AppSidebar />
+
             <main className='relative w-full'>
-              <ThemeProvider
-                attribute='class'
-                defaultTheme='system'
-                enableSystem
-                disableTransitionOnChange
-              >
+              <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
                 {children}
               </ThemeProvider>
             </main>
