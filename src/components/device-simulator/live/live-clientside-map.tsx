@@ -5,11 +5,12 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { CollectionPoints } from '@/types/collection-points'
 import { Device } from '@/types/device'
-import { createTrashCanIcon, darkPopupStyle, endIcon, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
+import { createTrashCanIcon, darkPopupStyle, endIcon, MapCenterUpdater, midIcon, routeEndIcon, routeStartIcon, startIcon } from '../client-side-map'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import MapButtons from '../map-buttons'
 import { Fullscreen } from 'lucide-react'
+import { DeviceRoute } from '@/types/device-route'
 
 interface LiveClientSideMapProps {
   routeCoordinates: Array<{
@@ -23,6 +24,7 @@ interface LiveClientSideMapProps {
   selectedDevice: Device | null;
   localDateTime: string;
   setIsFS: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedDeviceRoute: DeviceRoute | null;
 }
 
 interface DeviceLocationTrackerProps {
@@ -43,6 +45,130 @@ interface DeviceLocation {
   longitude: number;
   timestamp: string;
 }
+
+export const createGlowingGreenDot = () => {
+  return L.divIcon({
+    className: 'custom-start-icon',
+    html: `
+      <div 
+        style="
+          position: relative;
+          width: 10px; 
+          height: 10px; 
+          background-color: #22c55e; /* Solid green */
+          border: 2px solid #166534; /* Darker green border */
+          border-radius: 50%;
+        "
+      ></div>
+    `,
+    iconSize: [10, 10],
+    iconAnchor: [5, 5], // Center the icon
+  });
+};
+
+export const createGlowingBlueDot = () => {
+  return L.divIcon({
+    className: 'custom-mid-icon',
+    html: `
+      <div 
+        style="
+          position: relative;
+          width: 10px; 
+          height: 10px; 
+          background-color: #3b82f6; /* Solid blue */
+          border: 2px solid #1d4ed8; /* Darker blue border */
+          border-radius: 50%;
+        "
+      ></div>
+    `,
+    iconSize: [10, 10],
+    iconAnchor: [5, 5], // Center the icon
+  });
+};
+export const createCarIcon = (bearing: number, mapZoom: number) => {
+  // Function to convert meters to pixels based on zoom level
+  const metersToPixels = (meters: number, zoom: number) => {
+    const earthCircumference = 40075017; // Earth's circumference in meters
+    const mapWidthInPixels = 256 * Math.pow(2, zoom); // Map width in pixels at the given zoom level
+    return (meters / earthCircumference) * mapWidthInPixels;
+  };
+
+  const glowSize = metersToPixels(40, mapZoom); // 40 meters (20m radius * 2)
+
+  return L.divIcon({
+    className: 'custom-car-icon',
+    html: `
+      <div 
+        style="
+          position: relative;
+          width: ${glowSize}px; 
+          height: ${glowSize}px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+        "
+      >
+        <!-- Glowing Circle -->
+        <div 
+          style="
+            position: absolute;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0, 123, 255, 0.2);
+            border: 2px solid rgba(0, 123, 255, 0.3);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+            pointer-events: none;
+          "
+        ></div>
+        <!-- Garbage Truck Icon -->
+        <div
+          style="
+            position: relative;
+            z-index: 1;
+          "
+        >
+          <img 
+            src="/images/garbage-truck-icon.png" 
+            alt="Garbage Truck Icon" 
+            style="
+              width: 40px; 
+              height: 40px; 
+              transform: rotate(${bearing}deg); 
+              transform-origin: center;
+            "
+          />
+        </div>
+      </div>
+    `,
+    iconSize: [glowSize, glowSize],
+    iconAnchor: [glowSize / 2, glowSize / 2], // Center the icon
+  });
+};
+
+
+const calculateBearing = (
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
+  lon2: number
+): number => {
+  const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+  const toDegrees = (radians: number) => radians * (180 / Math.PI);
+  
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  
+  let bearingRad = Math.atan2(y, x);
+  let bearingDeg = toDegrees(bearingRad);
+  
+  return (bearingDeg + 360) % 360;
+};
+
 
 // Add seconds to a timestamp while staying in UTC
 const addSecondsToTimestamp = (timestamp: string, seconds: number) => {
@@ -149,7 +275,8 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   sessionId,
   selectedDevice,
   localDateTime,
-  setIsFS
+  setIsFS,
+  selectedDeviceRoute
 }) => {
   // Default position (Tokyo) or use first coordinate if available
   const defaultPosition: [number, number] = [35.6895, 139.6917];
@@ -166,7 +293,21 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const lastTimestampRef = useRef<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [showLegend, setShowLegend] = useState<boolean>(false);
-  
+  const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]);
+
+    useEffect(() => {
+      console.log(`selected device route: ${selectedDeviceRoute?.route.center_latitude}`)
+      if (selectedDeviceRoute &&selectedDeviceRoute.route && selectedDeviceRoute.route.center_latitude && selectedDeviceRoute.route.center_longitude) {
+        const lat = parseFloat(selectedDeviceRoute.route.center_latitude);
+        const lng = parseFloat(selectedDeviceRoute.route.center_longitude);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setCenter([lat, lng]);
+        }
+      }
+    }, [selectedDeviceRoute]);
+
+
   useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.textContent = darkPopupStyle + `
@@ -511,7 +652,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
     );
     
     // If within 30 meters radius
-    return distance <= 30;
+    return distance <= 20;
   };
 
   return (
@@ -582,7 +723,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       )}
       
       <MapContainer 
-        center={position} 
+        center={center} 
         zoom={13} 
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
@@ -592,12 +733,13 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         setShowLegend={setShowLegend}
         
       />
+      
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
           maxZoom={19}
         />
-        
+        <MapCenterUpdater selectedRoute={selectedDeviceRoute?.route} />
         {/* Route polyline */}
         {routeCoordinates.length > 0 && (
           <Polyline 
@@ -709,38 +851,63 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         
         {/* Device locations */}
         {deviceLocations.map((location, index) => {
-          // Determine which icon to use based on position
-          let iconToUse = midIcon;
-          let locationLabel = "Device Location";
-          
-          if (index === 0) {
-            iconToUse = startIcon;
-            locationLabel = "Start Location";
-          } else if (index === deviceLocations.length - 1) {
-            iconToUse = endIcon;
-            locationLabel = "Current Location";
-          }
-          
-          return (
-            <Marker 
-              key={location.id || `device-location-${index}`}
-              position={[location.latitude, location.longitude]} 
-              icon={iconToUse}
-            >
-              <Popup>
-                <div className="text-sm">
-                  <p className="font-bold">{locationLabel}</p>
-                  <p className="mt-1">
-                    <span className="font-semibold">Timestamp:</span> {formatTimestampForDisplay(location.timestamp)}
-                  </p>
-                  <p className="mt-1">
-                    <span className="font-semibold">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+  let iconToUse;
+  let locationLabel = "Device Location";
+
+  // Calculate bearing for current location
+  let bearing = 0;
+  if (index < deviceLocations.length - 1) {
+    // Calculate bearing to next location
+    bearing = calculateBearing(
+      location.latitude,
+      location.longitude,
+      deviceLocations[index + 1].latitude,
+      deviceLocations[index + 1].longitude
+    );
+  } else if (index > 0) {
+    // For last location, use bearing from previous location
+    bearing = calculateBearing(
+      deviceLocations[index - 1].latitude,
+      deviceLocations[index - 1].longitude,
+      location.latitude,
+      location.longitude
+    );
+  }
+
+  if (index === 0) {
+    iconToUse = createGlowingGreenDot();
+    locationLabel = "Start Location";
+  } else if (index === deviceLocations.length - 1) {
+    iconToUse = createCarIcon(bearing, 13); // Use calculated bearing
+    locationLabel = "Current Location";
+  } else {
+    iconToUse = createGlowingBlueDot();
+    locationLabel = "Device Location";
+  }
+
+  return (
+    <Marker 
+      key={location.id || `device-location-${index}`}
+      position={[location.latitude, location.longitude]} 
+      icon={iconToUse}
+    >
+      <Popup>
+        <div className="text-sm">
+          <p className="font-bold">{locationLabel}</p>
+          <p className="mt-1">
+            <span className="font-semibold">Timestamp:</span> {formatTimestampForDisplay(location.timestamp)}
+          </p>
+          <p className="mt-1">
+            <span className="font-semibold">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+          </p>
+          <p className="mt-1">
+            <span className="font-semibold">Bearing:</span> {bearing.toFixed(2)}°
+          </p>
+        </div>
+      </Popup>
+    </Marker>
+  );
+})}
         
         {/* Device location tracker */}
         {sessionId && (

@@ -18,63 +18,80 @@ const icon = L.icon({
   shadowSize: [41, 41]
 })
 
-const createCarIcon = (bearing: number) => {
+
+export const createCarIcon = (bearing: number, mapZoom: number) => {
+  // Function to convert meters to pixels based on zoom level
+  const metersToPixels = (meters: number, zoom: number) => {
+    const earthCircumference = 40075017; // Earth's circumference in meters
+    const mapWidthInPixels = 256 * Math.pow(2, zoom); // Map width in pixels at the given zoom level
+    return (meters / earthCircumference) * mapWidthInPixels;
+  };
+
+  const glowSize = metersToPixels(20, mapZoom); // 20 meters radius in pixels
+
   return L.divIcon({
     className: 'custom-car-icon',
     html: `
-      <svg 
-        width="40" 
-        height="40" 
-        viewBox="0 0 100 100" 
-        style="transform: rotate(${bearing}deg);"
+      <div 
+        style="
+          position: relative;
+          width: ${glowSize}px; 
+          height: ${glowSize}px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+        "
       >
-        <path 
-          d="M10 30 L90 30 L80 70 L20 70 Z" 
-          fill="#ff0000" 
-          stroke="#000" 
-          stroke-width="3"
+        <!-- Glowing Circle -->
+        <div 
+          style="
+            position: absolute;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0, 123, 255, 0.3); /* Blue glow */
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+          "
+        ></div>
+        <!-- Garbage Truck Icon -->
+        <img 
+          src="/images/garbage-truck-icon.png" 
+          alt="Garbage Truck Icon" 
+          style="
+            width: 50px; 
+            height: 50px; 
+            transform: rotate(${bearing}deg); 
+            transform-origin: center;
+          "
         />
-        <rect 
-          x="25" 
-          y="35" 
-          width="50" 
-          height="20" 
-          fill="#87CEEB" 
-          stroke="#000" 
-          stroke-width="2"
-        />
-        <circle cx="25" cy="75" r="10" fill="#000" />
-        <circle cx="75" cy="75" r="10" fill="#000" />
-      </svg>
+      </div>
     `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [glowSize, glowSize],
+    iconAnchor: [glowSize / 2, glowSize / 2], // Center the icon
   });
 };
-
-
-const createArrowIcon = (bearing: number) => {
-  return L.divIcon({
-    className: 'custom-arrow-icon',
-    html: `
-      <svg 
-        width="40" 
-        height="40" 
-        viewBox="0 0 100 100" 
-        style="transform: rotate(${bearing}deg);"
-      >
-        <polygon 
-          points="50,90 20,10 50,30 80,10" 
-          fill="#007bff" 
-          stroke="#000" 
-          stroke-width="3"
-        />
-      </svg>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
-};
+// const createArrowIcon = (bearing: number) => {
+//   return L.divIcon({
+//     className: 'custom-arrow-icon',
+//     html: `
+//       <svg 
+//         width="40" 
+//         height="40" 
+//         viewBox="0 0 100 100" 
+//         style="transform: rotate(${bearing}deg);"
+//       >
+//         <polygon 
+//           points="50,90 20,10 50,30 80,10" 
+//           fill="#007bff" 
+//           stroke="#000" 
+//           stroke-width="3"
+//         />
+//       </svg>
+//     `,
+//     iconSize: [40, 40],
+//     iconAnchor: [20, 20],
+//   });
+// };
 
 const calculateBearing = (
   lat1: number, 
@@ -100,17 +117,28 @@ const calculateBearing = (
 
 
 // Map View Control component to handle changing the view when data updates
-function MapViewControl({ locations, currentLocation }: { locations: DeviceLocation[], currentLocation?: DeviceLocation | null}) {
+function MapViewControl({
+  locations,
+  currentLocation,
+  setZoomLevel,
+}: {
+  locations: DeviceLocation[];
+  currentLocation?: DeviceLocation | null;
+  setZoomLevel: (zoom: number) => void;
+}) {
   const map = useMap();
-  
+
   useEffect(() => {
     if (locations.length > 0) {
       // If we have locations, fit the map to those bounds initially
-      const bounds = locations.map(loc => [parseFloat(loc.latitude), parseFloat(loc.longitude)]);
+      const bounds = locations.map((loc) => [
+        parseFloat(loc.latitude),
+        parseFloat(loc.longitude),
+      ]);
       map.fitBounds(bounds as L.LatLngBoundsExpression);
     }
   }, [locations, map]);
-  
+
   // When current location changes, center the map on that location
   useEffect(() => {
     if (currentLocation) {
@@ -120,7 +148,21 @@ function MapViewControl({ locations, currentLocation }: { locations: DeviceLocat
       );
     }
   }, [currentLocation, map]);
-  
+
+  // Track zoom level and pass it to the parent component
+  useEffect(() => {
+    const handleZoom = () => {
+      setZoomLevel(map.getZoom());
+    };
+
+    map.on("zoomend", handleZoom); // Listen for zoom changes
+    handleZoom(); // Set the initial zoom level
+
+    return () => {
+      map.off("zoomend", handleZoom); // Cleanup listener
+    };
+  }, [map, setZoomLevel]);
+
   return null;
 }
 
@@ -155,6 +197,7 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
       center_longitude: string;
     }
   }>>([]);
+  const [zoomLevel, setZoomLevel] = useState(13); 
   const [collectionPoints, setCollectionPoints] = useState<Array<{
     collection_point_id: string;
     collection_point_name: string;
@@ -803,41 +846,62 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
           
           {/* Show only current location marker */}
           {currentLocation && (
-  <Marker 
-    key={currentLocation.device_location_id} 
-    position={[parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)]} 
-    icon={
-      sortedLocations.length > 1 
-        ? createArrowIcon(
-            calculateBearing(
-              parseFloat(currentLocation.latitude),  // Current lat
-              parseFloat(currentLocation.longitude), // Current lon
-              parseFloat(sortedLocations[
-                Math.max(0, sortedLocations.findIndex(loc => loc === currentLocation) - 1)
-              ].latitude),   // Previous lat
-              parseFloat(sortedLocations[
-                Math.max(0, sortedLocations.findIndex(loc => loc === currentLocation) - 1)
-              ].longitude)   // Previous lon
-            )
-          )
-        : icon  // Fallback to the original icon if not enough locations
-    }
-  >
+            <Marker
+              key={currentLocation.device_location_id}
+              position={[
+                parseFloat(currentLocation.latitude),
+                parseFloat(currentLocation.longitude),
+              ]}
+              icon={createCarIcon(
+                sortedLocations.length > 1
+                  ? calculateBearing(
+                      parseFloat(currentLocation.latitude), // Current lat
+                      parseFloat(currentLocation.longitude), // Current lon
+                      parseFloat(
+                        sortedLocations[
+                          Math.max(
+                            0,
+                            sortedLocations.findIndex(
+                              (loc) =>
+                                loc.device_location_id === currentLocation.device_location_id
+                            ) - 1
+                          )
+                        ].latitude
+                      ), // Previous lat
+                      parseFloat(
+                        sortedLocations[
+                          Math.max(
+                            0,
+                            sortedLocations.findIndex(
+                              (loc) =>
+                                loc.device_location_id === currentLocation.device_location_id
+                            ) - 1
+                          )
+                        ].longitude
+                      ) // Previous lon
+                    )
+                  : 0, // Default bearing if there's only one location
+                zoomLevel // Use the zoom level from state
+              )}
+            >
               <Popup>
-                <div className='text-sm'>
-                  <p className='font-bold'>Device Location:</p>
+                <div className="text-sm">
+                  <p className="font-bold">Device Location:</p>
                   <p>{formatPopupTimestamp(currentLocation.current_location_timestamp)}</p>
-                  <p className='mt-1'>
-                    <span className='font-semibold'>Coordinates:</span> {currentLocation.latitude}, {currentLocation.longitude}
+                  <p className="mt-1">
+                    <span className="font-semibold">Coordinates:</span>{" "}
+                    {currentLocation.latitude}, {currentLocation.longitude}
                   </p>
                 </div>
               </Popup>
             </Marker>
           )}
           
-          <MapViewControl 
-            locations={sortedLocations} 
+          
+          <MapViewControl
+            locations={sortedLocations}
             currentLocation={currentLocation}
+            setZoomLevel={setZoomLevel} // Pass the setter function
           />
         </MapContainer>
       </div>

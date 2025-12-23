@@ -526,7 +526,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
   return (
     <div className='flex flex-col h-[calc(100vh-64px)]'>
 
-      <Toaster position="top-right" />
+      {/* <Toaster position="top-right" /> */}
       {/* Header Bar */}
       <div className='bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center'>
         <h1 className='text-xl font-bold text-white'>

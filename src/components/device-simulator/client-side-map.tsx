@@ -190,7 +190,7 @@ export const createTrashCanIcon = (isCollected: boolean) => {
 
 
 // Component to update map center when selected route changes
-const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) => {
+export const MapCenterUpdater = ({ selectedRoute }: { selectedRoute?: Route | null }) => {
   const map = useMap();
   
   useEffect(() => {

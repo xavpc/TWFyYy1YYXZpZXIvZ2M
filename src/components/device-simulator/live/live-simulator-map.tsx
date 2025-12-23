@@ -372,6 +372,7 @@ const LiveSimulatorMap = (): JSX.Element => {
             selectedDevice={selectedDevice}
             localDateTime={localDateTime}
             setIsFS={setIsMapFullScreen}
+            selectedDeviceRoute={selectedDeviceRoute}
             />
             <LoadingOverlay 
                 isVisible={routeCoordinatesLoading || collectionPointsLoading} 
