@@ -21,23 +21,19 @@ const DeviceCombobox: React.FC<DeviceComboboxProps> = ({
 }) => {
   // Format device display name to include vehicle plate
   const formatDeviceName = (device: Device) => {
-    return `${device.device_name} (${device.vehicle_plate_num})` || 'no selected device'
+    return `${device.device_name} (${device.vehicle_plate_num})`
   }
 
   // Format employee name
   const formatEmployeeName = (device: Device) => {
-    return device.employee 
-    ? `Operator: ${device.employee.first_name} ${device.employee.last_name}` 
-    : 'No operator assigned'
+    return `Operator: ${device.employee.first_name} ${device.employee.last_name}`
   }
 
   // Update the devices array with formatted display properties
   const enhancedDevices = devices.map(device => ({
     ...device,
-    displayName: formatDeviceName(device) || 'No Device',
-    employeeInfo: device.employee 
-      ? formatEmployeeName(device) 
-      : 'No operator assigned'
+    displayName: formatDeviceName(device),
+    employeeInfo: formatEmployeeName(device)
   }))
 
   return (

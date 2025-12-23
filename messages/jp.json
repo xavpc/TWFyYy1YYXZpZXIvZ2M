@@ -9,7 +9,9 @@
     "Username": "ユーザー名",
     "SignOut": "ログアウト",
     "Device Simulator": "デバイスシミュレーター",
-    "View Sessions": "セッションを表示"
+    "View Sessions": "セッションを表示",
+    "Archived Sessions": "アーカイブされたセッション",
+    "Live Sessions": "ライブセッション"
   },
   "Dashboard": {
     "Hello there": "こんにちは!",
@@ -24,8 +26,13 @@
     "Complaints": "苦情",
     "Others": "その他",
     "Lorem": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pulvinar leo magna",
-    "Area Chart": "面グラフ",
-    "Bar Chart": "棒グラフ"
+    "Session Chart": "セッションチャート",
+    "Collection Chart": "コレクションチャート",
+    "Active Session": "アクティブなセッション",
+    "Archived Session": "アーカイブセッション",
+    "Blue": "青",
+    "Green": "緑",
+    "Collected": "集めた"
   },
   "Layout": {
     "Dashboard": "ダッシュボード",

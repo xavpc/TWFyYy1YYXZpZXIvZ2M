@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react' // Add this import for the loading spinner
+import { Loader2, Slash } from 'lucide-react' // Add this import for the loading spinner
 
 interface OSMMapProps {
   className?: string
@@ -11,6 +11,14 @@ interface OSMMapProps {
 
 import { useTranslations } from 'next-intl' // Import
 import toast, { Toaster } from 'react-hot-toast'
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '../ui/breadcrumb'
 
 const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -206,84 +214,95 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
       toast.error('Need at least two markers to save a route.')
       return
     }
-  
+
     if (!route_id) {
       toast.error('Route ID is missing.')
       return
     }
-  
+
     setIsLoading(true)
     try {
       const checkUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/route/${route_id}`
       const checkResponse = await fetch(checkUrl)
       const checkData = await checkResponse.json()
-  
+
       if (checkResponse.ok && checkData.data && checkData.data.length > 0) {
-        toast.error('This route already has defined coordinates. Please edit the existing route instead.')
+        toast.error(
+          'This route already has defined coordinates. Please edit the existing route instead.'
+        )
         return
       }
-  
+
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/route-coordinates/batch`
       const allCoordinates = []
       let sequenceCounter = 1
-  
+
       // Process each OSRM route segment
       for (let i = 0; i < routeCoordinatesRef.current.length; i++) {
         // Add all OSRM points
         const segmentPoints = routeCoordinatesRef.current[i].coords
-        
+
         for (let j = 0; j < segmentPoints.length; j++) {
           const point = segmentPoints[j]
           // Check if point is valid
           if (Array.isArray(point) && point.length === 2) {
             const lat = point[0]
             const lng = point[1]
-            
+
             // Save every OSRM point, marking first/last points as waypoints
-            const isFirstOrLastInSegment = j === 0 || j === segmentPoints.length - 1
-            
+            const isFirstOrLastInSegment =
+              j === 0 || j === segmentPoints.length - 1
+
             allCoordinates.push({
               latitude: lat,
               longitude: lng,
               route_id,
               sequence: sequenceCounter++,
-              is_user_waypoint: isFirstOrLastInSegment
+              is_user_waypoint: isFirstOrLastInSegment,
             })
           }
         }
       }
-  
+
       // Check if we have any coordinates to save
       if (allCoordinates.length === 0) {
         toast.error('No valid route coordinates were generated.')
         return
       }
-  
+
       console.log('Sending OSRM-only coordinates batch:', allCoordinates)
-  
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(allCoordinates),
       })
-  
+
       const responseBody = await response.text()
       console.log('API Response:', response.status, responseBody)
-  
+
       if (!response.ok) {
-        throw new Error(`Failed to save coordinates. Server response: ${responseBody}`)
+        throw new Error(
+          `Failed to save coordinates. Server response: ${responseBody}`
+        )
       }
-  
+
       toast.success('Route saved successfully!')
       router.push(`/route/view/${route_id}`)
     } catch (error) {
       console.error('Error saving coordinates:', error)
-      
+
       // User-friendly toast errors
       if (error instanceof TypeError) {
-        toast.error('Network error. Please check your connection and try again.')
+        toast.error(
+          'Network error. Please check your connection and try again.'
+        )
       } else {
-        toast.error(`Failed to save route: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        toast.error(
+          `Failed to save route: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        )
       }
     } finally {
       setIsLoading(false)
@@ -314,6 +333,17 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
           </div>
         )}
         <div className='mb-4'>
+          <Breadcrumb className='mb-5'>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href='/route'>{t('Route')}</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <Slash />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>{t('Add Route')}</BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           <div className='bg-blue-500 p-4 text-sm rounded'>
             <div>
               {t('Click Points')}
@@ -354,7 +384,7 @@ const OSMMap: React.FC<OSMMapProps> = ({ route_id }) => {
           </button>
         </div>
       </div>
-      <Toaster position="top-right" />
+      <Toaster position='top-right' />
     </div>
   )
 }

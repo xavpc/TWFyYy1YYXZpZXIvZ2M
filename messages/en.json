@@ -9,6 +9,7 @@
     "Username": "Username",
     "SignOut": "Sign Out",
     "Device Simulator": "Device Simulator",
+    "View Sessions": "View Sessions",
     "Archived Sessions": "Archived Sessions",
     "Live Sessions": "Live Sessions"
   },
@@ -24,8 +25,13 @@
     "Complaints": "Complaints",
     "Others": "Others",
     "Lorem": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pulvinar leo magna",
-    "Area Chart": "Area Chart",
-    "Bar Chart": "Bar Chart"
+    "Session Chart": "Session Chart",
+    "Collection Chart": "Collection Chart",
+    "Active Session": "Active Session",
+    "Archived Session": "Archived Session",
+    "Blue": "Blue",
+    "Green": "Green",
+    "Collected": "Collected"
   },
   "Layout": {
     "Dashboard": "Dashboard",
@@ -35,8 +41,7 @@
     "Complaints": "Complaints",
     "Device Simulator": "Device Simulator",
     "View Sessions": "View Sessions",
-    "Session Viewer": "Archive Sessions",
-    "Live Sessions": "Live Sessions"
+    "Session Viewer": "Archive Sessions"
   },
   "Pagination": {
     "Next": "Next",
@@ -143,10 +148,10 @@
     "Live Map": "Live Map",
     "Settings": "Settings",
     "Loading map data": "Loading map data",
-    "Please select a device and route" : "Please select a device and route",
-    "Please select a device" : "Please select a device",
-    "Please select a route" : "Please select a route",
-    "Initializing map" : "Initializing map...",
+    "Please select a device and route": "Please select a device and route",
+    "Please select a device": "Please select a device",
+    "Please select a route": "Please select a route",
+    "Initializing map": "Initializing map...",
     "Live Simulation": "Live Simulation",
     "Device": "Device",
     "Route": "Route",
@@ -155,12 +160,11 @@
     "Set Initial Time": "Set Initial Time"
   },
   "Session Viewer": {
-    "Session Viewer": "Archive Sessions",
+    "Session Viewer": "Session Viewer",
     "Session Information": "Session Information",
     "Device Selection": "Device Selection",
     "Sessions": "Sessions",
-    "Live Session":"View Live Sessions",
-    "Active Sessions": "Active Sessions"
+    "Live Session": "View Live Sessions"
   },
 
   "Dialog": {

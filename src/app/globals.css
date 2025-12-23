@@ -15,25 +15,7 @@
   animation: shimmer 2s infinite;
 }
 
-@keyframes pulse-live {
-  0%, 100% {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scaleX(1.02);
-    opacity: 0.8;
-  }
-}
 
-@keyframes animate-pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.95;
-  }
-}
 
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
@@ -53,73 +35,6 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #6b7280; /* Tailwind's gray-500 */
 }
-
-/* Custom scrollbar styles for Today's Sessions */
-.today-sessions-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.today-sessions-scrollbar::-webkit-scrollbar-track {
-  background: #1f2937; /* Tailwind's gray-800 */
-  border-radius: 4px;
-}
-
-.today-sessions-scrollbar::-webkit-scrollbar-thumb {
-  background: #4b5563; /* Tailwind's gray-600 */
-  border-radius: 4px;
-}
-
-.today-sessions-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #6b7280; /* Tailwind's gray-500 */
-}
-
-/* Custom scrollbar styles for All Sessions */
-.all-sessions-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.all-sessions-scrollbar::-webkit-scrollbar-track {
-  background: #1f2937; /* Tailwind's gray-800 */
-  border-radius: 8px;
-}
-
-.all-sessions-scrollbar::-webkit-scrollbar-thumb {
-  background: #4b5563; /* Tailwind's gray-600 */
-  border-radius: 8px;
-}
-
-.all-sessions-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #6b7280; /* Tailwind's gray-500 */
-}
-
-.sessions-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-.sessions-content {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.today-sessions-scrollbar,
-.all-sessions-scrollbar {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-
-.marker-transition {
-  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-}
-
-
 
 .leaflet-popup-content-wrapper {
   background-color: white;

@@ -13,7 +13,7 @@ import {
   PlaySquare,
   Navigation,
   Satellite,
-  Activity
+  Activity,
 } from 'lucide-react'
 import {
   Sidebar,

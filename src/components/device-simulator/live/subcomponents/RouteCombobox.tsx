@@ -19,12 +19,11 @@ const RouteCombobox: React.FC<RouteComboboxProps> = ({
   selectedRoute,
   disabled
 }) => {
-  // Format route details with unique identification
+  // Format route details with just the route name
   const enhancedRoutes = routes.map(route => ({
     ...route,
     displayName: route.route.route_name,
-    routeInfo: `Day Assigned: ${route.day_assigned}`,
-    uniqueKey: route.device_route_id // Add unique identifier
+    routeInfo: `Route ID: ${route.route.route_id}`
   }))
 
   return (
@@ -37,8 +36,7 @@ const RouteCombobox: React.FC<RouteComboboxProps> = ({
       selectedItem={selectedRoute ? {
         ...selectedRoute,
         displayName: selectedRoute.route.route_name,
-        routeInfo: `Day Assigned: ${selectedRoute.day_assigned}`,
-        uniqueKey: selectedRoute.device_route_id // Use unique identifier for selection
+        routeInfo: `Route ID: ${selectedRoute.route.route_id}`
       } : null}
       placeholder={disabled ? "Select a device first" : "Select a route"}
       label="Route"

@@ -326,14 +326,13 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
     }
   }, [isFullScreen]);
 
-  const toggleFullScreen = useCallback((e: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    setIsFullScreen(prev => !prev);
-  }, []);
+    const toggleFullScreen = useCallback((e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      setIsFullScreen(prev => !prev);
+    }, []);
 
-  const locationUpdateChannel = new BroadcastChannel('device-location-updates');
   const handleAddDeviceLocation = async (location: {
     latitude: number;
     longitude: number;
@@ -376,7 +375,16 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         
         // Add the new location to state
         setDeviceLocations(prev => [...prev, newDeviceLocation]);
-        locationUpdateChannel.postMessage('device_location_updated');
+        
+        toast.success('Location added', {
+          duration: 1000,
+          style: {
+            background: '#1F2937',
+            color: '#FFF',
+            border: '1px solid #374151',
+            borderRadius: '6px',
+          },
+        });
       } else {
         throw new Error('API returned success: false or no data');
       }
@@ -468,7 +476,6 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         }));
         setIsLoading(true);
         // Show a success notification
-        locationUpdateChannel.postMessage('device_location_updated');
         toast.success(`Collection point collected successfully`, {
           duration: 4000,
           style: {
@@ -594,7 +601,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
       />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png" 
           maxZoom={19}
         />
         

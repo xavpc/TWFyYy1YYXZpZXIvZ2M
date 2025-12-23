@@ -18,42 +18,6 @@ const icon = L.icon({
   shadowSize: [41, 41]
 })
 
-const createCarIcon = (bearing: number) => {
-  return L.divIcon({
-    className: 'custom-car-icon',
-    html: `
-      <svg 
-        width="40" 
-        height="40" 
-        viewBox="0 0 24 24" 
-        style="transform: rotate(${bearing}deg);"
-        fill="#007bff" 
-        stroke="#fff" 
-        stroke-width="1.5"
-      >
-        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
-      </svg>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
-};
-
-const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const toRadians = (degrees: number) => degrees * (Math.PI / 180);
-  
-  const φ1 = toRadians(lat1);
-  const φ2 = toRadians(lat2);
-  const Δλ = toRadians(lon2 - lon1);
-
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  
-  let θ = Math.atan2(y, x);
-  θ = θ * (180 / Math.PI);
-  
-  return (θ + 360) % 360; // Normalize to 0-360 degrees
-};
 // Map View Control component to handle changing the view when data updates
 function MapViewControl({ locations, currentLocation }: { locations: DeviceLocation[], currentLocation?: DeviceLocation | null}) {
   const map = useMap();
@@ -84,10 +48,9 @@ interface ClientSideMapProps {
   routeId: string |undefined;
   viewingSession:boolean;
   selectedSessionId: string | undefined;
-  isLive: boolean;
 }
 
-const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessionId, isLive = false}: ClientSideMapProps) => {
+const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessionId}: ClientSideMapProps) => {
   // Default position if no locations are provided
   const defaultPosition: [number, number] = [35.6895, 139.6917]; // Tokyo as default
   
@@ -203,17 +166,12 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     };
   }, []);
   useEffect(() => { 
-    if (isLive && sortedLocations.length > 0) {
-      const latestIndex = sortedLocations.length - 1;
-      setCurrentIndex(latestIndex);
-      setSliderValue(100); 
-    } else {
-      setSliderValue(0);
-      setCurrentIndex(0);
-    }
+    setSliderValue(0);
+    setCurrentIndex(0);
     setSliderHover(null);
     setHoverTimestamp(null);
-  }, [deviceLocations, isLive]);
+  }, [deviceLocations]); 
+
   useEffect(() => { 
     if(!viewingSession){
       setRouteCoordinates([]);
@@ -273,9 +231,6 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
   }, [routeId]);
 
   useEffect(() => {
-    const locationUpdateChannel = new BroadcastChannel('device-location-updates');
-    let isMounted = true;
-    
     const fetchCollectedPoints = async (sessionId: string | undefined) => {
       if (!sessionId || !viewingSession) return;
       
@@ -294,23 +249,7 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
       }
     };
     
-    const handleLocationUpdate = (event: MessageEvent) => {
-      if (event.data === 'device_location_updated' && isMounted) {
-        fetchCollectedPoints(selectedSessionId);
-      }
-    };
-    
-    // Initial fetch
     fetchCollectedPoints(selectedSessionId);
-    
-    // Listen for broadcast updates
-    locationUpdateChannel.addEventListener('message', handleLocationUpdate);
-    
-    return () => {
-      isMounted = false;
-      locationUpdateChannel.removeEventListener('message', handleLocationUpdate);
-      locationUpdateChannel.close();
-    };
   }, [selectedSessionId, viewingSession]);
 
   const isCollectionPointCollected = useCallback((collectionPointId: string) => {
@@ -436,204 +375,58 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
   }, [isPlaying, sortedLocations]);
   
   // Toggle play/pause
-  const togglePlay = () => {
-    if (isLive) {
-      console.log("Live tracking toggled");
-    } else {
-      setIsPlaying(!isPlaying);
-    }
-  };
+  const togglePlay = () => setIsPlaying(!isPlaying);
   
   return (
     <div className='flex flex-col h-full'>
       {/* Map Timeline Controls */}
-      <div 
-        className={`
-          relative overflow-hidden 
-          ${isLive 
-            ? 'bg-gradient-to-r from-blue-950 via-blue-900 to-blue-950 border-b border-blue-800' 
-            : 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700'}
-          p-4 shadow-2xl rounded-b-xl transition-all duration-300 ease-in-out
-        `}
-      >
-        {/* Live Tracking Indicator */}
-        {isLive && (
-          <div className='absolute top-3 right-4 flex items-center space-x-3'>
-            <div className='relative'>
-              <span className='absolute inline-flex h-4 w-4 rounded-full bg-blue-400 opacity-75 animate-ping'></span>
-              <span className='relative inline-flex h-4 w-4 rounded-full bg-blue-500'></span>
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-blue-200 text-xs font-bold uppercase tracking-widest'>
-                Live Tracking
-              </span>
-              <span className='text-blue-300 text-[10px] opacity-75'>
-                Real-time Location Updates
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Main Controls Container */}
-        <div className='flex items-center justify-between space-x-4'>
-          {/* Play/Pause Button with Disabled State for Live */}
-          <div className='flex items-center space-x-4'>
+      <div className='bg-gray-800 border-b border-gray-700 p-2'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center space-x-3'>
             <button
-              className={`
-                group relative flex items-center justify-center
-                w-12 h-12 rounded-full 
-                ${isLive 
-                  ? 'bg-blue-900/20 cursor-not-allowed opacity-50' 
-                  : (isPlaying 
-                    ? 'bg-red-600/20 hover:bg-red-600/30 border-2 border-red-500/50' 
-                    : 'bg-blue-600/20 hover:bg-blue-600/30 border-2 border-blue-500/50')}
-                transition-all duration-300 ease-in-out
-                transform hover:scale-105 active:scale-95
-                will-change-transform
-                focus:outline-none focus:ring-2 focus:ring-offset-2
-                ${isLive 
-                  ? '' 
-                  : (isPlaying 
-                    ? 'focus:ring-red-500/50' 
-                    : 'focus:ring-blue-500/50')}
-              `}
-              onClick={isLive ? undefined : togglePlay}
-              disabled={isLive || sortedLocations.length === 0}
-              aria-label={isLive ? "Live Tracking" : (isPlaying ? "Pause" : "Play")}
+              onClick={togglePlay}
+              className={`p-2 rounded-full ${isPlaying ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+              disabled={sortedLocations.length === 0}
             >
-              {isLive ? (
-                <svg 
-                  className="w-6 h-6 text-gray-400" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-                  />
+              {isPlaying ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                 </svg>
               ) : (
-                isPlaying ? (
-                  <svg 
-                    className="w-6 h-6 text-red-500 group-hover:rotate-6 transition-transform" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-                    />
-                  </svg>
-                ) : (
-                  <svg 
-                    className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" 
-                    />
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-                    />
-                  </svg>
-                )
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               )}
             </button>
-
-            {/* Time Display with Advanced Styling */}
-            <div className='flex items-center space-x-2'>
+            
+            {/* Current position time / Last timestamp */}
+            <div className='text-xs text-gray-300'>
               {sortedLocations.length > 0 && currentLocation ? (
                 <>
-                  {!isLive ? (
-                    <>
-                  <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className='text-xs text-gray-200 font-medium tracking-tight'>
-                      {formatDisplayTimestamp(currentLocation.current_location_timestamp)}
-                    </span>
-                  </div>                    
-                  <span className='text-gray-500 text-xs'>/</span>
-                  <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className='text-xs text-gray-200 font-medium tracking-tight'>
-                      {formatDisplayTimestamp(endTimestamp)}
-                    </span>
-                  </div>
-                  </>
-                  ):(
-                  <>
- <div className='flex items-center space-x-2'>
-      <span className='text-gray-400 text-xs uppercase tracking-wider'>Navigated Location</span>
-      <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-        <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className='text-xs text-blue-200 font-medium tracking-tight'>
-          {hoverTimestamp || formatDisplayTimestamp(currentLocation.current_location_timestamp)}
-        </span>
-      </div>
-    </div>
-
-    {/* Separator */}
-    <div className='w-px h-5 bg-gray-700'></div>
-
-    {/* Live Time Section */}
-    <div className='flex items-center space-x-2'>
-      <span className='text-green-400 text-xs uppercase tracking-wider'>Latest Location</span>
-      <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-        <svg className="w-4 h-4 text-green-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className='text-xs text-green-200 font-medium tracking-tight'>
-          {formatDisplayTimestamp(endTimestamp)}
-        </span>
-      </div>
-    </div>
-  
-                  </>
-
-                  )}
+                  <span>{formatDisplayTimestamp(currentLocation.current_location_timestamp)}</span>
+                  <span className='mx-1'>/</span>
+                  <span>{formatDisplayTimestamp(endTimestamp)}</span>
                 </>
               ) : (
-                <span className='text-gray-500 animate-pulse'>No location data</span>
+                <span>No location data</span>
               )}
             </div>
           </div>
-
-          {/* Location Count - Hidden during Live Tracking */}
-          {!isLive && sortedLocations.length > 0 && (
-            <div className='flex items-center space-x-2'>
-              <div className='bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5 flex items-center space-x-2'>
-                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className='text-xs text-gray-200 font-medium tracking-tight'>
-                  Location {currentIndex + 1} of {sortedLocations.length}
-                </span>
-              </div>
-            </div>
-          )}
+          
+          {/* Location count indicator */}
+          <div className='text-xs text-gray-400'>
+            {sortedLocations.length > 0 ? (
+              <span>
+                Location {currentIndex + 1} of {sortedLocations.length}
+              </span>
+            ) : (
+              <span>No locations</span>
+            )}
+          </div>
         </div>
-
+        
         {/* Timeline slider */}
         <div className='mt-3 relative'>
           <div className='h-1 bg-gray-700 rounded-full'>
@@ -686,7 +479,6 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
           />
           {routeCoordinates.length > 0 && (
             <Polyline 
@@ -731,6 +523,8 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
             </>
           )}
 
+
+
           {/* Collection Points */}
           {collectionPoints.length > 0 && (
             <>
@@ -755,6 +549,8 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
               ))}
             </>
           )}
+
+
           
           {/* Show only current location marker */}
           {currentLocation && (
