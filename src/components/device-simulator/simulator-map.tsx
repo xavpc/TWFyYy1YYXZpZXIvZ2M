@@ -332,11 +332,11 @@ const DeviceSimulatorMap = (): JSX.Element => {
 
     try {
       setLoading(true)
-      console.log('Start session clicked for device:', selectedDevice.device_id)
+      console.log('Start session clicked for route:', selectedRoute?.route_id)
 
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-sessions/`
       const response = await axios.post(apiUrl, {
-        device_id: selectedDevice.device_id,
+        route_id: selectedRoute?.route_id
       })
       console.log('Session started successfully:', response.data)
 
