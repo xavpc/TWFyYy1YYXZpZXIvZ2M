@@ -46,6 +46,7 @@ export default function EmployeeList() {
     contact_number: '',
     address: '',
     age: 18,
+    status: 'active'
   })
 
   const t = useTranslations('Employees') // Ensure
@@ -121,6 +122,7 @@ export default function EmployeeList() {
         contact_number: '',
         address: '',
         age: 20,
+        status: 'active'
       })
     } catch (error) {
       console.error('Error adding employee:', error)
