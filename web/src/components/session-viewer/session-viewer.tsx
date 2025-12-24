@@ -176,6 +176,26 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     }
   };
 
+  const snapLocationToRoute = async (location: DeviceLocation): Promise<DeviceLocation> => {
+    try {
+      const nearestUrl = `https://router.project-osrm.org/nearest/v1/driving/${location.longitude},${location.latitude}`;
+      const response = await axios.get(nearestUrl);
+  
+      if (response.data?.waypoints?.[0]) {
+        const snappedPoint = response.data.waypoints[0];
+        return {
+          ...location,
+          latitude: snappedPoint.location[1].toString(),
+          longitude: snappedPoint.location[0].toString()
+        };
+      }
+      return location;
+    } catch (error) {
+      console.error('Error snapping to route:', error);
+      return location;
+    }
+  };
+  
 
   const fetchDeviceLocationsBySessionId = async (sessionId: string) => {
     try {
@@ -184,8 +204,13 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       const response = await axios.get(apiUrl)
      
       if (response.data.success && response.data.data) {
-        console.log(`Device Locations${response.data.data}`)
-        setDeviceLocations(response.data.data)
+        // Snap each location to nearest road
+        const locations = response.data.data;
+        const snappedLocations: DeviceLocation[] = await Promise.all(
+          locations.map((location: DeviceLocation) => snapLocationToRoute(location))
+        );
+        
+        setDeviceLocations(snappedLocations);
       } else {
         setDeviceLocations([])
       }
@@ -653,17 +678,6 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
         
         {/* Map Panel */}
         <div className="flex-1 overflow-hidden relative z-0">
-          {deviceLocationsLoading && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-              <div className="flex flex-col items-center">
-                <svg className='animate-spin h-10 w-10 text-blue-500 mb-2' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
-                  <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
-                  <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
-                </svg>
-                <p className="text-sm text-white">Loading location data...</p>
-              </div>
-            </div>
-          )}
           <Map 
             deviceLocations={deviceLocations} 
             routeId={selectedSession?.device_route.route.route_id} 
@@ -672,6 +686,19 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
             isLive={isLive}
           />
         </div>
+
+        {deviceLocationsLoading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+            <div className="flex flex-col items-center">
+              <svg className='animate-spin h-10 w-10 text-blue-500 mb-2' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+              </svg>
+              <p className="text-sm text-white mb-1">Processing location data...</p>
+              <p className="text-xs text-gray-300">Snapping points to nearest roads</p>
+            </div>
+          </div>
+        )}
 
         {/* Floating Sessions List Panel */}
         {(selectedDevice || (isLive && !deviceSelectionCollapsed)) && 

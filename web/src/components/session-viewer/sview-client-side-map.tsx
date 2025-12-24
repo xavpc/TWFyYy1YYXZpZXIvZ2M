@@ -632,6 +632,9 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     
       return null;
     };
+
+
+    
   return (
     <div className='flex flex-col h-full'>
       {/* Map Timeline Controls */}
