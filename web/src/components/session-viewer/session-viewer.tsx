@@ -22,7 +22,7 @@ interface GroupedSessions {
 
 // Dynamically import the map component with SSR disabled
 const Map = dynamic(
-  () => import('./client-side-map'),
+  () => import('./sview-client-side-map'),
   { ssr: false }
 )
 
@@ -56,7 +56,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   const [deviceInfoModalOpen, setDeviceInfoModalOpen] = useState(false)
   const [deviceLocations, setDeviceLocations] = useState<DeviceLocation[]>([])
   const [deviceLocationsLoading, setDeviceLocationsLoading] = useState(false)
-
+  const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
   useEffect(() => {
     if (isLive) {
       fetchActiveSessions()
@@ -458,9 +458,47 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     </div>
       
       {/* Main Content */}
-      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden'>
-        {/* Left Panel - Device Selection */}
-        <div className='lg:col-span-1 bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-hidden relative'>
+      <div className='flex-1 flex bg-gray-900 overflow-hidden relative'>
+        {/* Toggle Button */}
+        <button
+          onClick={() => {
+            setIsLeftPanelVisible(!isLeftPanelVisible);
+            // Close floating panel when left panel is collapsed
+            if (isLeftPanelVisible) {
+              setDeviceSelectionCollapsed(true);
+            }
+          }}
+          className={`absolute top-1/2 -translate-y-1/2 z-[999] bg-gray-800 hover:bg-gray-800 text-gray-300 p-2 rounded-r-md border border-l-0 border-gray-700 shadow-lg transition-all duration-200 ${
+            // Only apply opacity when floating panel is visible
+            (selectedDevice || (isLive && !deviceSelectionCollapsed)) && !deviceSelectionCollapsed 
+              ? 'bg-gray-800/50 hover:bg-gray-800 text-gray-400 hover:text-gray-300 border-gray-700/50 hover:border-gray-700 opacity-30 hover:opacity-100' 
+              : ''
+          }`}
+          style={{ 
+            transform: isLeftPanelVisible 
+              ? 'translate(320px, -50%)' 
+              : 'translate(0, -50%)',
+          }}
+        >
+          {isLeftPanelVisible ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+          )}
+        </button>
+  {/* Left Panel */}
+  <div 
+  className={`transition-all duration-300 ease-in-out ${
+    isLeftPanelVisible ? 'w-80' : 'w-0'
+  } overflow-hidden bg-gray-800 border-r border-gray-700 relative z-[998]`}
+>
+    <div className="w-80 h-full">
+      <div className='bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col h-full'>
+        {/* Device Selection Header */}
           <div className='p-4 border-b border-gray-700'>
             <h3 className='font-semibold text-blue-400 text-lg'>
               {devsim('Device Selection')}
@@ -610,10 +648,11 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
               </div>
             )}
         </div>
+    </div>
+  </div>
         
-        {/* Map Panel - Takes up all remaining space */}
-        <div className="lg:col-span-3 bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden" 
-            style={{ height: '100%', position: 'relative', zIndex: 0 }}>
+        {/* Map Panel */}
+        <div className="flex-1 overflow-hidden relative z-0">
           {deviceLocationsLoading && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
               <div className="flex flex-col items-center">
@@ -625,21 +664,29 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
               </div>
             </div>
           )}
-          <Map deviceLocations={deviceLocations} routeId={selectedSession?.device_route.route.route_id} viewingSession={viewingSession} selectedSessionId={selectedSession?.session_id} isLive={isLive}/>
+          <Map 
+            deviceLocations={deviceLocations} 
+            routeId={selectedSession?.device_route.route.route_id} 
+            viewingSession={viewingSession} 
+            selectedSessionId={selectedSession?.session_id} 
+            isLive={isLive}
+          />
         </div>
 
         {/* Floating Sessions List Panel */}
-        {(selectedDevice || (isLive && !deviceSelectionCollapsed)) && !deviceSelectionCollapsed && (
-          <div 
-            className="lg:block absolute bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-y-auto transition-all duration-300"
-            style={{ 
-              left: 'calc(25% + 2.5rem)',
-              top: '4.5rem',
-              height: 'calc(100% - 5.5rem)',
-              width: '25%',
-              zIndex: 30,
-            }}
-          >
+        {(selectedDevice || (isLive && !deviceSelectionCollapsed)) && 
+          !deviceSelectionCollapsed && 
+          isLeftPanelVisible && ( // Add this condition
+            <div 
+              className="lg:block absolute bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-y-auto transition-all duration-300"
+              style={{ 
+                left: 'calc(25% + 2.5rem)',
+                top: '4.5rem',
+                height: 'calc(100% - 5.5rem)',
+                width: '25%',
+                zIndex: 997,
+              }}
+            >
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h3 className="font-semibold text-blue-400 text-lg">
                 {devsim('Sessions')}
