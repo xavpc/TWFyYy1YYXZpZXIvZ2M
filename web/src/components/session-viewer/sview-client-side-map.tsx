@@ -200,6 +200,8 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
   const [sliderHover, setSliderHover] = useState<number | null>(null);
   const [hoverTimestamp, setHoverTimestamp] = useState<string | null>(null);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
+  const [skippedPoints, setSkippedPoints] = useState<{[key: string]: boolean}>({});
+  
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{
     route_coordinates_id: string;
     latitude: string;
@@ -219,6 +221,7 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     collection_point_name: string;
     latitude: string;
     longitude: string;
+    sequence: number;
     route: {
       route_id: string;
       route_name: string;
@@ -235,6 +238,7 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     collection_point: {
       collection_point_id: string;
       collection_point_name: string;
+      sequence: number;
       latitude: string;
       longitude: string;
     }
@@ -400,7 +404,35 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     }
   }, [viewingSession]);
 
-
+    useEffect(() => {
+      if (!collectionPoints || collectionPoints.length === 0) return;
+      
+      // Sort collection points by sequence
+      const sortedPoints = [...collectionPoints].sort((a, b) => a.sequence - b.sequence);
+      
+      // Initialize skipped points map
+      const skipped: {[key: string]: boolean} = {};
+      
+      // Find the highest sequence number that has been collected
+      let highestCollectedSequence = 0;
+      
+      sortedPoints.forEach(point => {
+        const isCollected = collectedPoints.some(collectedPoint => collectedPoint.collection_point.collection_point_id === point.collection_point_id);
+        if (isCollected && point.sequence > highestCollectedSequence) {
+          highestCollectedSequence = point.sequence;
+        }
+      });
+      
+      // Mark any uncollected points with sequence < highestCollectedSequence as skipped
+      sortedPoints.forEach(point => {
+        const isCollected = collectedPoints.some(collectedPoint => collectedPoint.collection_point.collection_point_id === point.collection_point_id);
+        if (!isCollected && point.sequence < highestCollectedSequence) {
+          skipped[point.collection_point_id] = true;
+        }
+      });
+      
+      setSkippedPoints(skipped);
+    }, [collectionPoints, collectedPoints]);
 
   useEffect(() => {
     const fetchRouteCoordinates = async (routeId: string | undefined) => {
@@ -925,18 +957,21 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
 
           {/* Collection Points */}
           {collectionPoints.length > 0 && (
+            
             <>
               {collectionPoints.map(point => (
+
+                
                 <Marker
                   key={point.collection_point_id}
                   position={[parseFloat(point.latitude), parseFloat(point.longitude)]}
-                  icon={createTrashCanIcon(isCollectionPointCollected(point.collection_point_id))}
+                  icon={createTrashCanIcon(isCollectionPointCollected(point.collection_point_id),  skippedPoints[point.collection_point_id] === true)}
                 >
                   <Popup className="dark-theme-popup">
                     <div className="text-sm">
                       <p className="font-bold">{point.collection_point_name}</p>
                       <p className="mt-1">
-                        <span className="font-semibold">Status:</span> {isCollectionPointCollected(point.collection_point_id) ? 'Collected' : 'Not Collected'}
+                        <span className="font-semibold">Status:</span> {skippedPoints[point.collection_point_id] === true? 'skipped' : (isCollectionPointCollected(point.collection_point_id) ? 'Collected' : 'Not Collected')}
                       </p>
                       <p className="mt-1">
                         <span className="font-semibold">Coordinates:</span> {parseFloat(point.latitude).toFixed(6)}, {parseFloat(point.longitude).toFixed(6)}

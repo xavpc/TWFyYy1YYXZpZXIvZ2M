@@ -159,16 +159,28 @@ interface MapProps {
 }
 
 
-export const createTrashCanIcon = (isCollected: boolean) => {
+export const createTrashCanIcon = (isCollected: boolean, isSkipped: boolean) => {
+  // Determine color based on status
+  let backgroundColor = '#8B5CF6'; // Default purple for normal collection points
+  
+  if (isCollected) {
+    backgroundColor = '#34D399'; // Green for collected points
+  } else if (isSkipped) {
+    backgroundColor = '#F59E0B'; // Amber/yellow for skipped points
+  }
+  
   // Create a custom divIcon with an embedded SVG trash can
   return L.divIcon({
     className: 'custom-trash-icon',
-    html: `<div style="display: flex; justify-content: center; align-items: center; width: 28px; height: 38px; background-color: ${isCollected ? '#34D399' : '#8B5CF6'}; border-radius: 50% 50% 0 50%; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid #ffffff;">
+    html: `<div style="display: flex; justify-content: center; align-items: center; width: 28px; height: 38px; background-color: ${backgroundColor}; border-radius: 50% 50% 0 50%; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid #ffffff;">
              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18" height="18" style="transform: rotate(45deg);">
                ${isCollected 
-                 ? `<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>` 
-                 : `<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/>
-                    <path d="M10 11v6M14 11v6"/>`}
+                 ? `<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>` // Checkmark for collected
+                 : isSkipped
+                   ? `<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/>
+                      <path d="M12 10v6M12 8v0"/>` // Trash can with exclamation mark
+                   : `<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/>
+                      <path d="M10 11v6M14 11v6"/>`} // Normal trash can
              </svg>
            </div>`,
     iconSize: [28, 38],
@@ -176,7 +188,6 @@ export const createTrashCanIcon = (isCollected: boolean) => {
     popupAnchor: [0, -38]
   });
 };
-
 
 
 // Component to update map center when selected route changes
@@ -331,6 +342,7 @@ const ClientSideMap = ({
   const [routeLoading, setRouteLoading] = useState<boolean>(false);
   const [ignoreClicks, setIgnoreClicks] = useState<boolean>(false);
   const [showLegend, setShowLegend] = useState<boolean>(false);
+  const [skippedPoints, setSkippedPoints] = useState<{[key: string]: boolean}>({});
   const [collectedPointsMap, setCollectedPointsMap] = useState<{[key: string]: boolean}>({});
   const [isCollecting, setIsCollecting] = useState<{[key: string]: boolean}>({});
   const [isAnyPointCollecting, setIsAnyPointCollecting] = useState<boolean>(false);
@@ -338,6 +350,39 @@ const ClientSideMap = ({
   const [currentCollectedTimestamp, setCurrentCollectedTimestamp] = useState<string>("");
   const mapContainerRef = useRef(null);
   const mapRef = useRef<L.Map | null>(null);
+
+
+  useEffect(() => {
+    if (!collectionPoints || collectionPoints.length === 0) return;
+    
+    // Sort collection points by sequence
+    const sortedPoints = [...collectionPoints].sort((a, b) => a.sequence - b.sequence);
+    
+    // Initialize skipped points map
+    const skipped: {[key: string]: boolean} = {};
+    
+    // Find the highest sequence number that has been collected
+    let highestCollectedSequence = 0;
+    
+    sortedPoints.forEach(point => {
+      const isCollected = collectedPointsMap[point.collection_point_id] === true;
+      if (isCollected && point.sequence > highestCollectedSequence) {
+        highestCollectedSequence = point.sequence;
+      }
+    });
+    
+    // Mark any uncollected points with sequence < highestCollectedSequence as skipped
+    sortedPoints.forEach(point => {
+      const isCollected = collectedPointsMap[point.collection_point_id] === true;
+      if (!isCollected && point.sequence < highestCollectedSequence) {
+        skipped[point.collection_point_id] = true;
+      }
+    });
+    
+    setSkippedPoints(skipped);
+  }, [collectionPoints, collectedPointsMap]);
+
+
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -357,6 +402,7 @@ const ClientSideMap = ({
     handleMapRef();
   }, []);
 
+  
 // Replace your existing resize effect with this one
 useEffect(() => {
   const handleResize = () => {
@@ -383,6 +429,9 @@ useEffect(() => {
   const resizeObserver = new ResizeObserver(() => {
     handleResize();
   });
+
+
+
 
   // Observe the map container
   const mapContainer = document.querySelector('.leaflet-container');
@@ -916,6 +965,8 @@ useEffect(() => {
         
         // Check if this point has been collected
         const isCollected = collectedPointsMap[point.collection_point_id] === true;
+        // Check if this point was skipped in sequence
+        const isSkipped = skippedPoints[point.collection_point_id] === true;
         // Check if this point is currently being collected
         const isCollectingPoint = isCollecting[point.collection_point_id] === true;
         
@@ -923,8 +974,7 @@ useEffect(() => {
           <Marker 
             key={`collection-point-${point.collection_point_id || index}`}
             position={[point.latitude, point.longitude]} 
-            icon={createTrashCanIcon(isCollected)}
-            // Add event handlers to disable clicks during loading
+            icon={createTrashCanIcon(isCollected, isSkipped)}
             eventHandlers={{
               click: (e) => {
                 if (routeLoading) {
@@ -939,12 +989,19 @@ useEffect(() => {
             <Popup className="dark-theme-popup">
               <div className="font-semibold">Collection Point</div>
               {point.collection_point_name && <div>Name: {point.collection_point_name}</div>}
-              <div className="text-xs mt-2">
+              <div className="text-xs mt-1">Precedence: {point.sequence}</div>
+              <div className="text-xs">
                 Lat: {point.latitude}, Lng: {point.longitude}
               </div>
               
+              {isSkipped && !isCollected && (
+                <div className="bg-yellow-500 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
+                  ⚠️ Collection Point Skipped
+                </div>
+              )}
+              
               {isCollected ? (
-                <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-3 text-center">
+                <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
                   ✓ Already Collected
                 </div>
               ) : (
@@ -955,11 +1012,11 @@ useEffect(() => {
                       type="datetime-local"
                       value={currentCollectedTimestamp}
                       onChange={(e) => setCurrentCollectedTimestamp(e.target.value)}
-                      className="w-full text-xs p-1 border border-gray-700 rounded-sm bg-gray-900 text-gray-300 mb-1"
+                      className="w-full text-xs p-1 border border-gray-700 rounded-sm bg-gray-900 text-gray-300 mb-1 mt-2"
                     />
           
                     <button 
-                      className={`${isCollectingPoint || isAnyPointCollecting ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-3 flex justify-center items-center`}
+                      className={`${isCollectingPoint || isAnyPointCollecting ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white px-2 py-1 text-xs rounded-md transition-colors w-full mt-1 flex justify-center items-center`}
                       onClick={() => collectPoint(point.collection_point_id, currentCollectedTimestamp)}
                       disabled={isCollectingPoint || isAnyPointCollecting || !selectedDevice}
                     >

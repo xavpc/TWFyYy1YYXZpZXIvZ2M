@@ -65,7 +65,6 @@ const Route = () => {
 
   useEffect(() => {
     fetchRoutes()
-    fetchDevices()
   }, [])
 
   //^ GET ROUTE NAMES
@@ -127,78 +126,6 @@ const Route = () => {
     } catch (error) {
       console.error('Error adding route:', error)
       toast.error('Failed to route. Please try again! ❌')
-    }
-  }
-
-  //^ GET DEVICE
-  const fetchDevices = async () => {
-    setLoading(true) // Start loading
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/devices`)
-      const data = await response.json()
-
-      const deviceArray = Array.isArray(data)
-        ? data
-        : data.posts || data.data || []
-
-      if (!Array.isArray(deviceArray)) {
-        console.error('Posts data is not an array:', deviceArray)
-        setDevices([]) // Fallback to empty array
-      } else {
-        setDevices(deviceArray)
-      }
-    } catch (error) {
-      console.error('Error fetching posts:', error)
-      setDevices([])
-    } finally {
-      setLoading(false) // Stop loading after fetching data
-    }
-  }
-
-  //^ ASSIGN DEVICE TO ROUTE
-  const addDeviceToRoute = async (
-    deviceId: string,
-    routeId: string,
-    selectedDay: string
-  ) => {
-    if (!deviceId || !routeId) {
-      console.error('Device ID and Route ID are required')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/device-routes`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            device_id: deviceId,
-            route_id: routeId,
-            day_assigned: selectedDay, // Use selected day from the dropdown
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        const errorMessage = await response.text()
-        throw new Error(`Failed to add device: ${errorMessage}`)
-      }
-
-      toast.success('Assign device to route is successfully! 🎉')
-      console.log('Device successfully assigned to route')
-
-      setIsAddDeviceOpen(false) // Close the modal
-    } catch (error) {
-      console.error('Error adding device to route:', error)
-      toast.error('Failed to assign device to route. Please try again! ❌')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -288,9 +215,8 @@ const Route = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-1/2'> {t('Route Name')}</TableHead>
+              <TableHead className='w-11/12'> {t('Route Name')}</TableHead>
               <TableHead>{t('View')}</TableHead>
-              <TableHead className='text-center'>{t('Add')}</TableHead>
               <TableHead>{t('Delete')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -309,42 +235,7 @@ const Route = () => {
                     {t('View')}
                   </Button>
                 </TableCell>
-                <TableCell>
-                  <div className='flex gap-2 justify-center'>
-                    <Button
-                      className='bg-green-500 text-white hover:bg-green-800'
-                      size='sm'
-                      onClick={() => {
-                        console.log(
-                          'Navigating to:',
-                          `/route/${route.route_id}`
-                        )
-                        router.push(`/route/${route.route_id}`)
-                      }}
-                    >
-                      {t('Add Route')}
-                    </Button>
-                    <Button
-                      className='bg-green-500 text-white hover:bg-green-800'
-                      size='sm'
-                      onClick={() => {
-                        router.push(`/route/add_collection/${route.route_id}`)
-                      }}
-                    >
-                      {t('Add Collection Point')}
-                    </Button>
-                    <Button
-                      className='bg-green-500 text-white hover:bg-green-800'
-                      size='sm'
-                      onClick={() => {
-                        setSelectedRouteId(route.route_id) // Store selected route
-                        setIsAddDeviceOpen(true) // Open modal
-                      }}
-                    >
-                      {t('Add Device')}
-                    </Button>
-                  </div>
-                </TableCell>
+
                 <TableCell>
                   <Button
                     className='bg-red-500 text-white hover:bg-red-800'
@@ -354,7 +245,7 @@ const Route = () => {
                       setIsDialogOpen(true)
                     }}
                   >
-                    {t('Delete Route')}
+                    {t('Delete')}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -382,6 +273,7 @@ const Route = () => {
         </Button>
       </div>
 
+      {/* DELETE ROUTE */}
       <div className='relative z-50'>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
@@ -406,93 +298,6 @@ const Route = () => {
                 </button>
               </div>
             </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* ADD DEVICE DIALOG */}
-      <div className='relative z-50'>
-        <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('Add Device')}</DialogTitle>
-            </DialogHeader>
-            <div className='mt-2'>
-              <h2 className='text-sm  mb-2'>{t('Device Name')}:</h2>
-              <Select onValueChange={(value) => setSelectedDeviceId(value)}>
-                <SelectTrigger className='w-[280px]'>
-                  <SelectValue placeholder={t('Device Name')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>{t('Device Name')}</SelectLabel>
-                    {devices
-                      .filter((device) => device.device_id) // Filter out devices with an empty ID
-                      .map((device) => (
-                        <SelectItem
-                          key={device.device_id!}
-                          value={device.device_id!}
-                          className='cursor-pointer hover:bg-zinc-800'
-                        >
-                          {device.device_name}
-                        </SelectItem>
-                      ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              {/* Day Assigned Selection */}
-              <h2 className='text-sm mt-5 mb-2'>{t('Day Assigned')}:</h2>
-              <Select onValueChange={(value) => setSelectedDay(value)}>
-                <SelectTrigger className='w-[280px]'>
-                  <SelectValue placeholder={t('Select Day')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>{device('Days')}</SelectLabel>
-                    {[
-                      'monday',
-                      'tuesday',
-                      'wednesday',
-                      'thursday',
-                      'friday',
-                      'saturday',
-                      'sunday',
-                    ].map((day) => (
-                      <SelectItem
-                        key={day}
-                        value={day.toLowerCase()} // Ensure value is lowercase for consistency
-                        className='cursor-pointer hover:bg-zinc-800'
-                      >
-                        {device(day)} {/* Correctly translate each day */}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={() => {
-                  if (selectedDeviceId && selectedDay) {
-                    addDeviceToRoute(
-                      selectedDeviceId as string,
-                      selectedRouteId as string,
-                      selectedDay as string
-                    )
-                  }
-                }}
-                disabled={!selectedDeviceId || !selectedDay} // Button is disabled if either is missing
-              >
-                {t('Save')}
-              </Button>
-
-              <Button
-                variant='outline'
-                onClick={() => setIsAddDeviceOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

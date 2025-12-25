@@ -42,8 +42,8 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   const [selectedDeviceRouteFilter, setSelectedDeviceRouteFilter] = useState<string>("all");
   const [snapMode, setSnapMode] = useState(false);
 
-
-  
+  const [error429, setError429] = useState(false);
+  const [showError429, setShowError429] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [deviceSelectionCollapsed, setDeviceSelectionCollapsed] = useState(false);
   // New state for sessions
@@ -177,14 +177,15 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   };
 
   const snapLocationToRoute = async (
-    location: DeviceLocation, 
-    retryCount = 0,
-    maxRetries = 3
+    location: DeviceLocation
   ): Promise<DeviceLocation> => {
+    console.log(`snap is running `)
     try {
-      const nearestUrl = `https://router.project-osrm.org/nearest/v1/driving/${location.longitude},${location.latitude}`;
-      const response = await axios.get(nearestUrl);
-  
+      const nearestUrl = `http://localhost:3001/osrm/nearest?coordinate=${location.latitude},${location.longitude}`;
+      const response = await axios.get(nearestUrl, {
+        timeout: 5000
+    });
+      console.log(`response data: ${response.data}`)
       if (response.data?.waypoints?.[0]) {
         const snappedPoint = response.data.waypoints[0];
         return {
@@ -194,32 +195,8 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
         };
       }
       return location;
-    } catch (error) {
-      if (retryCount < maxRetries) {
-        // toast.error(`OSRM Demo Server unable to snap location. Retrying (${retryCount + 1}/${maxRetries})...`, {
-        //   duration: 1500,
-        //   style: {
-        //     background: '#1F2937',
-        //     color: '#FFF',
-        //     border: '1px solid #374151',
-        //     borderRadius: '6px',
-        //   },
-        // });
-        console.log(`OSRM Demo Server unable to snap location. Retrying (${retryCount + 1}/${maxRetries})...`)
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        return snapLocationToRoute(location, retryCount + 1, maxRetries);
-      }
-      console.log(`Max retries reached, using original location`)
-      // toast.error('Max retries reached, using original location', {
-      //   duration: 3000,
-      //   style: {
-      //     background: '#1F2937',
-      //     color: '#FFF',
-      //     border: '1px solid #374151',
-      //     borderRadius: '6px',
-      //   },
-      // });
-      return location;
+    } catch (error: any) {
+      throw error;
     }
   };
   
@@ -228,6 +205,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     if(!snapMode)
     {
       try {
+        console.log(`snapmode: ${snapMode}`)
         setDeviceLocationsLoading(true)
         const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
         const response = await axios.get(apiUrl)
@@ -255,26 +233,39 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       }
       
     }
-    else{
+    else {
       try {
-        setDeviceLocationsLoading(true)
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
-        const response = await axios.get(apiUrl)
-       
+        setDeviceLocationsLoading(true);
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`;
+        const response = await axios.get(apiUrl);
+  
         if (response.data.success && response.data.data) {
-          // Snap each location to nearest road
           const locations = response.data.data;
-          const snappedLocations: DeviceLocation[] = await Promise.all(
-            locations.map((location: DeviceLocation) => snapLocationToRoute(location))
-          );
-          
-          setDeviceLocations(snappedLocations);
+          try {
+            const snappedLocations: DeviceLocation[] = await Promise.all(
+              locations.map((location: DeviceLocation) => snapLocationToRoute(location))
+            );
+            setDeviceLocations(snappedLocations);
+          } catch (error: any) {
+            if (error.response?.status === 429 || error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+              setError429(true);
+              setSnapMode(false);
+              setDeviceLocations(locations); 
+
+              setTimeout(() => {
+                setError429(false);
+              }, 2500);
+            } else {
+              console.error('Error snapping locations:', error);
+              setDeviceLocations(locations);
+            }
+          }
         } else {
-          setDeviceLocations([])
+          setDeviceLocations([]);
         }
       } catch (error) {
-        console.error('Error fetching device locations:', error)
-        setDeviceLocations([])
+        console.error('Error fetching device locations:', error);
+        setDeviceLocations([]);
         toast.error('Failed to load device locations for this session', {
           duration: 3000,
           style: {
@@ -283,9 +274,9 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
             border: '1px solid #374151',
             borderRadius: '6px',
           },
-        })
+        });
       } finally {
-        setDeviceLocationsLoading(false)
+        setDeviceLocationsLoading(false);
       }
     }
   }
@@ -514,40 +505,56 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
           {!isLive ? t('Session Viewer') : t('Live Sessions')}
         </h1>
         <button
-          onClick={() => setSnapMode(!snapMode)}
-          disabled={deviceLocationsLoading}
-          className={`
-            relative px-4 py-2 rounded-full flex items-center gap-2
-            transition-all duration-300 ease-in-out
-            shadow-md hover:shadow-lg
-            ${snapMode 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-            }
-            ${deviceLocationsLoading ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105 active:scale-95'}
-            group
-          `}
-        >
-          <span className={`
-            text-xs font-medium 
-            transition-all duration-300
-            ${snapMode ? 'text-white' : 'text-gray-300'}
-          `}>
-            Snap to Road
-          </span>
-          <div className={`
-            w-5 h-5 rounded-full 
-            transition-all duration-300 ease-in-out
-            ${snapMode 
-              ? 'bg-white scale-125 animate-pulse' 
-              : 'bg-gray-400 scale-100'}
-            group-hover:rotate-45
-          `} />
-          
-          {snapMode && !deviceLocationsLoading && (
-            <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping" />
-          )}
-        </button>
+  onClick={() => setSnapMode(!snapMode)}
+  disabled={deviceLocationsLoading || deviceLocations.length === 0}
+  className={`
+    relative px-4 py-2 rounded-full flex items-center gap-2
+    transition-all duration-300 ease-in-out
+    shadow-md hover:shadow-lg
+    ${deviceLocations.length === 0 
+      ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed' 
+      : snapMode
+        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+        : 'bg-green-600 hover:bg-green-700 text-white'
+    }
+    ${deviceLocationsLoading 
+      ? 'opacity-50 cursor-not-allowed' 
+      : 'transform hover:scale-105 active:scale-95'
+    }
+    group
+  `}
+>
+  <span className={`
+    text-xs font-medium 
+    transition-all duration-300
+    ${deviceLocations.length === 0 
+      ? 'text-gray-400' 
+      : 'text-white'
+    }
+  `}>
+    {deviceLocations.length === 0 
+      ? 'No Locations'
+      : snapMode
+        ? 'Original Location'
+        : 'Snap to Road'
+    }
+  </span>
+  <div className={`
+    w-5 h-5 rounded-full 
+    transition-all duration-300 ease-in-out
+    ${deviceLocations.length === 0
+      ? 'bg-gray-400'
+      : snapMode 
+        ? 'bg-white scale-125 animate-pulse' 
+        : 'bg-white scale-100'
+    }
+    group-hover:rotate-45
+  `} />
+  
+  {snapMode && !deviceLocationsLoading && deviceLocations.length > 0 && (
+    <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping" />
+  )}
+</button>
       </div>
         {isLive && (
           <button

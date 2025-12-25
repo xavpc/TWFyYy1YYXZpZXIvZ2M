@@ -11,7 +11,8 @@
     "Device Simulator": "デバイスシミュレーター",
     "View Sessions": "セッションを表示",
     "Archived Sessions": "アーカイブされたセッション",
-    "Live Sessions": "ライブセッション"
+    "Live Sessions": "ライブセッション",
+    "Reports": "レポート"
   },
   "Dashboard": {
     "Hello there": "こんにちは!",
@@ -99,7 +100,11 @@
     "Search Route Name": "ルート名を検索する",
     "Delete Device": "デバイスの削除",
     "Day Assigned": "割り当てられた日",
-    "Select Day": "日を選択してください"
+    "Select Day": "日を選択してください",
+    "Add Collection": "コレクションを追加する",
+    "Collection Point": "回収ポイント",
+    "Set": "セット",
+    "Enter collection point name and adress": "集荷場所の名前と住所を入力してください"
   },
   "Device": {
     "Device Name": "デバイス名",

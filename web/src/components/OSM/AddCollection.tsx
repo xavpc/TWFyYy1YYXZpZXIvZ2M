@@ -13,6 +13,17 @@ import {
   BreadcrumbSeparator,
 } from '../ui/breadcrumb'
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { CollectionPoints } from '@/types/collection-points'
+
 interface OSMMapProps {
   route_id?: string
   route_name: string
@@ -22,13 +33,29 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const collectionPointsMarkerRef = useRef<L.Marker[]>([])
+
   const routesRef = useRef<L.Polyline[]>([]) // Store drawn routes
+  const markersRef = useRef<L.Marker<any>[]>([])
+
   const [center, setCenter] = useState<CenterCoordinates>({
     latitude: 10.3157,
     longitude: 123.8854,
   })
   const [clickCoords, setClickCoords] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  const [error, setError] = useState<string | null>(null)
+
+  const [selectedMarker, setSelectedMarker] = useState<L.Marker | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [markerName, setMarkerName] = useState('')
+
+  const [noData, setNoData] = useState(false) // Add state for tracking no data
+  const [isCollectionOpen, setIsCollectionOpen] = useState(false)
+  const [collectionPoints, setCollectionPoints] = useState<CollectionPoints[]>(
+    []
+  )
+
   const t = useTranslations('Route')
   const router = useRouter()
 
@@ -36,6 +63,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
     const fetchData = async () => {
       await fetchCenterCoordinates()
       await fetchAndDisplayRoute()
+      await fetchCollectionPoints()
     }
 
     fetchData()
@@ -90,13 +118,16 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       icon: L.divIcon({
         className: 'custom-div-icon',
         html: `<div>
-         <svg fill="#f32b2b" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20px" height="20px" viewBox="0 0 41.336 41.336" xml:space="preserve" stroke="#f32b2b"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M36.335,5.668h-8.167V1.5c0-0.828-0.672-1.5-1.5-1.5h-12c-0.828,0-1.5,0.672-1.5,1.5v4.168H5.001c-1.104,0-2,0.896-2,2 s0.896,2,2,2h2.001v29.168c0,1.381,1.119,2.5,2.5,2.5h22.332c1.381,0,2.5-1.119,2.5-2.5V9.668h2.001c1.104,0,2-0.896,2-2 S37.438,5.668,36.335,5.668z M14.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21c0-0.828,0.672-1.5,1.5-1.5 s1.5,0.672,1.5,1.5V35.67z M22.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21c0-0.828,0.672-1.5,1.5-1.5 s1.5,0.672,1.5,1.5V35.67z M25.168,5.668h-9V3h9V5.668z M30.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21 c0-0.828,0.672-1.5,1.5-1.5s1.5,0.672,1.5,1.5V35.67z"></path> </g> </g></svg>
+       <svg fill="#f32b2b" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20px" height="20px" viewBox="0 0 41.336 41.336" xml:space="preserve" stroke="#f32b2b"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M36.335,5.668h-8.167V1.5c0-0.828-0.672-1.5-1.5-1.5h-12c-0.828,0-1.5,0.672-1.5,1.5v4.168H5.001c-1.104,0-2,0.896-2,2 s0.896,2,2,2h2.001v29.168c0,1.381,1.119,2.5,2.5,2.5h22.332c1.381,0,2.5-1.119,2.5-2.5V9.668h2.001c1.104,0,2-0.896,2-2 S37.438,5.668,36.335,5.668z M14.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21c0-0.828,0.672-1.5,1.5-1.5 s1.5,0.672,1.5,1.5V35.67z M22.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21c0-0.828,0.672-1.5,1.5-1.5 s1.5,0.672,1.5,1.5V35.67z M25.168,5.668h-9V3h9V5.668z M30.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21 c0-0.828,0.672-1.5,1.5-1.5s1.5,0.672,1.5,1.5V35.67z"></path> </g> </g></svg>
         </div>`,
+
         iconSize: [10, 10],
       }),
     }).addTo(map)
 
-    collectionPointsMarkerRef.current.push(marker)
+    setSelectedMarker(marker)
+    setIsDialogOpen(true) // open ShadCN dialog
+
     marker.on('click', () => handleDeleteMarker(marker))
   }
 
@@ -204,6 +235,55 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       setIsLoading(false)
     }
   }
+
+  //^ FETCHES COLLECTION POINTS
+  const fetchCollectionPoints = async () => {
+    if (!route_id || !mapInstanceRef.current) return
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+    try {
+      // Fetch collection points
+      const response = await fetch(
+        `${API_URL}/collection-points/route/${route_id}`
+      )
+      const { data } = await response.json()
+
+      if (!Array.isArray(data) || !data.length) {
+        setNoData(true)
+        return
+      }
+
+      setCollectionPoints(data) // Store in state
+
+      // Add markers to the map
+      data.forEach(
+        ({ latitude, longitude, collection_point_name }: CollectionPoints) => {
+          const markerIcon = L.icon({
+            iconUrl:
+              '/images/trash-can-with-cover-from-side-view-svgrepo-com.svg',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+          })
+
+          const marker = L.marker([Number(latitude), Number(longitude)], {
+            icon: markerIcon,
+          })
+            .addTo(mapInstanceRef.current!)
+            .bindPopup(`<b>${collection_point_name}</b>`)
+
+          markersRef.current.push(marker) // Store markers for potential cleanup
+        }
+      )
+    } catch (error) {
+      console.error('Error fetching collection points:', error)
+      setError('Error fetching collection points')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // ^ ADD COLLECTION
   const handleCreateCollection = async () => {
     if (!route_id || collectionPointsMarkerRef.current.length === 0) return
@@ -218,26 +298,26 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       ) {
         const marker = collectionPointsMarkerRef.current[index]
         const { lat, lng } = marker.getLatLng()
+        const name =
+          (marker as any).collection_point_name ||
+          `Collection Point ${index + 1}, ${route_id}`
 
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/collection-points`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               latitude: lat,
               longitude: lng,
-              collection_point_name: `Collection Point ${
-                index + 1
-              }, ${route_id}`,
+              collection_point_name: name,
               route_id,
+              sequence: index + 1,
             }),
           }
         )
 
-        const responseText = await response.text() // Get raw response
+        const responseText = await response.text()
 
         if (!response.ok) {
           throw new Error(`Failed to create collection: ${responseText}`)
@@ -251,6 +331,18 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  //^ DELETE ALL COLLECTION
+  const handleDeleteCollection = () => {
+    // Remove all collection point markers from the map
+    collectionPointsMarkerRef.current.forEach((marker) => marker.remove())
+    collectionPointsMarkerRef.current = []
+
+    // Optionally reset any related state
+    setClickCoords('No collection points')
+
+    console.log('Collection points cleared!')
   }
 
   return (
@@ -276,7 +368,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       <div className='relative'>
         <div
           ref={mapContainerRef}
-          className='h-[500px] w-full'
+          className='h-[500px] w-full relative z-20'
           style={{ cursor: isLoading ? 'wait' : 'crosshair' }}
         />
         {isLoading && (
@@ -294,14 +386,55 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
         >
           {isLoading ? 'Loading' : t('Create Collection')}
         </button>
-        {/* <button
+        <button
           onClick={handleDeleteCollection} // Add the function here
           className='bg-red-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50 text-sm'
           disabled={isLoading}
         >
-          {isLoading ? 'Loading' : t('Remove Collection')}
-        </button> */}
+          {isLoading ? 'Loading' : t('Delete Collection')}
+        </button>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Collection Point')}</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={markerName}
+            onChange={(e) => setMarkerName(e.target.value)}
+            placeholder={t('Enter collection point name and adress')}
+          />
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (selectedMarker) {
+                  const name =
+                    markerName ||
+                    `Collection Point ${
+                      collectionPointsMarkerRef.current.length + 1
+                    }`
+                  ;(selectedMarker as any).collection_point_name = name
+
+                  // Optionally: add to ref and bind a popup
+                  selectedMarker.bindPopup(`<b>${name}</b>`)
+                  collectionPointsMarkerRef.current.push(selectedMarker)
+                  selectedMarker.on('click', () =>
+                    handleDeleteMarker(selectedMarker)
+                  )
+                }
+
+                // Reset dialog
+                setMarkerName('')
+                setSelectedMarker(null)
+                setIsDialogOpen(false)
+              }}
+            >
+              {t('Set')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

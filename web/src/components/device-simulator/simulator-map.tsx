@@ -343,7 +343,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       console.error('Error sending locations:', error);
       
       // Error toast
-      toast.error('Error sending locations. See console for details.', {
+      toast.error('Failed to send locations, Please Try again.', {
         id: loadingToastId,
         duration: 5000,
         style: {

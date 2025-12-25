@@ -361,6 +361,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [center, setCenter] = useState<[number, number]>([35.6895, 139.6917]);
+  const [skippedPoints, setSkippedPoints] = useState<{[key: string]: boolean}>({});
 
     useEffect(() => {
       console.log(`selected device route: ${selectedDeviceRoute?.route.center_latitude}`)
@@ -541,6 +542,36 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
     setIsFullScreen(prev => !prev);
   }, []);
 
+    useEffect(() => {
+      if (!collectionPoints || collectionPoints.length === 0) return;
+      
+      // Sort collection points by sequence
+      const sortedPoints = [...collectionPoints].sort((a, b) => a.sequence - b.sequence);
+      
+      // Initialize skipped points map
+      const skipped: {[key: string]: boolean} = {};
+      
+      // Find the highest sequence number that has been collected
+      let highestCollectedSequence = 0;
+      
+      sortedPoints.forEach(point => {
+        const isCollected = collectedPointsMap[point.collection_point_id] === true;
+        if (isCollected && point.sequence > highestCollectedSequence) {
+          highestCollectedSequence = point.sequence;
+        }
+      });
+      
+      // Mark any uncollected points with sequence < highestCollectedSequence as skipped
+      sortedPoints.forEach(point => {
+        const isCollected = collectedPointsMap[point.collection_point_id] === true;
+        if (!isCollected && point.sequence < highestCollectedSequence) {
+          skipped[point.collection_point_id] = true;
+        }
+      });
+      
+      setSkippedPoints(skipped);
+    }, [collectionPoints, collectedPointsMap]);
+
   const locationUpdateChannel = new BroadcastChannel('device-location-updates');
   const handleAddDeviceLocation = async (location: {
     latitude: number;
@@ -688,7 +719,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
           icon: '✅',
         });
       } else {
-        toast.error('Failed to collect point: ' + (response.data.message || 'Unknown error'), {
+        toast.error('Failed to collect point: ', {
           duration: 3000,
         });
         console.error('Failed to collect point:', response.data.message);
@@ -857,9 +888,11 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
         )}
         
         {/* Collection points */}
-        {collectionPoints.map((point, index) => {
+        {collectionPoints && collectionPoints.map((point: CollectionPoints, index: number) => {
           // Check if this point has been collected
           const isCollected = collectedPointsMap[point.collection_point_id] === true;
+          // Check if this point was skipped in sequence
+          const isSkipped = skippedPoints[point.collection_point_id] === true;
           // Check if this point is currently being collected
           const isCollectingPoint = isCollecting[point.collection_point_id] === true;
           
@@ -871,15 +904,20 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
             <Marker 
               key={`collection-point-${point.collection_point_id || index}`}
               position={[Number(point.latitude), Number(point.longitude)]} 
-              icon={createTrashCanIcon(isCollected)}
+               icon={createTrashCanIcon(isCollected, isSkipped)}
             >
               <Popup>
                 <div className="font-semibold mb-1">Collection Point</div>
                 {point.collection_point_name && <div className="mb-1">Name: {point.collection_point_name}</div>}
+                <div className="text-xs mt-1">Precedence: {point.sequence}</div>
                 <div className="text-xs mb-2">
                   Lat: {point.latitude}, Lng: {point.longitude}
                 </div>
-                
+                {isSkipped && !isCollected && (
+                  <div className="bg-yellow-500 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
+                    ⚠️ Collection Point Skipped
+                  </div>
+                )}
                 {isCollected ? (
                   <div className="bg-green-600 text-white px-2 py-1 text-xs rounded-md w-full mt-2 text-center">
                     ✓ Already Collected

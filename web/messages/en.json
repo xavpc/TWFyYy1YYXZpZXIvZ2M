@@ -11,7 +11,8 @@
     "Device Simulator": "Device Simulator",
     "View Sessions": "View Sessions",
     "Archived Sessions": "Archived Sessions",
-    "Live Sessions": "Live Sessions"
+    "Live Sessions": "Live Sessions",
+    "Reports": "Reports"
   },
   "Dashboard": {
     "Hello there": "Hello there!",
@@ -98,7 +99,11 @@
     "Search Route Name": "Search Route Name",
     "Delete Device": "Delete Device",
     "Day Assigned": "Day Assigned",
-    "Select Day": "Select Day"
+    "Select Day": "Select Day",
+    "Add Collection": "Add Collection",
+    "Collection Point": "Collection Point",
+    "Set": "Set",
+    "Enter collection point name and adress": "Enter collection point name and adress"
   },
   "Device": {
     "Device Name": "Device Name",
@@ -206,7 +211,9 @@
     "No items found": "No items found",
     "Loading": "Loading",
     "Select a Device": "Select a device",
-    "Session": "Session"
+    "Session": "Session",
+    "Search routes": "Search routes...",
+    "Select a Route": "Select a route"
   },
 
   "Dialog": {
