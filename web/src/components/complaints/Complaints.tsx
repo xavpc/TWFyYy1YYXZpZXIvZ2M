@@ -65,11 +65,21 @@ export default function ComplaintsList() {
               <div className='flex gap-4'>
                 {/* Complaint Image */}
                 <div className='relative w-24 h-24 rounded-lg overflow-hidden'>
+                  {/* Skeleton loader with blur effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent
+                    before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white before:to-transparent before:animate-[wave_2s_infinite]
+                    after:absolute after:inset-0 after:backdrop-blur-[2px]" 
+                  />
                   <Image
                     src={complaint.image.image_url}
                     alt='Complaint evidence'
                     fill
-                    className='object-cover'
+                    className='object-cover opacity-0 transition-all duration-700 ease-out'
+                    onLoadingComplete={(img) => {
+                      img.classList.remove('opacity-0');
+                      img.classList.add('scale-100');
+                    }}
+                    style={{ transform: 'scale(1.05)' }}
                   />
                 </div>
 
@@ -110,12 +120,21 @@ export default function ComplaintsList() {
           <Card className='h-full'>
             <div className='h-full flex flex-col'>
               {/* Image */}
-              <div className='relative w-full h-64'>
+              <div className='relative aspect-video w-full overflow-hidden'>
+                {/* Skeleton loader */}
+                <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+                
                 <Image
                   src={selectedComplaint.image.image_url}
                   alt='Complaint evidence'
                   fill
-                  className='object-cover'
+                  className='object-cover opacity-0 scale-[1.02] transition-all duration-500'
+                  onLoadingComplete={(img) => {
+                    img.classList.remove('opacity-0');
+                    img.classList.remove('scale-[1.02]');
+                  }}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
                 />
               </div>
 
