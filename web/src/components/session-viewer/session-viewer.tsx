@@ -176,11 +176,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     }
   };
 
-  const snapLocationToRoute = async (
-    location: DeviceLocation, 
-    retryCount = 0,
-    maxRetries = 3
-  ): Promise<DeviceLocation> => {
+  const snapLocationToRoute = async (location: DeviceLocation): Promise<DeviceLocation> => {
     try {
       const nearestUrl = `https://router.project-osrm.org/nearest/v1/driving/${location.longitude},${location.latitude}`;
       const response = await axios.get(nearestUrl);
@@ -195,30 +191,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       }
       return location;
     } catch (error) {
-      if (retryCount < maxRetries) {
-        toast.error(`OSRM Demo Server unable to snap location. Retrying (${retryCount + 1}/${maxRetries})...`, {
-          duration: 1500,
-          style: {
-            background: '#1F2937',
-            color: '#FFF',
-            border: '1px solid #374151',
-            borderRadius: '6px',
-          },
-        });
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        return snapLocationToRoute(location, retryCount + 1, maxRetries);
-      }
-      
-      toast.error('Max retries reached, using original location', {
-        duration: 3000,
-        style: {
-          background: '#1F2937',
-          color: '#FFF',
-          border: '1px solid #374151',
-          borderRadius: '6px',
-        },
-      });
+      console.error('Error snapping to route:', error);
       return location;
     }
   };
