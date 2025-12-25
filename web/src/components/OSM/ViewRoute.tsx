@@ -773,7 +773,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                   {deviceRoutes.length > 0 ? (
                     deviceRoutes.map((route, index) => (
                       <TableRow
-                        key={route.device?.device_id || `device-${index}`}
+                        key={route.device_route_id || `device-${index}`}
                       >
                         <TableCell>
                           {route.device?.device_name || 'No Name'}

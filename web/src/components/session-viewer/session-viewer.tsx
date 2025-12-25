@@ -181,9 +181,11 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   ): Promise<DeviceLocation> => {
     console.log(`snap is running `)
     try {
-      const nearestUrl = `https://router.project-osrm.org/nearest/v1/driving/${location.longitude},${location.latitude}`;
-      const response = await axios.get(nearestUrl, { timeout: 5000 }); // 5 second timeout
-  
+      const nearestUrl = `http://localhost:3001/osrm/nearest?coordinate=${location.latitude},${location.longitude}`;
+      const response = await axios.get(nearestUrl, {
+        timeout: 5000
+    });
+      console.log(`response data: ${response.data}`)
       if (response.data?.waypoints?.[0]) {
         const snappedPoint = response.data.waypoints[0];
         return {
@@ -203,6 +205,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     if(!snapMode)
     {
       try {
+        console.log(`snapmode: ${snapMode}`)
         setDeviceLocationsLoading(true)
         const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
         const response = await axios.get(apiUrl)

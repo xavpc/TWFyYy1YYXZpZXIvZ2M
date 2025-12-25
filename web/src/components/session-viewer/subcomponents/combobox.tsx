@@ -114,7 +114,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         <span
           className={`text-sm font-medium ${disabled ? 'text-gray-500' : ''}`}
         >
-          {t('Device')}:
+           {t(label === 'Device' ? 'Device' : 'Route')}
         </span>
       </div>
 
