@@ -15,6 +15,7 @@
   - [Clone the Repository](#clone-the-repository)
   - [Install Dependencies](#install-dependencies)
   - [Configure Environment](#configure-environment)
+  - [Database Migration](#database-migration)
 - [Running the App 🔥](#running-the-app-🔥)
 - [Test ⚡](#test-⚡)
 - [Support](#support)
@@ -60,6 +61,46 @@ DATABASE_NAME=example_gomicollection
 ```
 
 > **Note:** Update the database credentials according to your MySQL/MariaDB setup.
+
+### Database Migration
+
+Before running the application, you need to set up the database schema using migrations:
+
+1. First, check your `package.json` has these scripts:
+
+```json
+{
+  "scripts": {
+    "typeorm": "ts-node ./node_modules/typeorm/cli",
+    "migration:generate": "npm run typeorm migration:generate -- -d src/data-source.ts",
+    "migration:run": "npm run typeorm migration:run -- -d src/data-source.ts",
+    "migration:revert": "npm run typeorm migration:revert -- -d src/data-source.ts"
+  }
+}
+```
+
+2. Generate a new migration:
+
+```bash
+# Generate a migration for your entity changes
+npm run migration:generate src/migrations/nameOfTheChanges
+```
+
+3. Run the migrations:
+
+```bash
+# Apply migrations to the database
+npm run migration:run
+```
+
+4. If you need to revert a migration:
+
+```bash
+# Revert the last applied migration
+npm run migration:revert
+```
+
+> **Note:** Make sure your database is running and accessible before running migrations.
 
 ---
 
