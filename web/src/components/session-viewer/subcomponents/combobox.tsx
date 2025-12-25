@@ -107,6 +107,10 @@ const Combobox: React.FC<ComboboxProps> = ({
     )
   }
 
+  const getSearchPlaceholder = () => {
+    return label === 'Device' ? 'Search devices' : 'Search routes'
+  }
+
   return (
     <div className='relative' ref={dropdownRef}>
       <div className='flex items-center space-x-2 mb-1'>
@@ -114,7 +118,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         <span
           className={`text-sm font-medium ${disabled ? 'text-gray-500' : ''}`}
         >
-           {t(label === 'Device' ? 'Device' : 'Route')}
+          {t(label)}
         </span>
       </div>
 
@@ -131,7 +135,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         <span className='block truncate'>
           {selectedItem
             ? selectedItem[displayProperty]
-            : `${t('Select a Device')}`}
+            : `${t(`Select a ${label}`)}`}
         </span>
         <span className='absolute inset-y-0 right-0 flex items-center pr-2'>
           <ChevronDown
@@ -163,7 +167,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                 ref={inputRef}
                 type='text'
                 className='block w-full pl-10 pr-3 py-1.5 border border-gray-600 rounded-md text-sm bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                placeholder={`${t('Search devices')}...`}
+                placeholder={t(getSearchPlaceholder())}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

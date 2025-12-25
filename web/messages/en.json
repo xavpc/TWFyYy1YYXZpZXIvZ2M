@@ -211,7 +211,9 @@
     "No items found": "No items found",
     "Loading": "Loading",
     "Select a Device": "Select a device",
-    "Session": "Session"
+    "Session": "Session",
+    "Search routes": "Search routes...",
+    "Select a Route": "Select a route"
   },
 
   "Dialog": {
