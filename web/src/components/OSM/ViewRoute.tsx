@@ -450,7 +450,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/device-routes/route/${route_id}`
+        `${process.env.NEXT_PUBLIC_API_URL}/device-routes/route/${route_id}?groupByDevice=true`
       )
 
       if (!response.ok) {
