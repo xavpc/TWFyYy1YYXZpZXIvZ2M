@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { Employee } from './employee/employee.entity';
+
 
 @Module({
   imports: [
@@ -16,7 +18,7 @@ import { AppService } from './app.service';
         username: configService.get('DATABASE_USER'),
         password: configService.get('DATABASE_PASSWORD'),
         database: configService.get('DATABASE_NAME'),
-        entities: [],
+        entities: [Employee],
         synchronize: true, // set to false in production
       }),
       inject: [ConfigService],
