@@ -58,6 +58,7 @@ const DeviceSimulatorMap = (): JSX.Element => {
       center_longitude: string;
     }
   }>>([]);
+  const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
   const [isRouteDropdownOpen, setIsRouteDropdownOpen] = useState(false);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
   const [isTimestampUpdate, setIsTimeStampUpdate] = useState(false);
@@ -67,6 +68,46 @@ const DeviceSimulatorMap = (): JSX.Element => {
       return new Date(now.getTime() + (9 * 60 * 60 * 1000));
     }
   );
+
+  useEffect(() => {
+    // Initial invalidation
+    const maps = document.querySelectorAll('.leaflet-container');
+    maps.forEach((mapElement) => {
+      const map = (mapElement as any)._leaflet_map;
+      if (map) {
+        map.invalidateSize();
+      }
+    });
+  
+    // Wait for transition to complete, then invalidate again
+    const timer = setTimeout(() => {
+      maps.forEach((mapElement) => {
+        const map = (mapElement as any)._leaflet_map;
+        if (map) {
+          map.invalidateSize({
+            animate: true,
+            duration: 0.2,
+            pan: false
+          });
+        }
+      });
+      
+      // Additional invalidation after a brief delay to ensure complete render
+      setTimeout(() => {
+        maps.forEach((mapElement) => {
+          const map = (mapElement as any)._leaflet_map;
+          if (map) {
+            map.invalidateSize({
+              animate: false
+            });
+          }
+        });
+      }, 100);
+    }, 300);
+  
+    return () => clearTimeout(timer);
+  }, [isLeftPanelVisible]);
+
   useEffect(() => {
     if (selectedDeviceRoute && selectedDeviceRoute.route.route_id) {
       fetchCollectionPoints(selectedDeviceRoute.route.route_id);
@@ -720,16 +761,42 @@ const DeviceSimulatorMap = (): JSX.Element => {
       </div>
 
       {/* Main Content */}
-      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-auto' style={{ height: 'calc(100vh - 132px)' }}>
-{/* Left Panel - Session Info */}
-<div className='lg:col-span-1 flex flex-col overflow-auto'>
-  {sessionId ? (
-    <div className='bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col h-full'>
-      <div className='p-4 border-b border-gray-700'>
-        <h3 className='font-semibold text-green-400 text-lg'>
-          {devsim('Active Session')}
-        </h3>
-      </div>
+      <div className='flex-1 flex bg-gray-900 overflow-auto relative' style={{ height: 'calc(100vh - 132px)' }}>
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsLeftPanelVisible(!isLeftPanelVisible)}
+          className="absolute top-1/2 -translate-y-1/2 z-10 bg-gray-800 hover:bg-gray-700 text-gray-300 p-2 rounded-r-md border border-l-0 border-gray-700 shadow-lg transition-all duration-200"
+          style={{ 
+            transform: isLeftPanelVisible 
+              ? 'translate(320px, -50%)' 
+              : 'translate(0, -50%)',
+          }}
+        >
+          {isLeftPanelVisible ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+          )}
+        </button>
+  {/* Left Panel */}
+  <div 
+    className={`transition-all duration-300 ease-in-out ${
+      isLeftPanelVisible ? 'w-80' : 'w-0'
+    } overflow-hidden bg-gray-800 border-r border-gray-700`}
+  >
+    <div className="w-80 h-full">
+      {sessionId ? (
+        // Session Active Content
+        <div className='flex flex-col h-full'>
+          <div className='p-4 border-b border-gray-700'>
+            <h3 className='font-semibold text-green-400 text-lg'>
+              {devsim('Active Session')}
+            </h3>
+          </div>
       <div className='flex-1 overflow-y-auto p-4'>
         <div className='space-y-4'>
           {/* Device Information */}
@@ -1232,25 +1299,28 @@ const DeviceSimulatorMap = (): JSX.Element => {
             </div>
             
           )}
+          </div>
         </div>
 
-        {/* Right Panel - Map */}
-        <div className='lg:col-span-3 bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden' style={{ height: '100%' }}>
-        <Map
-          sessionActive={!!sessionId}
-          onAddMarker={handleAddMarker}
-          onRemoveMarker={handleRemoveMarker}
-          onUpdateMarkerTimestamp={handleUpdateMarkerTimestamp}
-          markers={markers}
-          onClearMarkers={handleClearAllWaypoints}
-          routeCoordinates={routeCoordinates} 
-          selectedRoute={route}
-          collectionPoints={collectionPoints}
-          sessionId={sessionId}
-          selectedDevice={selectedDevice}
-          isTimeStampUpdate={isTimestampUpdate}
-          setIsTimeStampUpdate={setIsTimeStampUpdate}
-        />
+        {/* Map Panel */}
+        <div className='flex-1 overflow-hidden relative'>
+          <div className="absolute inset-0">
+            <Map
+              sessionActive={!!sessionId}
+              onAddMarker={handleAddMarker}
+              onRemoveMarker={handleRemoveMarker}
+              onUpdateMarkerTimestamp={handleUpdateMarkerTimestamp}
+              markers={markers}
+              onClearMarkers={handleClearAllWaypoints}
+              routeCoordinates={routeCoordinates} 
+              selectedRoute={route}
+              collectionPoints={collectionPoints}
+              sessionId={sessionId}
+              selectedDevice={selectedDevice}
+              isTimeStampUpdate={isTimestampUpdate}
+              setIsTimeStampUpdate={setIsTimeStampUpdate}
+            />
+          </div>
         </div>
       </div>
     </div>
