@@ -98,7 +98,11 @@
     "Search Route Name": "Search Route Name",
     "Delete Device": "Delete Device",
     "Day Assigned": "Day Assigned",
-    "Select Day": "Select Day"
+    "Select Day": "Select Day",
+    "Add Collection": "Add Collection",
+    "Collection Point": "Collection Point",
+    "Set": "Set",
+    "Enter collection point name and adress": "Enter collection point name and adress"
   },
   "Device": {
     "Device Name": "Device Name",

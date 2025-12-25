@@ -499,17 +499,40 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   return (
     <div className='relative'>
       <div>
-        <Breadcrumb className='mb-5'>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href='/route'>{t('Route')}</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <Slash />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>{t('View Route')}</BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className='flex justify-between items-center'>
+          <div>
+            <Breadcrumb className='mb-5'>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href='/route'>{t('Route')}</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <Slash />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>{t('View Route')}</BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          <div>
+            <Breadcrumb className='mb-5'>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href={`/route/${route_id}`}>
+                    {t('Add Route')}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <Slash />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href={`/route/add_collection/${route_id}`}>
+                    {t('Add Collection')}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </div>
         <div className='flex justify-between items-center'>
           <div className='flex gap-2'>
             <button
