@@ -4,18 +4,25 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Employee } from './employee/employee.entity';
-import { EmployeeModule } from './employee/employee.module';
-import { getTypeOrmConfig } from './config/typeorm.config';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule],
-        useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mariadb',
+        host: configService.get('DATABASE_HOST'),
+        port: configService.get('DATABASE_PORT'),
+        username: configService.get('DATABASE_USER'),
+        password: configService.get('DATABASE_PASSWORD'),
+        database: configService.get('DATABASE_NAME'),
+        entities: [Employee],
+        synchronize: true, // set to false in production
+      }),
       inject: [ConfigService],
     }),
-    EmployeeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
