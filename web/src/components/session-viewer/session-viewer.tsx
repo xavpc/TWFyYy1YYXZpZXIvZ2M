@@ -502,63 +502,56 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
           {!isLive ? t('Session Viewer') : t('Live Sessions')}
         </h1>
         <button
-        onClick={() => setSnapMode(!snapMode)}
-        disabled={deviceLocationsLoading || deviceLocations.length === 0}
-        className={`
-          relative px-4 py-2 rounded-full flex items-center gap-2
-          transition-all duration-300 ease-in-out
-          shadow-md hover:shadow-lg
-          ${deviceLocations.length === 0 
-            ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed' 
-            : snapMode
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : error429 
-                ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                : 'bg-red-600 hover:bg-red-700 text-white'
-          }
-          ${deviceLocationsLoading 
-            ? 'opacity-50 cursor-not-allowed' 
-            : 'transform hover:scale-105 active:scale-95'
-          }
-          group
-        `}
-        title={error429 ? 'OSRM demo server request limit reached' : ''}
-      >
-        <span className={`
-          text-xs font-medium 
-          transition-all duration-300
-          ${deviceLocations.length === 0 
-            ? 'text-gray-400' 
-            : 'text-white'
-          }
-        `}>
-            {deviceLocations.length === 0 
-              ? 'No Locations'
-              : error429
-                ? 'Demo Limit Reached'
-                : snapMode
-                  ? 'Original Location'
-                  : 'Snap to Road'
-            }
-        </span>
-        <div className={`
-          w-5 h-5 rounded-full 
-          transition-all duration-300 ease-in-out
-          ${deviceLocations.length === 0
-            ? 'bg-gray-400'
-            : error429
-              ? 'bg-yellow-300'
-              : snapMode 
-                ? 'bg-white scale-125 animate-pulse' 
-                : 'bg-white scale-100'
-          }
-          group-hover:rotate-45
-        `} />
-        
-        {snapMode && !deviceLocationsLoading && deviceLocations.length > 0 && !error429 && (
-          <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping" />
-        )}
-      </button>
+  onClick={() => setSnapMode(!snapMode)}
+  disabled={deviceLocationsLoading || deviceLocations.length === 0}
+  className={`
+    relative px-4 py-2 rounded-full flex items-center gap-2
+    transition-all duration-300 ease-in-out
+    shadow-md hover:shadow-lg
+    ${deviceLocations.length === 0 
+      ? 'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed' 
+      : snapMode
+        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+        : 'bg-green-600 hover:bg-green-700 text-white'
+    }
+    ${deviceLocationsLoading 
+      ? 'opacity-50 cursor-not-allowed' 
+      : 'transform hover:scale-105 active:scale-95'
+    }
+    group
+  `}
+>
+  <span className={`
+    text-xs font-medium 
+    transition-all duration-300
+    ${deviceLocations.length === 0 
+      ? 'text-gray-400' 
+      : 'text-white'
+    }
+  `}>
+    {deviceLocations.length === 0 
+      ? 'No Locations'
+      : snapMode
+        ? 'Original Location'
+        : 'Snap to Road'
+    }
+  </span>
+  <div className={`
+    w-5 h-5 rounded-full 
+    transition-all duration-300 ease-in-out
+    ${deviceLocations.length === 0
+      ? 'bg-gray-400'
+      : snapMode 
+        ? 'bg-white scale-125 animate-pulse' 
+        : 'bg-white scale-100'
+    }
+    group-hover:rotate-45
+  `} />
+  
+  {snapMode && !deviceLocationsLoading && deviceLocations.length > 0 && (
+    <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping" />
+  )}
+</button>
       </div>
         {isLive && (
           <button
