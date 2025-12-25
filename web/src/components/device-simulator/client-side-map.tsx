@@ -95,12 +95,6 @@ interface RouteGeometry {
   type: string;
 }
 
-
-interface LeafletElement extends HTMLElement {
-  _leaflet_map?: L.Map;
-}
-
-
 interface Route {
   route_id: string;
   route_name: string;
@@ -337,7 +331,6 @@ const ClientSideMap = ({
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [currentCollectedTimestamp, setCurrentCollectedTimestamp] = useState<string>("");
   const mapContainerRef = useRef(null);
-  const mapRef = useRef<L.Map | null>(null);
   // Add a function to disable clicks temporarily
   const disableClicks = useCallback((duration: number) => {
     setIgnoreClicks(true);
@@ -345,80 +338,7 @@ const ClientSideMap = ({
       setIgnoreClicks(false);
     }, duration);
   }, []);
-
-  useEffect(() => {
-    const handleMapRef = () => {
-      const mapElement = document.querySelector('.leaflet-container') as LeafletElement;
-      if (mapElement && mapElement._leaflet_map) {
-        mapRef.current = mapElement._leaflet_map;
-      }
-    };
-  
-    handleMapRef();
-  }, []);
-
-// Replace your existing resize effect with this one
-useEffect(() => {
-  const handleResize = () => {
-    if (mapRef.current) {
-      // First invalidation
-      mapRef.current.invalidateSize();
-
-      // Second invalidation after the animation
-      setTimeout(() => {
-        if (mapRef.current) {
-          mapRef.current.invalidateSize();
-          // Force a re-render of tiles
-          mapRef.current.eachLayer((layer) => {
-            if (layer instanceof L.TileLayer) {
-              layer.redraw();
-            }
-          });
-        }
-      }, 300); // Match this with your panel animation duration
-    }
-  };
-
-  // Create observer for size changes
-  const resizeObserver = new ResizeObserver(() => {
-    handleResize();
-  });
-
-  // Observe the map container
-  const mapContainer = document.querySelector('.leaflet-container');
-  if (mapContainer) {
-    resizeObserver.observe(mapContainer);
-  }
-
-  // Also trigger resize on window resize
-  window.addEventListener('resize', handleResize);
-
-  // Clean up
-  return () => {
-    if (mapContainer) {
-      resizeObserver.unobserve(mapContainer);
-    }
-    resizeObserver.disconnect();
-    window.removeEventListener('resize', handleResize);
-  };
-}, []);
-
-// Update the initial load effect as well
-useEffect(() => {
-  const mapElement = document.querySelector('.leaflet-container') as LeafletElement;
-  const map = mapElement?._leaflet_map;
-  
-  if (map) {
-    map.invalidateSize();
-    
-    setTimeout(() => {
-      map.invalidateSize({
-        animate: true,
-        duration: 0.5
-      });
-    }, 500);
-  }
-}, []);
+  // Update center when selectedRoute changes
 
   const toggleFullScreen = useCallback((e: any) => {
     e.preventDefault();
@@ -860,18 +780,6 @@ useEffect(() => {
     return midIcon(bearing);
   };
   
-  const MapController = () => {
-    const map = useMap();
-    
-    useEffect(() => {
-      if (map) {
-        mapRef.current = map;
-      }
-    }, [map]);
-  
-    return null;
-  };
-
   return (
     <MapContainer 
       center={center} 
@@ -880,7 +788,6 @@ useEffect(() => {
       style={{ height: '100%', width: '100%' }}
       className="z-0"
     >
-      <MapController />
       <MapButtons 
         setIsFullScreen={setIsFullScreen}
         setShowLegend={setShowLegend}
