@@ -569,7 +569,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
         throw new Error(`Failed to add device: ${errorMessage}`)
       }
 
-      toast.success('Assign device to route is successfully! 🎉')
       console.log('Device successfully assigned to route')
 
       setIsAddDeviceOpen(false) // Close the modal
@@ -577,6 +576,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       console.error('Error adding device to route:', error)
       toast.error('Failed to assign device to route. Please try again! ❌')
     } finally {
+      toast.success('Assign device to route is successfully! 🎉')
       setIsLoading(false)
     }
   }
@@ -783,12 +783,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                           {route.device?.vehicle_plate_num || 'No Plate'}
                         </TableCell>
                         <TableCell>
-                          {route.day_assigned ? 
-                            route.day_assigned.split(', ').map(day => 
-                              deviceTranslate(day)
-                            ).join(', ') : 
-                            'No Day Assigned'
-                          }
+                          {route.day_assigned
+                            ? route.day_assigned
+                                .split(', ')
+                                .map((day) => deviceTranslate(day))
+                                .join(', ')
+                            : 'No Day Assigned'}
                         </TableCell>
                         <Badge
                           className={`text-white px-3 text-center my-4 ${
@@ -835,7 +835,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                     className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Loading...' : t('Delete Device')}
+                    {isLoading ? 'Loading...' : t('Delete')}
                   </button>
                   <button
                     onClick={() => setIsDeviceOpen(false)}
@@ -862,7 +862,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                     className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Loading...' : t('Delete Route')}
+                    {isLoading ? 'Loading...' : t('Delete')}
                   </button>
                   <button
                     onClick={() => setIsDialogOpen(false)}
@@ -959,7 +959,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                     className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Deleting...' : t('Delete Device')}
+                    {isLoading ? 'Deleting...' : t('Delete')}
                   </button>
                   <button
                     onClick={() => setDeviceDeleteOpen(false)}
@@ -987,7 +987,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                     className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50 text-sm'
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Loading' : t('Delete Collection')}
+                    {isLoading ? 'Loading' : t('Delete')}
                   </button>
                   <button
                     onClick={() => setIsCollectionOpen(false)}

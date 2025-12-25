@@ -312,6 +312,7 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
               longitude: lng,
               collection_point_name: name,
               route_id,
+              sequence: index + 1,
             }),
           }
         )

@@ -14,7 +14,7 @@ import {
   Navigation,
   Satellite,
   Activity,
-  FileText
+  FileText,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/sidebar'
 
 import Link from 'next/link'
+
 import {
   DropdownMenu,
   DropdownMenuTrigger,
