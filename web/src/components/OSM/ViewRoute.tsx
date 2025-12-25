@@ -783,8 +783,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                           {route.device?.vehicle_plate_num || 'No Plate'}
                         </TableCell>
                         <TableCell>
-                          {deviceTranslate(route.day_assigned) ||
-                            'No Day Assigned'}
+                          {route.day_assigned ? 
+                            route.day_assigned.split(', ').map(day => 
+                              deviceTranslate(day)
+                            ).join(', ') : 
+                            'No Day Assigned'
+                          }
                         </TableCell>
                         <Badge
                           className={`text-white px-3 text-center my-4 ${
