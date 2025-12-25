@@ -40,7 +40,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([])
   const [deviceRoutesLoading, setDeviceRoutesLoading] = useState(false)
   const [selectedDeviceRouteFilter, setSelectedDeviceRouteFilter] = useState<string>("all");
-
+  const [snapMode, setSnapMode] = useState(false);
 
 
   
@@ -116,7 +116,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       isMounted = false;
       locationUpdateChannel.removeEventListener('message', handleLocationUpdate);
     };
-  }, [selectedSession, isLive]);
+  }, [selectedSession, isLive, snapMode]);
   
   
   const showAllActiveSessions = async () => {
@@ -225,36 +225,68 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   
 
   const fetchDeviceLocationsBySessionId = async (sessionId: string) => {
-    try {
-      setDeviceLocationsLoading(true)
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
-      const response = await axios.get(apiUrl)
-     
-      if (response.data.success && response.data.data) {
-        // Snap each location to nearest road
-        const locations = response.data.data;
-        const snappedLocations: DeviceLocation[] = await Promise.all(
-          locations.map((location: DeviceLocation) => snapLocationToRoute(location))
-        );
+    if(!snapMode)
+    {
+      try {
+        setDeviceLocationsLoading(true)
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
+        const response = await axios.get(apiUrl)
         
-        setDeviceLocations(snappedLocations);
-      } else {
+        if (response.data.success && response.data.data) {
+          console.log(`Device Locations${response.data.data}`)
+          setDeviceLocations(response.data.data)
+        } else {
+          setDeviceLocations([])
+        }
+      } catch (error) {
+        console.error('Error fetching device locations:', error)
         setDeviceLocations([])
+        toast.error('Failed to load device locations for this session', {
+          duration: 3000,
+          style: {
+            background: '#1F2937',
+            color: '#FFF',
+            border: '1px solid #374151',
+            borderRadius: '6px',
+          },
+        })
+      } finally {
+        setDeviceLocationsLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching device locations:', error)
-      setDeviceLocations([])
-      toast.error('Failed to load device locations for this session', {
-        duration: 3000,
-        style: {
-          background: '#1F2937',
-          color: '#FFF',
-          border: '1px solid #374151',
-          borderRadius: '6px',
-        },
-      })
-    } finally {
-      setDeviceLocationsLoading(false)
+      
+    }
+    else{
+      try {
+        setDeviceLocationsLoading(true)
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/device-locations/session/${sessionId}`
+        const response = await axios.get(apiUrl)
+       
+        if (response.data.success && response.data.data) {
+          // Snap each location to nearest road
+          const locations = response.data.data;
+          const snappedLocations: DeviceLocation[] = await Promise.all(
+            locations.map((location: DeviceLocation) => snapLocationToRoute(location))
+          );
+          
+          setDeviceLocations(snappedLocations);
+        } else {
+          setDeviceLocations([])
+        }
+      } catch (error) {
+        console.error('Error fetching device locations:', error)
+        setDeviceLocations([])
+        toast.error('Failed to load device locations for this session', {
+          duration: 3000,
+          style: {
+            background: '#1F2937',
+            color: '#FFF',
+            border: '1px solid #374151',
+            borderRadius: '6px',
+          },
+        })
+      } finally {
+        setDeviceLocationsLoading(false)
+      }
     }
   }
 
@@ -477,37 +509,70 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     <div className='flex flex-col h-[calc(100vh-64px)]'>
       {/* Header Bar */}
       <div className='bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center'>
-      <h1 className='text-xl font-bold text-white'>
-      {!isLive ? (
-        t('Session Viewer')
-      ):(
-        t('Live Sessions')
-      )}
-      </h1>
-      {isLive && (
+      <div className='flex items-center space-x-4'>
+        <h1 className='text-xl font-bold text-white'>
+          {!isLive ? t('Session Viewer') : t('Live Sessions')}
+        </h1>
         <button
-          onClick={showAllActiveSessions}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group"
+          onClick={() => setSnapMode(!snapMode)}
+          className={`
+            relative px-4 py-2 rounded-full flex items-center gap-2
+            transition-all duration-300 ease-in-out
+            shadow-md hover:shadow-lg
+            ${snapMode 
+              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }
+            transform hover:scale-105 active:scale-95
+            group
+          `}
         >
-          <svg 
-            className="w-5 h-5 transition-transform group-hover:rotate-12" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
-          <span className="transition-all duration-300 group-hover:tracking-wider">
-            Show All Active Sessions
+          <span className={`
+            text-xs font-medium 
+            transition-all duration-300
+            ${snapMode ? 'text-white' : 'text-gray-300'}
+          `}>
+            Snap to Road
           </span>
+          <div className={`
+            w-5 h-5 rounded-full 
+            transition-all duration-300 ease-in-out
+            ${snapMode 
+              ? 'bg-white scale-125 animate-pulse' 
+              : 'bg-gray-400 scale-100'}
+            group-hover:rotate-45
+          `} />
+          
+          {/* Subtle glow effect */}
+          {snapMode && (
+            <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping" />
+          )}
         </button>
-      )}
-    </div>
+      </div>
+        {isLive && (
+          <button
+            onClick={showAllActiveSessions}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 group"
+          >
+            <svg 
+              className="w-5 h-5 transition-transform group-hover:rotate-12" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            <span className="transition-all duration-300 group-hover:tracking-wider">
+              Show All Active Sessions
+            </span>
+          </button>
+        )}
+      </div>
       
       {/* Main Content */}
       <div className='flex-1 flex bg-gray-900 overflow-hidden relative'>
