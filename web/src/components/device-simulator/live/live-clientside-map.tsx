@@ -688,7 +688,7 @@ const LiveClientSideMap: React.FC<LiveClientSideMapProps> = ({
           icon: '✅',
         });
       } else {
-        toast.error('Failed to collect point: ' + (response.data.message || 'Unknown error'), {
+        toast.error('Failed to collect point: ', {
           duration: 3000,
         });
         console.error('Failed to collect point:', response.data.message);
