@@ -14,6 +14,7 @@ import {
   Navigation,
   Satellite,
   Activity,
+  FileText
 } from 'lucide-react'
 import {
   Sidebar,
@@ -88,6 +89,11 @@ export function AppSidebar() {
       title: t('Live Sessions'),
       url: '/view-sessions-active',
       icon: Activity,
+    },
+    {
+      title: t('Reports'),
+      url: '/reports',
+      icon: FileText,
     },
   ]
 
