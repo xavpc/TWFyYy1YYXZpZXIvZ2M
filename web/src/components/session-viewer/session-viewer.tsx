@@ -515,6 +515,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
         </h1>
         <button
           onClick={() => setSnapMode(!snapMode)}
+          disabled={deviceLocationsLoading}
           className={`
             relative px-4 py-2 rounded-full flex items-center gap-2
             transition-all duration-300 ease-in-out
@@ -523,7 +524,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
               ? 'bg-blue-600 hover:bg-blue-700 text-white' 
               : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
             }
-            transform hover:scale-105 active:scale-95
+            ${deviceLocationsLoading ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105 active:scale-95'}
             group
           `}
         >
@@ -543,8 +544,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
             group-hover:rotate-45
           `} />
           
-          {/* Subtle glow effect */}
-          {snapMode && (
+          {snapMode && !deviceLocationsLoading && (
             <div className="absolute inset-0 bg-blue-500 rounded-full opacity-30 animate-ping" />
           )}
         </button>
