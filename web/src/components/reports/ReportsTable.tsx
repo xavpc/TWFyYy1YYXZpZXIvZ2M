@@ -43,6 +43,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+
 interface Report {
   report_id: string
   route_name: string
@@ -106,6 +109,89 @@ export default function ReportsTable() {
   useEffect(() => {
     fetchReports()
   }, [filters])
+
+  const exportReportToPDF = async () => {
+    const element = document.getElementById('report-table')
+    if (!element || reports.length === 0) return
+
+    // Add temporary export styling
+    element.classList.add('export-pdf')
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+
+      // Get dynamic values
+      const totalReports = reports.length
+      const uniqueEmployees = new Set(reports.map((r) => r.employee_name)).size
+      const uniqueRoutes = new Set(reports.map((r) => r.route_name)).size
+
+      const sortedTimestamps = reports
+        .map((r) => new Date(r.report_timestamp))
+        .sort((a, b) => a.getTime() - b.getTime())
+
+      const formatDate = (date: Date) =>
+        date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+
+      const dateRange =
+        sortedTimestamps.length >= 2
+          ? `${formatDate(sortedTimestamps[0])} – ${formatDate(
+              sortedTimestamps[sortedTimestamps.length - 1]
+            )}`
+          : formatDate(sortedTimestamps[0])
+
+      const generatedDate = formatDate(new Date())
+
+      // Header content
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(18)
+      pdf.text('Garbage Collection Activity Report', 10, 20)
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(12)
+      pdf.text(`Generated on: ${generatedDate}`, 10, 28)
+
+      pdf.setFontSize(11)
+      pdf.text(
+        `Overview:\nThis report summarizes transportation activities recorded in the tracking system\nbetween ${dateRange}.`,
+        10,
+        38
+      )
+
+      // Summary stats
+      pdf.setFontSize(11)
+      pdf.text('Summary:', 10, 58)
+      pdf.text(`• Total Reports: ${totalReports}`, 15, 66)
+      pdf.text(`• Employees: ${uniqueEmployees}`, 15, 72)
+      pdf.text(`• Routes Covered: ${uniqueRoutes}`, 15, 78)
+      pdf.text(`• Time Range: ${dateRange}`, 15, 84)
+
+      // Divider
+      pdf.setDrawColor(180)
+      pdf.line(10, 90, 200, 90)
+
+      // Insert table image
+      const tableYStart = 95
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+      pdf.addImage(imgData, 'PNG', 0, tableYStart, pdfWidth, pdfHeight)
+
+      pdf.save('transportation_activity_report.pdf')
+    } catch (err) {
+      console.error('Export failed', err)
+    } finally {
+      element.classList.remove('export-pdf')
+    }
+  }
 
   const fetchReports = async () => {
     setLoading(true)
@@ -447,7 +533,7 @@ export default function ReportsTable() {
       </div>
 
       {/* Table */}
-      <div className='rounded-md border'>
+      <div className='rounded-md border' id='report-table'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -538,6 +624,16 @@ export default function ReportsTable() {
           to {Math.min(currentPage * (filters.limit || 10), totalCount)} of{' '}
           {totalCount} entries
         </div>
+
+        <div>
+          <Button
+            onClick={exportReportToPDF}
+            className='mb-4 bg-blue-600 text-white hover:bg-blue-800'
+          >
+            Export to PDF
+          </Button>
+        </div>
+
         <div className='flex items-center space-x-2'>
           <Select
             value={String(filters.limit || 10)}
