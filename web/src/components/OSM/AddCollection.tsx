@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CollectionPoints } from '@/types/collection-points'
 
 interface OSMMapProps {
   route_id?: string
@@ -32,24 +33,37 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const collectionPointsMarkerRef = useRef<L.Marker[]>([])
+
   const routesRef = useRef<L.Polyline[]>([]) // Store drawn routes
+  const markersRef = useRef<L.Marker<any>[]>([])
+
   const [center, setCenter] = useState<CenterCoordinates>({
     latitude: 10.3157,
     longitude: 123.8854,
   })
   const [clickCoords, setClickCoords] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const t = useTranslations('Route')
-  const router = useRouter()
+
+  const [error, setError] = useState<string | null>(null)
 
   const [selectedMarker, setSelectedMarker] = useState<L.Marker | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [markerName, setMarkerName] = useState('')
 
+  const [noData, setNoData] = useState(false) // Add state for tracking no data
+  const [isCollectionOpen, setIsCollectionOpen] = useState(false)
+  const [collectionPoints, setCollectionPoints] = useState<CollectionPoints[]>(
+    []
+  )
+
+  const t = useTranslations('Route')
+  const router = useRouter()
+
   useEffect(() => {
     const fetchData = async () => {
       await fetchCenterCoordinates()
       await fetchAndDisplayRoute()
+      await fetchCollectionPoints()
     }
 
     fetchData()
@@ -217,6 +231,54 @@ const AddCollection: React.FC<OSMMapProps> = ({ route_id }) => {
       L.marker(endPoint, { icon: redIcon }).addTo(mapInstanceRef.current!)
     } catch (error) {
       console.error('Error fetching route:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  //^ FETCHES COLLECTION POINTS
+  const fetchCollectionPoints = async () => {
+    if (!route_id || !mapInstanceRef.current) return
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+    try {
+      // Fetch collection points
+      const response = await fetch(
+        `${API_URL}/collection-points/route/${route_id}`
+      )
+      const { data } = await response.json()
+
+      if (!Array.isArray(data) || !data.length) {
+        setNoData(true)
+        return
+      }
+
+      setCollectionPoints(data) // Store in state
+
+      // Add markers to the map
+      data.forEach(
+        ({ latitude, longitude, collection_point_name }: CollectionPoints) => {
+          const markerIcon = L.icon({
+            iconUrl:
+              '/images/trash-can-with-cover-from-side-view-svgrepo-com.svg',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+          })
+
+          const marker = L.marker([Number(latitude), Number(longitude)], {
+            icon: markerIcon,
+          })
+            .addTo(mapInstanceRef.current!)
+            .bindPopup(`<b>${collection_point_name}</b>`)
+
+          markersRef.current.push(marker) // Store markers for potential cleanup
+        }
+      )
+    } catch (error) {
+      console.error('Error fetching collection points:', error)
+      setError('Error fetching collection points')
     } finally {
       setIsLoading(false)
     }

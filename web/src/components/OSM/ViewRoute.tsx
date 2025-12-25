@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog'
 
 import {
@@ -38,6 +39,18 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 
+import { Checkbox } from '@/components/ui/checkbox'
+
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+} from '@/components/ui/select'
+
 import { Button } from '@/components/ui/button'
 
 import { Trash, MapPin, Ellipsis, Slash } from 'lucide-react' // Import icons
@@ -54,6 +67,8 @@ import { Badge } from '../ui/badge'
 
 import { DeviceRoute } from '@/types/device-route'
 import { CollectionPoints } from '@/types/collection-points'
+import { Devices } from '@/types/devices'
+import toast from 'react-hot-toast'
 
 const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -80,12 +95,29 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
   const [showRoutes, setShowRoutes] = useState(true)
   const [deviceRoutes, setDeviceRoutes] = useState<DeviceRoute[]>([])
   const [isDeviceDeleteOpen, setDeviceDeleteOpen] = useState(false)
+  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false)
+  const [devices, setDevices] = useState<Devices[]>([])
+
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null) // Track selected route
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
+  const daysOfWeek = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+  ]
+
+  const [selectedDays, setSelectedDays] = useState<string[]>([])
 
   const router = useRouter()
 
   const t = useTranslations('Route')
   const dialog = useTranslations('Dialog')
   const deviceTranslate = useTranslations('Device')
+  const device = useTranslations('Device')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,6 +125,7 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       await fetchAndDisplayRoute()
       await fetchCollectionPoints()
       await fetchDeviceRoute()
+      await fetchDevices()
     }
 
     fetchData()
@@ -133,6 +166,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
       setError('Failed to initialize map')
     }
   }, [center, route_id])
+
+  const handleCheckboxChange = (day: string) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    )
+  }
 
   const fetchCenterCoordinates = async () => {
     if (!route_id) return
@@ -496,6 +535,105 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
     }
   }
 
+  //^ ADD DEVICE TO ROUTE
+  const addDeviceToRoute = async (
+    deviceId: string,
+    routeId: string,
+    selectedDay: string
+  ) => {
+    if (!deviceId || !routeId) {
+      console.error('Device ID and Route ID are required')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/device-routes`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            device_id: deviceId,
+            route_id: routeId,
+            day_assigned: selectedDay, // Use selected day from the dropdown
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorMessage = await response.text()
+        throw new Error(`Failed to add device: ${errorMessage}`)
+      }
+
+      toast.success('Assign device to route is successfully! 🎉')
+      console.log('Device successfully assigned to route')
+
+      setIsAddDeviceOpen(false) // Close the modal
+    } catch (error) {
+      console.error('Error adding device to route:', error)
+      toast.error('Failed to assign device to route. Please try again! ❌')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  //^ SET ADD DEVICE SAVE
+  const handleSave = async () => {
+    if (!selectedDeviceId || selectedDays.length === 0 || !selectedRouteId)
+      return
+
+    setIsLoading(true)
+
+    try {
+      // Loop through all selected days and call the API one by one
+      for (const day of selectedDays) {
+        await addDeviceToRoute(selectedDeviceId, selectedRouteId, day)
+      }
+
+      toast.success('Device assigned to selected days successfully! 🎉')
+
+      // Reset state
+      setIsAddDeviceOpen(false)
+      setSelectedDeviceId(null)
+      setSelectedDays([])
+    } catch (error) {
+      console.error('Failed to assign device to route:', error)
+      toast.error('Some assignments failed. Please check logs. ❌')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  //^ GET DEVICE
+  const fetchDevices = async () => {
+    setIsLoading(true) // Start loading
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/devices`)
+      const data = await response.json()
+
+      const deviceArray = Array.isArray(data)
+        ? data
+        : data.posts || data.data || []
+
+      if (!Array.isArray(deviceArray)) {
+        console.error('Posts data is not an array:', deviceArray)
+        setDevices([]) // Fallback to empty array
+      } else {
+        setDevices(deviceArray)
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+      setDevices([])
+    } finally {
+      setIsLoading(false) // Stop loading after fetching data
+    }
+  }
+
   return (
     <div className='relative'>
       <div>
@@ -528,6 +666,25 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
                   <BreadcrumbLink href={`/route/add_collection/${route_id}`}>
                     {t('Add Collection')}
                   </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <Slash />
+                </BreadcrumbSeparator>
+                {/* Add Device Button */}
+
+                <BreadcrumbItem>
+                  <Button
+                    className='bg-green-500 text-white hover:bg-green-800'
+                    size='sm'
+                    onClick={() => {
+                      if (route_id !== undefined) {
+                        setSelectedRouteId(route_id)
+                        setIsAddDeviceOpen(true)
+                      }
+                    }}
+                  >
+                    {t('Add Device')}
+                  </Button>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -588,14 +745,12 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             </DropdownMenu>
           </div>
         </div>
-
         <div className='mt-5'>
           <div
             ref={mapContainerRef}
             className='h-[500px] w-full relative z-10'
           />
         </div>
-
         {/* 🔹 Debugging Data Display */}
         <div className='p-4'>
           {isLoading ? (
@@ -662,7 +817,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             </>
           )}
         </div>
-
         <div className='relative z-50'>
           <Dialog open={isDeviceOpen} onOpenChange={setIsDeviceOpen}>
             <DialogContent>
@@ -690,7 +844,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             </DialogContent>
           </Dialog>
         </div>
-
         <div className='relative z-50'>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent>
@@ -719,6 +872,71 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
           </Dialog>
         </div>
 
+        {/* ADD DEVICE DIALOG */}
+        <div className='relative z-50'>
+          <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('Add Device')}</DialogTitle>
+              </DialogHeader>
+              <div className='mt-2'>
+                {/* Device Selection */}
+                <h2 className='text-sm mb-2'>{t('Device Name')}:</h2>
+                <Select onValueChange={(value) => setSelectedDeviceId(value)}>
+                  <SelectTrigger className='w-[280px]'>
+                    <SelectValue placeholder={t('Device Name')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>{t('Device Name')}</SelectLabel>
+                      {devices
+                        .filter((device) => !!device.device_id)
+                        .map((device) => (
+                          <SelectItem
+                            key={device.device_id}
+                            value={device.device_id!}
+                            className='cursor-pointer hover:bg-zinc-800'
+                          >
+                            {device.device_name}
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                {/* Day Checkboxes */}
+                <h2 className='text-sm mt-5 mb-2'>{t('Day Assigned')}:</h2>
+                <div className='grid grid-cols-2 gap-2'>
+                  {daysOfWeek.map((day) => (
+                    <label key={day} className='flex items-center space-x-2'>
+                      <Checkbox
+                        checked={selectedDays.includes(day)}
+                        onCheckedChange={() => handleCheckboxChange(day)}
+                        id={`day-${day}`}
+                      />
+                      <span className='capitalize text-sm'>{device(day)}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  onClick={handleSave}
+                  disabled={!selectedDeviceId || selectedDays.length === 0}
+                >
+                  {t('Save')}
+                </Button>
+                <Button
+                  variant='outline'
+                  onClick={() => setIsAddDeviceOpen(false)}
+                >
+                  {t('Cancel')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
         {/* DELETE DEVICE BY ID */}
         <div className='relative z-50'>
           <Dialog open={isDeviceDeleteOpen} onOpenChange={setDeviceDeleteOpen}>
@@ -750,7 +968,6 @@ const ViewRoute: React.FC<OSMMapProps> = ({ route_id }) => {
             </DialogContent>
           </Dialog>
         </div>
-
         {/* DELETE COLLECTION DIALOG */}
         <div className='relative z-50'>
           <Dialog open={isCollectionOpen} onOpenChange={setIsCollectionOpen}>
