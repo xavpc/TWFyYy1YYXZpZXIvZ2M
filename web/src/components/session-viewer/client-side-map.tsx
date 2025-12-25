@@ -20,35 +20,45 @@ const icon = L.icon({
 
 
 export const createCarIcon = (bearing: number, mapZoom: number) => {
+  // Define actual image dimensions
+  const imageWidth = 125;
+  const imageHeight = 225;
+  
+  // Define the desired display size (adjust these values to make the icon smaller)
+  const displayHeight = 40;
+  const displayWidth = (imageWidth * displayHeight) / imageHeight;
+  
   // Function to convert meters to pixels based on zoom level
   const metersToPixels = (meters: number, zoom: number) => {
-    const earthCircumference = 40075017; // Earth's circumference in meters
-    const mapWidthInPixels = 256 * Math.pow(2, zoom); // Map width in pixels at the given zoom level
+    const earthCircumference = 40075017;
+    const mapWidthInPixels = 256 * Math.pow(2, zoom);
     return (meters / earthCircumference) * mapWidthInPixels;
   };
 
-  const glowSize = metersToPixels(40, mapZoom); // 20 meters radius in pixels
+  const glowSize = Math.max(metersToPixels(40, mapZoom), displayHeight * 1.5);
 
   return L.divIcon({
-    className: 'custom-car-icon',
+    className: 'custom-car-icon pointer-events-auto',
     html: `
       <div 
         style="
           position: relative;
-          width: ${glowSize}px; 
-          height: ${glowSize}px; 
-          display: flex; 
-          align-items: center; 
+          display: flex;
+          align-items: center;
           justify-content: center;
+          width: ${glowSize}px;
+          height: ${glowSize}px;
+          background-color: transparent;
+          pointer-events: all;
         "
       >
         <!-- Glowing Circle -->
         <div 
           style="
             position: absolute;
-            width: 100%; 
-            height: 100%; 
-            background-color: rgba(0, 123, 255, 0.3); /* Blue glow */
+            width: 100%;
+            height: 100%;
+            background-color: rgba(59, 130, 246, 0.2);
             border-radius: 50%;
             animation: pulse 1.5s infinite;
           "
@@ -58,16 +68,18 @@ export const createCarIcon = (bearing: number, mapZoom: number) => {
           src="/images/garbage-truck-icon.png" 
           alt="Garbage Truck Icon" 
           style="
-            width: 85px; 
-            height: 85px; 
-            transform: rotate(${bearing + 180}deg); /* Reverse the icon */
+            width: ${displayWidth}px;
+            height: ${displayHeight}px;
+            transform: rotate(${bearing + 180}deg); /* Added 180 degrees to reverse direction */
             transform-origin: center;
+            z-index: 1;
+            pointer-events: all;
           "
         />
       </div>
     `,
     iconSize: [glowSize, glowSize],
-    iconAnchor: [glowSize / 2, glowSize / 2], // Center the icon
+    iconAnchor: [glowSize / 2, glowSize / 2]
   });
 };
 // const createArrowIcon = (bearing: number) => {
