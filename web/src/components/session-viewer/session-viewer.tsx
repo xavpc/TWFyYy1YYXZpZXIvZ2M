@@ -196,29 +196,29 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       return location;
     } catch (error) {
       if (retryCount < maxRetries) {
-        toast.error(`OSRM Demo Server unable to snap location. Retrying (${retryCount + 1}/${maxRetries})...`, {
-          duration: 1500,
-          style: {
-            background: '#1F2937',
-            color: '#FFF',
-            border: '1px solid #374151',
-            borderRadius: '6px',
-          },
-        });
-        
+        // toast.error(`OSRM Demo Server unable to snap location. Retrying (${retryCount + 1}/${maxRetries})...`, {
+        //   duration: 1500,
+        //   style: {
+        //     background: '#1F2937',
+        //     color: '#FFF',
+        //     border: '1px solid #374151',
+        //     borderRadius: '6px',
+        //   },
+        // });
+        console.log(`OSRM Demo Server unable to snap location. Retrying (${retryCount + 1}/${maxRetries})...`)
         await new Promise(resolve => setTimeout(resolve, 1500));
         return snapLocationToRoute(location, retryCount + 1, maxRetries);
       }
-      
-      toast.error('Max retries reached, using original location', {
-        duration: 3000,
-        style: {
-          background: '#1F2937',
-          color: '#FFF',
-          border: '1px solid #374151',
-          borderRadius: '6px',
-        },
-      });
+      console.log(`Max retries reached, using original location`)
+      // toast.error('Max retries reached, using original location', {
+      //   duration: 3000,
+      //   style: {
+      //     background: '#1F2937',
+      //     color: '#FFF',
+      //     border: '1px solid #374151',
+      //     borderRadius: '6px',
+      //   },
+      // });
       return location;
     }
   };
