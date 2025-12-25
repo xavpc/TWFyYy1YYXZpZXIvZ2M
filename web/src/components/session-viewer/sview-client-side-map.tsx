@@ -200,8 +200,7 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
   const [sliderHover, setSliderHover] = useState<number | null>(null);
   const [hoverTimestamp, setHoverTimestamp] = useState<string | null>(null);
   const [routeCoordinatesLoading, setRouteCoordinatesLoading] = useState(false);
-  const [skippedPoints, setSkippedPoints] = useState<{[key: string]: boolean}>({});
-  
+  const [skippedPoints, setSkippedPoints] = useState<{[key: string]: {skipped: boolean, timestamp: string}}>({});  
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{
     route_coordinates_id: string;
     latitude: string;
@@ -404,35 +403,64 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     }
   }, [viewingSession]);
 
-    useEffect(() => {
-      if (!collectionPoints || collectionPoints.length === 0) return;
+
+  //TODO: use backend instead, temporary for testing(have performace issues because of complex calculations)
+  useEffect(() => {
+    if (!collectionPoints || collectionPoints.length === 0 || !collectedPoints.length) return;
+    
+    const sortedPoints = [...collectionPoints].sort((a, b) => a.sequence - b.sequence);
+    
+    const skipped: {[key: string]: {skipped: boolean, timestamp: string}} = {};
+    
+    for (let i = 0; i < sortedPoints.length; i++) {
+      const point = sortedPoints[i];
+      const pointId = point.collection_point_id;
+      const pointSequence = point.sequence;
       
-      // Sort collection points by sequence
-      const sortedPoints = [...collectionPoints].sort((a, b) => a.sequence - b.sequence);
+      const collectionRecord = collectedPoints.find(cp => 
+        cp.collection_point.collection_point_id === pointId
+      );
       
-      // Initialize skipped points map
-      const skipped: {[key: string]: boolean} = {};
-      
-      // Find the highest sequence number that has been collected
-      let highestCollectedSequence = 0;
-      
-      sortedPoints.forEach(point => {
-        const isCollected = collectedPoints.some(collectedPoint => collectedPoint.collection_point.collection_point_id === point.collection_point_id);
-        if (isCollected && point.sequence > highestCollectedSequence) {
-          highestCollectedSequence = point.sequence;
+      if (!collectionRecord) {
+        const lastCollectedPoint = collectedPoints[collectedPoints.length - 1];
+        if (lastCollectedPoint) {
+          skipped[pointId] = {
+            skipped: true,
+            timestamp: lastCollectedPoint.collected_timestamp
+          };
         }
+        continue;
+      }
+      
+      const thisCollectionTime = new Date(collectionRecord.collected_timestamp).getTime();
+      
+      const skippedEvidence = collectedPoints.find(cp => {
+        const otherPointRecord = sortedPoints.find(sp => 
+          sp.collection_point_id === cp.collection_point.collection_point_id
+        );
+        
+        if (!otherPointRecord) return false;
+        
+        if (otherPointRecord.sequence > pointSequence) {
+          const otherCollectionTime = new Date(cp.collected_timestamp).getTime();
+          return otherCollectionTime < thisCollectionTime;
+        }
+        
+        return false;
       });
       
-      // Mark any uncollected points with sequence < highestCollectedSequence as skipped
-      sortedPoints.forEach(point => {
-        const isCollected = collectedPoints.some(collectedPoint => collectedPoint.collection_point.collection_point_id === point.collection_point_id);
-        if (!isCollected && point.sequence < highestCollectedSequence) {
-          skipped[point.collection_point_id] = true;
-        }
-      });
-      
-      setSkippedPoints(skipped);
-    }, [collectionPoints, collectedPoints]);
+      if (skippedEvidence) {
+        skipped[pointId] = {
+          skipped: true,
+          timestamp: skippedEvidence.collected_timestamp // Use the timestamp of the evidence point
+        };
+      }
+    }
+    
+    setSkippedPoints(skipped);
+  }, [collectionPoints, collectedPoints]);
+
+
 
   useEffect(() => {
     const fetchRouteCoordinates = async (routeId: string | undefined) => {
@@ -523,23 +551,67 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
     };
   }, [selectedSessionId, viewingSession]);
 
-  const isCollectionPointCollected = useCallback((collectionPointId: string) => {
-    if (!currentLocation || sortedLocations.length === 0) return false;
-    
-    const matchingCollectedPoint = collectedPoints.find(point => 
-      point.collection_point.collection_point_id === collectionPointId
-    );
-    
-    if (!matchingCollectedPoint) return false;
-    
-    // Just use the raw strings and compare them directly
-    const currentTimeStr = currentLocation.current_location_timestamp;
+// Update the isCollectionPointSkipped function to consider the timeline context
+const isCollectionPointSkipped = useCallback((collectionPointId: string) => {
+  if (!currentLocation || sortedLocations.length === 0) return false;
+  
+  // Make sure current_location_timestamp is defined
+  const currentTimeStr = currentLocation.current_location_timestamp;
+  if (!currentTimeStr) return false;
+  
+  // Check if it's already collected BY THIS POINT IN TIME
+  const matchingCollectedPoint = collectedPoints.find(point => 
+    point.collection_point.collection_point_id === collectionPointId
+  );
+  
+  if (matchingCollectedPoint) {
     const collectedTimeStr = matchingCollectedPoint.collected_timestamp;
-    console.log(`current timestamp: ${currentTimeStr} collectedtimestamp: ${collectedTimeStr}`)
-    console.log(`is collected? ${currentTimeStr >= collectedTimeStr}`)
-    // Add the currentIndex dependency to ensure re-evaluation when timeline moves
-    return currentTimeStr >= collectedTimeStr;  
-  }, [currentLocation, collectedPoints, sortedLocations, currentIndex]);
+    // If it's collected, but not yet at this point in the timeline,
+    // we need to check if it's skipped before being collected
+    if (currentTimeStr < collectedTimeStr) {
+      // Point is not yet collected at this timestamp
+      const skippedInfo = skippedPoints[collectionPointId];
+      if (skippedInfo && skippedInfo.skipped && skippedInfo.timestamp) {
+        // If the skipped timestamp is before the current time but the collection time is after,
+        // then it should show as skipped
+        return currentTimeStr >= skippedInfo.timestamp;
+      }
+    } else {
+      // Already collected at this point in time, so not skipped
+      return false;
+    }
+  } else {
+    // Not collected at all - check if skipped
+    const skippedInfo = skippedPoints[collectionPointId];
+    if (skippedInfo && skippedInfo.skipped && skippedInfo.timestamp) {
+      return currentTimeStr >= skippedInfo.timestamp;
+    }
+  }
+  
+  return false;
+}, [currentLocation, collectedPoints, skippedPoints, sortedLocations, currentIndex]);
+
+// Also update the isCollectionPointCollected function to be timeline-aware
+const isCollectionPointCollected = useCallback((collectionPointId: string) => {
+  if (!currentLocation || sortedLocations.length === 0) return false;
+  
+  // Make sure current_location_timestamp is defined
+  const currentTimeStr = currentLocation.current_location_timestamp;
+  if (!currentTimeStr) return false;
+  
+  // Check if it's a collected point
+  const matchingCollectedPoint = collectedPoints.find(point => 
+    point.collection_point.collection_point_id === collectionPointId
+  );
+  
+  if (matchingCollectedPoint) {
+    // If it's collected, check if we've reached that timestamp in the playback
+    const collectedTimeStr = matchingCollectedPoint.collected_timestamp;
+    return currentTimeStr >= collectedTimeStr;
+  }
+  
+  return false;
+}, [currentLocation, collectedPoints, sortedLocations, currentIndex]);
   
 
   const formatDisplayTimestamp = (timestamp: string) => {
@@ -957,21 +1029,25 @@ const ClientSideMap = ({ deviceLocations, routeId, viewingSession, selectedSessi
 
           {/* Collection Points */}
           {collectionPoints.length > 0 && (
-            
             <>
               {collectionPoints.map(point => (
-
-                
                 <Marker
                   key={point.collection_point_id}
                   position={[parseFloat(point.latitude), parseFloat(point.longitude)]}
-                  icon={createTrashCanIcon(isCollectionPointCollected(point.collection_point_id),  skippedPoints[point.collection_point_id] === true)}
+                  icon={createTrashCanIcon(
+                    isCollectionPointCollected(point.collection_point_id),
+                    isCollectionPointSkipped(point.collection_point_id)
+                  )}
                 >
                   <Popup className="dark-theme-popup">
                     <div className="text-sm">
                       <p className="font-bold">{point.collection_point_name}</p>
                       <p className="mt-1">
-                        <span className="font-semibold">Status:</span> {skippedPoints[point.collection_point_id] === true? 'skipped' : (isCollectionPointCollected(point.collection_point_id) ? 'Collected' : 'Not Collected')}
+                        <span className="font-semibold">Status:</span> {
+                          isCollectionPointSkipped(point.collection_point_id) 
+                            ? 'Skipped' 
+                            : (isCollectionPointCollected(point.collection_point_id) ? 'Collected' : 'Not Collected')
+                        }
                       </p>
                       <p className="mt-1">
                         <span className="font-semibold">Coordinates:</span> {parseFloat(point.latitude).toFixed(6)}, {parseFloat(point.longitude).toFixed(6)}
