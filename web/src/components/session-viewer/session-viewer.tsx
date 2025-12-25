@@ -23,7 +23,10 @@ interface GroupedSessions {
 }
 
 // Dynamically import the map component with SSR disabled
-const Map = dynamic(() => import('./client-side-map'), { ssr: false })
+const Map = dynamic(
+  () => import('./sview-client-side-map'),
+  { ssr: false }
+)
 
 interface SessionViewerProps {
   isLive?: boolean
@@ -56,7 +59,7 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
   const [deviceInfoModalOpen, setDeviceInfoModalOpen] = useState(false)
   const [deviceLocations, setDeviceLocations] = useState<DeviceLocation[]>([])
   const [deviceLocationsLoading, setDeviceLocationsLoading] = useState(false)
-
+  const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
   useEffect(() => {
     if (isLive) {
       fetchActiveSessions()
@@ -170,7 +173,8 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
     if (selectedDevice) {
       fetchDeviceSessions(selectedDevice.device_id)
     }
-  }
+  };
+
 
   const fetchDeviceLocationsBySessionId = async (sessionId: string) => {
     try {
@@ -179,8 +183,13 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       const response = await axios.get(apiUrl)
 
       if (response.data.success && response.data.data) {
-        console.log(`Device Locations${response.data.data}`)
-        setDeviceLocations(response.data.data)
+        // Snap each location to nearest road
+        const locations = response.data.data;
+        const snappedLocations: DeviceLocation[] = await Promise.all(
+          locations.map((location: DeviceLocation) => snapLocationToRoute(location))
+        );
+        
+        setDeviceLocations(snappedLocations);
       } else {
         setDeviceLocations([])
       }
@@ -451,278 +460,249 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
       </div>
 
       {/* Main Content */}
-      <div className='flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 bg-gray-900 overflow-hidden'>
-        {/* Left Panel - Device Selection */}
-        <div className='lg:col-span-1 bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-hidden relative'>
-          <div className='p-4 border-b border-gray-700'>
-            <h3 className='font-semibold text-blue-400 text-lg'>
-              {devsim('Device Selection')}
-            </h3>
-          </div>
+      <div className='flex-1 flex bg-gray-900 overflow-hidden relative'>
+        {/* Toggle Button */}
+        <button
+          onClick={() => {
+            setIsLeftPanelVisible(!isLeftPanelVisible)
+            // Close floating panel when left panel is collapsed
+            if (isLeftPanelVisible) {
+              setDeviceSelectionCollapsed(true)
+            }
+          }}
+          className={`absolute top-1/2 -translate-y-1/2 z-[999] bg-gray-800 hover:bg-gray-800 text-gray-300 p-2 rounded-r-md border border-l-0 border-gray-700 shadow-lg transition-all duration-200 ${
+            // Only apply opacity when floating panel is visible
+            (selectedDevice || (isLive && !deviceSelectionCollapsed)) &&
+            !deviceSelectionCollapsed
+              ? 'bg-gray-800/50 hover:bg-gray-800 text-gray-400 hover:text-gray-300 border-gray-700/50 hover:border-gray-700 opacity-30 hover:opacity-100'
+              : ''
+          }`}
+          style={{
+            transform: isLeftPanelVisible
+              ? 'translate(320px, -50%)'
+              : 'translate(0, -50%)',
+          }}
+        >
+          {isLeftPanelVisible ? (
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              className='h-5 w-5'
+              viewBox='0 0 20 20'
+              fill='currentColor'
+            >
+              <path
+                fillRule='evenodd'
+                d='M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z'
+                clipRule='evenodd'
+              />
+            </svg>
+          ) : (
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              className='h-5 w-5'
+              viewBox='0 0 20 20'
+              fill='currentColor'
+            >
+              <path
+                fillRule='evenodd'
+                d='M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z'
+                clipRule='evenodd'
+              />
+            </svg>
+          )}
+        </button>
+      </div>
 
-          {/* Device Selection Content */}
-          <div className='px-4 py-3 flex-1 overflow-y-auto'>
-            <DeviceCombobox
-              devices={devices}
-              devicesLoading={devicesLoading}
-              onSelectDevice={handleDeviceSelect}
-              selectedDevice={selectedDevice}
-            />
+      {/* Left Panel */}
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          isLeftPanelVisible ? 'w-80' : 'w-0'
+        } overflow-hidden bg-gray-800 border-r border-gray-700 relative z-[998]`}
+      >
+        <div className='w-80 h-full'>
+          <div className='bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col h-full'>
+            {/* Device Selection Header */}
+            <div className='p-4 border-b border-gray-700'>
+              <h3 className='font-semibold text-blue-400 text-lg'>
+                {devsim('Device Selection')}
+              </h3>
+            </div>
 
-            {/* Device Info Summary */}
-            {selectedDevice && (
-              <div className='mt-4 p-3 bg-gray-900/50 rounded-md border border-gray-700'>
-                <div className='flex items-center space-x-2 mb-2'>
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      selectedDevice.status === 'active'
-                        ? 'bg-green-400'
-                        : 'bg-red-400'
-                    }`}
-                  ></div>
-                  <p className='text-sm font-medium text-blue-400 truncate'>
-                    {selectedDevice.device_name}
-                  </p>
-                </div>
-                {selectedDevice.employee && (
-                  <p className='text-xs text-gray-400 ml-4 mb-2'>
-                    {devsim('Assigned to')}:{' '}
-                    {selectedDevice.employee.first_name}{' '}
-                    {selectedDevice.employee.last_name}
-                  </p>
-                )}
-                <div className='flex justify-end'>
-                  <button
-                    onClick={() => setDeviceInfoModalOpen(true)}
-                    className='text-xs bg-gray-800 hover:bg-gray-700 text-blue-400 px-3 py-1 rounded-md transition-colors'
-                  >
-                    {devsim('View Details')}
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Device Selection Content */}
+            <div className='px-4 py-3 flex-1 overflow-y-auto'>
+              <DeviceCombobox
+                devices={devices}
+                devicesLoading={devicesLoading}
+                onSelectDevice={handleDeviceSelect}
+                selectedDevice={selectedDevice}
+              />
 
-            {/* Filtering Section */}
-            {selectedDevice && (
-              <div className='mt-4 space-y-4'>
-                {/* Session Count Info */}
-                <div className='flex justify-between items-center px-3 py-2 bg-gray-900/50 rounded-md border border-gray-700'>
-                  <div className='flex items-center space-x-2'>
-                    <svg
-                      className='w-4 h-4 text-blue-400'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                      stroke='currentColor'
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                      />
-                    </svg>
-                    <h4 className='text-blue-400 text-sm font-medium'>
-                      {devsim('Sessions')}
-                    </h4>
+              {/* Device Info Summary */}
+              {selectedDevice && (
+                <div className='mt-4 p-3 bg-gray-900/50 rounded-md border border-gray-700'>
+                  <div className='flex items-center space-x-2 mb-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        selectedDevice.status === 'active'
+                          ? 'bg-green-400'
+                          : 'bg-red-400'
+                      }`}
+                    ></div>
+                    <p className='text-sm font-medium text-blue-400 truncate'>
+                      {selectedDevice.device_name}
+                    </p>
                   </div>
-                  <span className='text-xs text-gray-400'>
-                    {deviceSessions.length} session
-                    {deviceSessions.length !== 1 ? 's' : ''}
-                  </span>
+                  {selectedDevice.employee && (
+                    <p className='text-xs text-gray-400 ml-4 mb-2'>
+                      {devsim('Assigned to')}:{' '}
+                      {selectedDevice.employee.first_name}{' '}
+                      {selectedDevice.employee.last_name}
+                    </p>
+                  )}
+                  <div className='flex justify-end'>
+                    <button
+                      onClick={() => setDeviceInfoModalOpen(true)}
+                      className='text-xs bg-gray-800 hover:bg-gray-700 text-blue-400 px-3 py-1 rounded-md transition-colors'
+                    >
+                      {devsim('View Details')}
+                    </button>
+                  </div>
                 </div>
+              )}
 
-                {/* Filter Controls */}
-                <div className='bg-gray-900/50 rounded-md p-3 border border-gray-700'>
-                  <h5 className='text-xs font-medium text-blue-400 mb-2'>
-                    {devsim('Filter Sessions')}
-                  </h5>
-                  <div className='space-y-2'>
-                    {!isLive && (
+              {/* Filtering Section */}
+              {selectedDevice && (
+                <div className='mt-4 space-y-4'>
+                  {/* Session Count Info */}
+                  <div className='flex justify-between items-center px-3 py-2 bg-gray-900/50 rounded-md border border-gray-700'>
+                    <div className='flex items-center space-x-2'>
+                      <svg
+                        className='w-4 h-4 text-blue-400'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                        />
+                      </svg>
+                      <h4 className='text-blue-400 text-sm font-medium'>
+                        {devsim('Sessions')}
+                      </h4>
+                    </div>
+                    <span className='text-xs text-gray-400'>
+                      {deviceSessions.length} session
+                      {deviceSessions.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  {/* Filter Controls */}
+                  <div className='bg-gray-900/50 rounded-md p-3 border border-gray-700'>
+                    <h5 className='text-xs font-medium text-blue-400 mb-2'>
+                      {devsim('Filter Sessions')}
+                    </h5>
+                    <div className='space-y-2'>
+                      {!isLive && (
+                        <div>
+                          <label className='text-xs text-gray-400 block mb-1'>
+                            {devsim('Date')}
+                          </label>
+                          <div className='flex'>
+                            <input
+                              type='date'
+                              className='rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1 w-full'
+                              value={selectedDate}
+                              onChange={(e) => setSelectedDate(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Route Filter */}
                       <div>
                         <label className='text-xs text-gray-400 block mb-1'>
-                          {devsim('Date')}
+                          {devsim('Route')}
                         </label>
-                        <div className='flex'>
-                          <input
-                            type='date'
-                            className='rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1 w-full'
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Route Filter */}
-                    <div>
-                      <label className='text-xs text-gray-400 block mb-1'>
-                        {devsim('Route')}
-                      </label>
-                      <select
-                        className='w-full rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1'
-                        value={selectedDeviceRouteFilter}
-                        onChange={(e) =>
-                          setSelectedDeviceRouteFilter(e.target.value)
-                        }
-                      >
-                        <option value='all'>All Routes</option>
-                        {deviceRoutes.map((deviceRoute) => (
-                          <option
-                            key={deviceRoute.device_route_id}
-                            value={deviceRoute.device_route_id}
-                          >
-                            {deviceRoute.route.route_name} (
-                            {deviceRoute.day_assigned})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Filter Buttons */}
-                    <div className='flex space-x-2'>
-                      <button
-                        className='flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors'
-                        onClick={() => {
-                          if (
-                            selectedDate &&
-                            selectedDeviceRouteFilter !== 'all'
-                          ) {
-                            fetchSessionsByDeviceRouteAndDate(
-                              selectedDeviceRouteFilter,
-                              selectedDate
-                            )
-                          } else if (selectedDate) {
-                            fetchSessionsByDate(selectedDate)
-                          } else if (selectedDeviceRouteFilter !== 'all') {
-                            fetchSessionsByDeviceRoute(
-                              selectedDeviceRouteFilter
-                            )
-                          } else if (selectedDevice) {
-                            fetchDeviceSessions(selectedDevice.device_id)
+                        <select
+                          className='w-full rounded bg-gray-800 border border-gray-700 text-gray-200 text-xs p-1'
+                          value={selectedDeviceRouteFilter}
+                          onChange={(e) =>
+                            setSelectedDeviceRouteFilter(e.target.value)
                           }
-                        }}
-                      >
-                        {devsim('Apply Filters')}
-                      </button>
-                      <button
-                        className='flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs py-1 px-2 rounded transition-colors'
-                        onClick={resetFilters}
-                      >
-                        {devsim('Reset Filters')}
-                      </button>
+                        >
+                          <option value='all'>All Routes</option>
+                          {deviceRoutes.map((deviceRoute) => (
+                            <option
+                              key={deviceRoute.device_route_id}
+                              value={deviceRoute.device_route_id}
+                            >
+                              {deviceRoute.route.route_name} (
+                              {deviceRoute.day_assigned})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Filter Buttons */}
+                      <div className='flex space-x-2'>
+                        <button
+                          className='flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors'
+                          onClick={() => {
+                            if (
+                              selectedDate &&
+                              selectedDeviceRouteFilter !== 'all'
+                            ) {
+                              fetchSessionsByDeviceRouteAndDate(
+                                selectedDeviceRouteFilter,
+                                selectedDate
+                              )
+                            } else if (selectedDate) {
+                              fetchSessionsByDate(selectedDate)
+                            } else if (selectedDeviceRouteFilter !== 'all') {
+                              fetchSessionsByDeviceRoute(
+                                selectedDeviceRouteFilter
+                              )
+                            } else if (selectedDevice) {
+                              fetchDeviceSessions(selectedDevice.device_id)
+                            }
+                          }}
+                        >
+                          {devsim('Apply Filters')}
+                        </button>
+                        <button
+                          className='flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs py-1 px-2 rounded transition-colors'
+                          onClick={resetFilters}
+                        >
+                          {devsim('Reset Filters')}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Add Session Toggle Button at bottom of left panel */}
-          {(selectedDevice || isLive) && (
-            <div className='mt-4 flex justify-center'>
-              <button
-                onClick={() =>
-                  setDeviceSelectionCollapsed(!deviceSelectionCollapsed)
-                }
-                className='bg-gray-900 hover:bg-gray-800 text-blue-400 border border-gray-700 px-3 py-2 rounded-md flex items-center space-x-2 transition-colors'
-              >
-                <span className='text-sm'>
-                  {deviceSelectionCollapsed
-                    ? `${devsim('Show Sessions')}`
-                    : `${devsim('Hide Sessions')}`}
-                </span>
-                <svg
-                  className={`w-4 h-4 transition-transform ${
-                    deviceSelectionCollapsed ? '' : 'transform rotate-180'
-                  }`}
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M9 5l7 7-7 7'
-                  />
-                </svg>
-              </button>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Map Panel - Takes up all remaining space */}
-        <div
-          className='lg:col-span-3 bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden'
-          style={{ height: '100%', position: 'relative', zIndex: 0 }}
-        >
-          {deviceLocationsLoading && (
-            <div className='absolute inset-0 bg-black/50 flex items-center justify-center z-10'>
-              <div className='flex flex-col items-center'>
-                <svg
-                  className='animate-spin h-10 w-10 text-blue-500 mb-2'
-                  xmlns='http://www.w3.org/2000/svg'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                >
-                  <circle
-                    className='opacity-25'
-                    cx='12'
-                    cy='12'
-                    r='10'
-                    stroke='currentColor'
-                    strokeWidth='4'
-                  ></circle>
-                  <path
-                    className='opacity-75'
-                    fill='currentColor'
-                    d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                  ></path>
-                </svg>
-                <p className='text-sm text-white'>
-                  {devsim('Loading location data')}...
-                </p>
-              </div>
-            </div>
-          )}
-          <Map
-            deviceLocations={deviceLocations}
-            routeId={selectedSession?.device_route.route.route_id}
-            viewingSession={viewingSession}
-            selectedSessionId={selectedSession?.session_id}
-            isLive={isLive}
-          />
-        </div>
-
-        {/* Floating Sessions List Panel */}
-        {(selectedDevice || (isLive && !deviceSelectionCollapsed)) &&
-          !deviceSelectionCollapsed && (
-            <div
-              className='lg:block absolute bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-y-auto transition-all duration-300'
-              style={{
-                left: 'calc(25% + 2.5rem)',
-                top: '4.5rem',
-                height: 'calc(100% - 5.5rem)',
-                width: '25%',
-                zIndex: 30,
-              }}
-            >
-              <div className='p-4 border-b border-gray-700 flex justify-between items-center'>
-                <h3 className='font-semibold text-blue-400 text-lg'>
-                  {devsim('Sessions')}
-                </h3>
+            {/* Add Session Toggle Button at bottom of left panel */}
+            {(selectedDevice || isLive) && (
+              <div className='mt-4 flex justify-center'>
                 <button
-                  onClick={() => {
-                    if (isLive && !selectedDevice) {
-                      setDeviceSelectionCollapsed(true)
-                    } else if (selectedDevice) {
-                      setDeviceSelectionCollapsed(true)
-                    }
-                  }}
-                  className='text-gray-400 hover:text-blue-400'
+                  onClick={() =>
+                    setDeviceSelectionCollapsed(!deviceSelectionCollapsed)
+                  }
+                  className='bg-gray-900 hover:bg-gray-800 text-blue-400 border border-gray-700 px-3 py-2 rounded-md flex items-center space-x-2 transition-colors'
                 >
+                  <span className='text-sm'>
+                    {deviceSelectionCollapsed
+                      ? 'Show Sessions'
+                      : 'Hide Sessions'}
+                  </span>
                   <svg
-                    className='w-5 h-5'
+                    className={`w-4 h-4 transition-transform ${
+                      deviceSelectionCollapsed ? '' : 'transform rotate-180'
+                    }`}
                     fill='none'
                     viewBox='0 0 24 24'
                     stroke='currentColor'
@@ -731,20 +711,84 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
                       strokeLinecap='round'
                       strokeLinejoin='round'
                       strokeWidth={2}
-                      d='M6 18L18 6M6 6l12 12'
+                      d='M9 5l7 7-7 7'
                     />
                   </svg>
                 </button>
               </div>
+            )}
+          </div>
 
-              {selectedSession && (
-                <div className='flex justify-center my-2'>
+          {/* Map Panel - Takes up all remaining space */}
+          <div
+            className='lg:col-span-3 bg-gray-800 border border-gray-700 rounded-md shadow-md overflow-hidden'
+            style={{ height: '100%', position: 'relative', zIndex: 0 }}
+          >
+            {deviceLocationsLoading && (
+              <div className='absolute inset-0 bg-black/50 flex items-center justify-center z-10'>
+                <div className='flex flex-col items-center'>
+                  <svg
+                    className='animate-spin h-10 w-10 text-blue-500 mb-2'
+                    xmlns='http://www.w3.org/2000/svg'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                  >
+                    <circle
+                      className='opacity-25'
+                      cx='12'
+                      cy='12'
+                      r='10'
+                      stroke='currentColor'
+                      strokeWidth='4'
+                    ></circle>
+                    <path
+                      className='opacity-75'
+                      fill='currentColor'
+                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                    ></path>
+                  </svg>
+                  <p className='text-sm text-white'>Loading location data...</p>
+                </div>
+              </div>
+            )}
+            <Map
+              deviceLocations={deviceLocations}
+              routeId={selectedSession?.device_route.route.route_id}
+              viewingSession={viewingSession}
+              selectedSessionId={selectedSession?.session_id}
+              isLive={isLive}
+            />
+          </div>
+
+          {/* Floating Sessions List Panel */}
+          {(selectedDevice || (isLive && !deviceSelectionCollapsed)) &&
+            !deviceSelectionCollapsed && (
+              <div
+                className='lg:block absolute bg-gray-800 border border-gray-700 rounded-md shadow-md flex flex-col overflow-y-auto transition-all duration-300'
+                style={{
+                  left: 'calc(25% + 2.5rem)',
+                  top: '4.5rem',
+                  height: 'calc(100% - 5.5rem)',
+                  width: '25%',
+                  zIndex: 30,
+                }}
+              >
+                <div className='p-4 border-b border-gray-700 flex justify-between items-center'>
+                  <h3 className='font-semibold text-blue-400 text-lg'>
+                    {devsim('Sessions')}
+                  </h3>
                   <button
-                    onClick={clearSelectedSession}
-                    className='text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-blue-400 px-2 py-1 rounded-md transition-colors flex items-center'
+                    onClick={() => {
+                      if (isLive && !selectedDevice) {
+                        setDeviceSelectionCollapsed(true)
+                      } else if (selectedDevice) {
+                        setDeviceSelectionCollapsed(true)
+                      }
+                    }}
+                    className='text-gray-400 hover:text-blue-400'
                   >
                     <svg
-                      className='w-3 h-3 mr-1'
+                      className='w-5 h-5'
                       fill='none'
                       viewBox='0 0 24 24'
                       stroke='currentColor'
@@ -756,175 +800,52 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
                         d='M6 18L18 6M6 6l12 12'
                       />
                     </svg>
-                    {devsim('Release Selection')}
                   </button>
                 </div>
-              )}
 
-              <div className='px-4 py-3 flex-1 overflow-hidden flex flex-col space-y-4'>
-                {/* Today's Sessions Section */}
-                <div className='flex flex-col space-y-2'>
-                  <h5 className='text-xs font-medium text-blue-400'>
-                    {isLive
-                      ? `${devsim('Active Sessions')}`
-                      : `${devsim('Todays Sessions')}`}
-                  </h5>
-                  <div
-                    className={`bg-gray-900 rounded-md p-3 border border-gray-700 ${
-                      isLive
-                        ? 'flex-1 overflow-y-auto'
-                        : 'flex-shrink-0 overflow-y-auto max-h-64 today-sessions-scrollbar'
-                    }`}
-                  >
-                    {sessionsLoading ? (
-                      <div className='flex items-center justify-center py-4'>
-                        <svg
-                          className='animate-spin h-5 w-5 text-blue-500'
-                          xmlns='http://www.w3.org/2000/svg'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                        >
-                          <circle
-                            className='opacity-25'
-                            cx='12'
-                            cy='12'
-                            r='10'
-                            stroke='currentColor'
-                            strokeWidth='4'
-                          ></circle>
-                          <path
-                            className='opacity-75'
-                            fill='currentColor'
-                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                          ></path>
-                        </svg>
-                      </div>
-                    ) : (
-                      <>
-                        {deviceSessions.filter(
-                          (session) =>
-                            isLive ||
-                            new Date(session.start).toLocaleDateString() ===
-                              new Date().toLocaleDateString()
-                        ).length > 0 ? (
-                          <div className='space-y-2'>
-                            {deviceSessions
-                              .filter(
-                                (session) =>
-                                  isLive ||
-                                  new Date(
-                                    session.start
-                                  ).toLocaleDateString() ===
-                                    new Date().toLocaleDateString()
-                              )
-                              .map((session) => (
-                                <div
-                                  key={session.session_id}
-                                  className='group mb-1 bg-gray-800 rounded-md border border-gray-700'
-                                >
-                                  {/* Existing session card content */}
-                                  <div className='p-3'>
-                                    <div className='flex justify-between items-start mb-2'>
-                                      <div>
-                                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                                          {devsim('Device')}
-                                        </p>
-                                        <p className='text-sm text-blue-300'>
-                                          {
-                                            session.device_route.device
-                                              .device_name
-                                          }
-                                        </p>
-                                      </div>
-                                      <span
-                                        className={`px-2 py-1 rounded-full text-xs ${
-                                          session.device_route.device.status ===
-                                          'active'
-                                            ? 'bg-green-900 text-green-300'
-                                            : 'bg-red-900 text-red-300'
-                                        }`}
-                                      >
-                                        {session.device_route.device.status}
-                                      </span>
-                                    </div>
-
-                                    <div className='grid grid-cols-2 gap-2'>
-                                      <div>
-                                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                                          {devsim('Route')}
-                                        </p>
-                                        <p className='text-sm text-purple-300'>
-                                          {
-                                            session.device_route.route
-                                              .route_name
-                                          }
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                                          {devsim('Day Assigned')}
-                                        </p>
-                                        <p className='text-sm text-purple-300'>
-                                          {session.device_route.day_assigned.toUpperCase()}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className='flex'>
-                                    <button
-                                      onClick={() =>
-                                        handleSessionSelect(session)
-                                      }
-                                      className={`w-1/2 text-center py-2 text-xs border-t border-r border-gray-700 transition-colors ${
-                                        selectedSession?.session_id ===
-                                        session.session_id
-                                          ? 'bg-blue-900/30 text-blue-400'
-                                          : 'hover:bg-gray-700 text-gray-400'
-                                      }`}
-                                    >
-                                      {devsim('Select Sessions')}
-                                    </button>
-                                    <button
-                                      onClick={() => openSessionDetail(session)}
-                                      className={`w-1/2 text-center py-2 text-xs border-t border-gray-700 transition-colors ${
-                                        selectedSession?.session_id ===
-                                        session.session_id
-                                          ? 'bg-blue-900/20 text-blue-400'
-                                          : 'hover:bg-gray-700 text-gray-400'
-                                      }`}
-                                    >
-                                      {devsim('View Details')}
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        ) : (
-                          <div className='flex flex-col items-center justify-center py-4 text-center'>
-                            <p className='text-gray-400 text-sm'>
-                              {isLive
-                                ? `${devsim('No active session')}`
-                                : `${devsim('No sessions today')}`}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
+                {selectedSession && (
+                  <div className='flex justify-center my-2'>
+                    <button
+                      onClick={clearSelectedSession}
+                      className='text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-blue-400 px-2 py-1 rounded-md transition-colors flex items-center'
+                    >
+                      <svg
+                        className='w-3 h-3 mr-1'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M6 18L18 6M6 6l12 12'
+                        />
+                      </svg>
+                      {devsim('Release Selection')}
+                    </button>
                   </div>
-                </div>
+                )}
 
-                {/* All Sessions Section */}
-                {!isLive && (
+                <div className='px-4 py-3 flex-1 overflow-hidden flex flex-col space-y-4'>
+                  {/* Today's Sessions Section */}
                   <div className='flex flex-col space-y-2'>
                     <h5 className='text-xs font-medium text-blue-400'>
-                      {devsim('All sessions')}
+                      {isLive
+                        ? `${devsim('Active Sessions')}`
+                        : `${devsim('Todays Sessions')}`}
                     </h5>
-                    <div className='bg-gray-900 rounded-md p-3 border border-gray-700 flex-1 overflow-y-auto max-h-64 all-sessions-scrollbar'>
+                    <div
+                      className={`bg-gray-900 rounded-md p-3 border border-gray-700 ${
+                        isLive
+                          ? 'flex-1 overflow-y-auto'
+                          : 'flex-shrink-0 overflow-y-auto max-h-64 today-sessions-scrollbar'
+                      }`}
+                    >
                       {sessionsLoading ? (
-                        <div className='flex items-center justify-center py-8'>
+                        <div className='flex items-center justify-center py-4'>
                           <svg
-                            className='animate-spin h-6 w-6 text-blue-500'
+                            className='animate-spin h-5 w-5 text-blue-500'
                             xmlns='http://www.w3.org/2000/svg'
                             fill='none'
                             viewBox='0 0 24 24'
@@ -944,326 +865,477 @@ const SessionViewer = ({ isLive = false }: SessionViewerProps): JSX.Element => {
                             ></path>
                           </svg>
                         </div>
-                      ) : deviceSessions.length === 0 ? (
-                        <div className='flex flex-col items-center justify-center py-8 text-center'>
-                          <svg
-                            className='h-10 w-10 text-gray-500 mb-2'
-                            fill='none'
-                            viewBox='0 0 24 24'
-                            stroke='currentColor'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={1.5}
-                              d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                            />
-                          </svg>
-                          <p className='text-gray-400 text-sm'>
-                            {devsim('No sessions found on this device')}
-                          </p>
-                        </div>
                       ) : (
-                        <div className='space-y-2'>
-                          {Object.entries(
-                            organizeSessionsByMonthAndWeek(deviceSessions)
-                          ).map(([monthYear, weeks]) => (
-                            <div key={monthYear}>
-                              <h5 className='text-sm font-medium text-gray-300 mb-2'>
-                                {monthYear}
-                              </h5>
-
-                              {Object.entries(weeks)
-                                .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
-                                .map(([weekNum, sessions]) => (
+                        <>
+                          {deviceSessions.filter(
+                            (session) =>
+                              isLive ||
+                              new Date(session.start).toLocaleDateString() ===
+                                new Date().toLocaleDateString()
+                          ).length > 0 ? (
+                            <div className='space-y-2'>
+                              {deviceSessions
+                                .filter(
+                                  (session) =>
+                                    isLive ||
+                                    new Date(
+                                      session.start
+                                    ).toLocaleDateString() ===
+                                      new Date().toLocaleDateString()
+                                )
+                                .map((session) => (
                                   <div
-                                    key={`${monthYear}-${weekNum}`}
-                                    className='space-y-2 mb-3'
+                                    key={session.session_id}
+                                    className='group mb-1 bg-gray-800 rounded-md border border-gray-700'
                                   >
-                                    <h6 className='text-xs text-gray-500'>
-                                      {devsim('Week')} {weekNum}
-                                    </h6>
-
-                                    {sessions.map((session) => (
-                                      // Existing session card rendering logic (similar to Today's Sessions)
-                                      <div
-                                        key={session.session_id}
-                                        className='group mb-1 bg-gray-800 rounded-md border border-gray-700'
-                                      >
-                                        {sessions.map((session) => (
-                                          <div
-                                            key={session.session_id}
-                                            className='group mb-1 bg-gray-800 rounded-md border border-gray-700'
-                                          >
-                                            <div className='p-3'>
-                                              <div className='flex justify-between items-start mb-2'>
-                                                <div>
-                                                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                                                    {devsim('Device')}
-                                                  </p>
-                                                  <p className='text-sm text-blue-300'>
-                                                    {
-                                                      session.device_route
-                                                        .device.device_name
-                                                    }
-                                                  </p>
-                                                </div>
-                                                <span
-                                                  className={`px-2 py-1 rounded-full text-xs ${
-                                                    session.device_route.device
-                                                      .status === 'active'
-                                                      ? 'bg-green-900 text-green-300'
-                                                      : 'bg-red-900 text-red-300'
-                                                  }`}
-                                                >
-                                                  {
-                                                    session.device_route.device
-                                                      .status
-                                                  }
-                                                </span>
-                                              </div>
-
-                                              <div className='grid grid-cols-2 gap-2'>
-                                                <div>
-                                                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                                                    {devsim('Route')}
-                                                  </p>
-                                                  <p className='text-sm text-purple-300'>
-                                                    {
-                                                      session.device_route.route
-                                                        .route_name
-                                                    }
-                                                  </p>
-                                                </div>
-                                                <div>
-                                                  <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                                                    {devsim('Date')}
-                                                  </p>
-                                                  <p className='text-sm text-purple-300'>
-                                                    {new Date(
-                                                      session.start
-                                                    ).toLocaleDateString()}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                            </div>
-
-                                            <div className='flex'>
-                                              <button
-                                                onClick={() =>
-                                                  handleSessionSelect(session)
-                                                }
-                                                className={`w-1/2 text-center py-2 text-xs border-t border-r border-gray-700 transition-colors ${
-                                                  selectedSession?.session_id ===
-                                                  session.session_id
-                                                    ? 'bg-blue-900/30 text-blue-400'
-                                                    : 'hover:bg-gray-700 text-gray-400'
-                                                }`}
-                                              >
-                                                {devsim('Select Session')}
-                                              </button>
-                                              <button
-                                                onClick={() =>
-                                                  openSessionDetail(session)
-                                                }
-                                                className={`w-1/2 text-center py-2 text-xs border-t border-gray-700 transition-colors ${
-                                                  selectedSession?.session_id ===
-                                                  session.session_id
-                                                    ? 'bg-blue-900/20 text-blue-400'
-                                                    : 'hover:bg-gray-700 text-gray-400'
-                                                }`}
-                                              >
-                                                {devsim('View Details')}
-                                              </button>
-                                            </div>
-                                          </div>
-                                        ))}
+                                    {/* Existing session card content */}
+                                    <div className='p-3'>
+                                      <div className='flex justify-between items-start mb-2'>
+                                        <div>
+                                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                                            {devsim('Device')}
+                                          </p>
+                                          <p className='text-sm text-blue-300'>
+                                            {
+                                              session.device_route.device
+                                                .device_name
+                                            }
+                                          </p>
+                                        </div>
+                                        <span
+                                          className={`px-2 py-1 rounded-full text-xs ${
+                                            session.device_route.device
+                                              .status === 'active'
+                                              ? 'bg-green-900 text-green-300'
+                                              : 'bg-red-900 text-red-300'
+                                          }`}
+                                        >
+                                          {session.device_route.device.status}
+                                        </span>
                                       </div>
-                                    ))}
+
+                                      <div className='grid grid-cols-2 gap-2'>
+                                        <div>
+                                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                                            {devsim('Route')}
+                                          </p>
+                                          <p className='text-sm text-purple-300'>
+                                            {
+                                              session.device_route.route
+                                                .route_name
+                                            }
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                                            {devsim('Day Assigned')}
+                                          </p>
+                                          <p className='text-sm text-purple-300'>
+                                            {session.device_route.day_assigned.toUpperCase()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className='flex'>
+                                      <button
+                                        onClick={() =>
+                                          handleSessionSelect(session)
+                                        }
+                                        className={`w-1/2 text-center py-2 text-xs border-t border-r border-gray-700 transition-colors ${
+                                          selectedSession?.session_id ===
+                                          session.session_id
+                                            ? 'bg-blue-900/30 text-blue-400'
+                                            : 'hover:bg-gray-700 text-gray-400'
+                                        }`}
+                                      >
+                                        {devsim('Select Sessions')}
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          openSessionDetail(session)
+                                        }
+                                        className={`w-1/2 text-center py-2 text-xs border-t border-gray-700 transition-colors ${
+                                          selectedSession?.session_id ===
+                                          session.session_id
+                                            ? 'bg-blue-900/20 text-blue-400'
+                                            : 'hover:bg-gray-700 text-gray-400'
+                                        }`}
+                                      >
+                                        {devsim('View Details')}
+                                      </button>
+                                    </div>
                                   </div>
                                 ))}
                             </div>
-                          ))}
-                        </div>
+                          ) : (
+                            <div className='flex flex-col items-center justify-center py-4 text-center'>
+                              <p className='text-gray-400 text-sm'>
+                                {isLive
+                                  ? `${devsim('No active session')}`
+                                  : `${devsim('No sessions today')}`}
+                              </p>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
 
-        {/* Device Information Modal */}
-        <Dialog
-          open={deviceInfoModalOpen}
-          onOpenChange={setDeviceInfoModalOpen}
-        >
-          <DialogContent
-            className='bg-gray-900 border border-gray-700 text-white max-w-md'
-            style={{ position: 'fixed', zIndex: 9999 }}
-          >
-            <DialogHeader>
-              <DialogTitle className='text-xl text-blue-400'>
-                {devsim('Device Information')}
-              </DialogTitle>
-            </DialogHeader>
+                  {/* All Sessions Section */}
+                  {!isLive && (
+                    <div className='flex flex-col space-y-2'>
+                      <h5 className='text-xs font-medium text-blue-400'>
+                        {devsim('All sessions')}
+                      </h5>
+                      <div className='bg-gray-900 rounded-md p-3 border border-gray-700 flex-1 overflow-y-auto max-h-64 all-sessions-scrollbar'>
+                        {sessionsLoading ? (
+                          <div className='flex items-center justify-center py-8'>
+                            <svg
+                              className='animate-spin h-6 w-6 text-blue-500'
+                              xmlns='http://www.w3.org/2000/svg'
+                              fill='none'
+                              viewBox='0 0 24 24'
+                            >
+                              <circle
+                                className='opacity-25'
+                                cx='12'
+                                cy='12'
+                                r='10'
+                                stroke='currentColor'
+                                strokeWidth='4'
+                              ></circle>
+                              <path
+                                className='opacity-75'
+                                fill='currentColor'
+                                d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                              ></path>
+                            </svg>
+                          </div>
+                        ) : deviceSessions.length === 0 ? (
+                          <div className='flex flex-col items-center justify-center py-8 text-center'>
+                            <svg
+                              className='h-10 w-10 text-gray-500 mb-2'
+                              fill='none'
+                              viewBox='0 0 24 24'
+                              stroke='currentColor'
+                            >
+                              <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={1.5}
+                                d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                              />
+                            </svg>
+                            <p className='text-gray-400 text-sm'>
+                              {devsim('No sessions found on this device')}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className='space-y-2'>
+                            {Object.entries(
+                              organizeSessionsByMonthAndWeek(deviceSessions)
+                            ).map(([monthYear, weeks]) => (
+                              <div key={monthYear}>
+                                <h5 className='text-sm font-medium text-gray-300 mb-2'>
+                                  {monthYear}
+                                </h5>
 
-            {selectedDevice && (
-              <div className='space-y-4'>
-                {/* Device Info Section */}
-                <div className='space-y-3 pb-3 border-b border-gray-700'>
-                  <h4 className='text-sm font-medium text-gray-300'>
-                    {devsim('Device Details')}
-                  </h4>
-                  <div className='grid grid-cols-2 gap-3'>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Name')}
-                      </p>
-                      <p className='text-sm text-blue-300'>
-                        {selectedDevice.device_name}
-                      </p>
+                                {Object.entries(weeks)
+                                  .sort(
+                                    (a, b) => parseInt(b[0]) - parseInt(a[0])
+                                  )
+                                  .map(([weekNum, sessions]) => (
+                                    <div
+                                      key={`${monthYear}-${weekNum}`}
+                                      className='space-y-2 mb-3'
+                                    >
+                                      <h6 className='text-xs text-gray-500'>
+                                        {devsim('Week')} {weekNum}
+                                      </h6>
+
+                                      {sessions.map((session) => (
+                                        // Existing session card rendering logic (similar to Today's Sessions)
+                                        <div
+                                          key={session.session_id}
+                                          className='group mb-1 bg-gray-800 rounded-md border border-gray-700'
+                                        >
+                                          {sessions.map((session) => (
+                                            <div
+                                              key={session.session_id}
+                                              className='group mb-1 bg-gray-800 rounded-md border border-gray-700'
+                                            >
+                                              <div className='p-3'>
+                                                <div className='flex justify-between items-start mb-2'>
+                                                  <div>
+                                                    <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                                                      {devsim('Device')}
+                                                    </p>
+                                                    <p className='text-sm text-blue-300'>
+                                                      {
+                                                        session.device_route
+                                                          .device.device_name
+                                                      }
+                                                    </p>
+                                                  </div>
+                                                  <span
+                                                    className={`px-2 py-1 rounded-full text-xs ${
+                                                      session.device_route
+                                                        .device.status ===
+                                                      'active'
+                                                        ? 'bg-green-900 text-green-300'
+                                                        : 'bg-red-900 text-red-300'
+                                                    }`}
+                                                  >
+                                                    {
+                                                      session.device_route
+                                                        .device.status
+                                                    }
+                                                  </span>
+                                                </div>
+
+                                                <div className='grid grid-cols-2 gap-2'>
+                                                  <div>
+                                                    <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                                                      {devsim('Route')}
+                                                    </p>
+                                                    <p className='text-sm text-purple-300'>
+                                                      {
+                                                        session.device_route
+                                                          .route.route_name
+                                                      }
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                                                      {devsim('Date')}
+                                                    </p>
+                                                    <p className='text-sm text-purple-300'>
+                                                      {new Date(
+                                                        session.start
+                                                      ).toLocaleDateString()}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              <div className='flex'>
+                                                <button
+                                                  onClick={() =>
+                                                    handleSessionSelect(session)
+                                                  }
+                                                  className={`w-1/2 text-center py-2 text-xs border-t border-r border-gray-700 transition-colors ${
+                                                    selectedSession?.session_id ===
+                                                    session.session_id
+                                                      ? 'bg-blue-900/30 text-blue-400'
+                                                      : 'hover:bg-gray-700 text-gray-400'
+                                                  }`}
+                                                >
+                                                  {devsim('Select Session')}
+                                                </button>
+                                                <button
+                                                  onClick={() =>
+                                                    openSessionDetail(session)
+                                                  }
+                                                  className={`w-1/2 text-center py-2 text-xs border-t border-gray-700 transition-colors ${
+                                                    selectedSession?.session_id ===
+                                                    session.session_id
+                                                      ? 'bg-blue-900/20 text-blue-400'
+                                                      : 'hover:bg-gray-700 text-gray-400'
+                                                  }`}
+                                                >
+                                                  {devsim('View Details')}
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Status')}
-                      </p>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          selectedDevice.status === 'active'
-                            ? 'bg-green-900 text-green-300'
-                            : 'bg-red-900 text-red-300'
-                        }`}
-                      >
-                        {selectedDevice.status}
-                      </span>
-                    </div>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Device ID')}
-                      </p>
-                      <p className='text-sm text-blue-300 font-mono'>
-                        {selectedDevice.device_id}
-                      </p>
-                    </div>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Vehicle Plate')}
-                      </p>
-                      <p className='text-sm text-blue-300'>
-                        {selectedDevice.vehicle_plate_num}
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
+              </div>
+            )}
 
-                {/* Employee Info Section */}
-                {selectedDevice.employee && (
-                  <div className='space-y-3'>
+          {/* Device Information Modal */}
+          <Dialog
+            open={deviceInfoModalOpen}
+            onOpenChange={setDeviceInfoModalOpen}
+          >
+            <DialogContent
+              className='bg-gray-900 border border-gray-700 text-white max-w-md'
+              style={{ position: 'fixed', zIndex: 9999 }}
+            >
+              <DialogHeader>
+                <DialogTitle className='text-xl text-blue-400'>
+                  {devsim('Device Information')}
+                </DialogTitle>
+              </DialogHeader>
+
+              {selectedDevice && (
+                <div className='space-y-4'>
+                  {/* Device Info Section */}
+                  <div className='space-y-3 pb-3 border-b border-gray-700'>
                     <h4 className='text-sm font-medium text-gray-300'>
-                      {devsim('Assigned Employee')}
+                      {devsim('Device Details')}
                     </h4>
                     <div className='grid grid-cols-2 gap-3'>
                       <div>
                         <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
                           {devsim('Name')}
                         </p>
-                        <p className='text-sm text-purple-300'>
-                          {getEmployeeDisplayName(selectedDevice.employee)}
+                        <p className='text-sm text-blue-300'>
+                          {selectedDevice.device_name}
                         </p>
                       </div>
                       <div>
                         <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                          {devsim('Email')}
+                          {devsim('Status')}
                         </p>
-                        <p className='text-sm text-purple-300'>
-                          {selectedDevice.employee.email}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            selectedDevice.status === 'active'
+                              ? 'bg-green-900 text-green-300'
+                              : 'bg-red-900 text-red-300'
+                          }`}
+                        >
+                          {selectedDevice.status}
+                        </span>
+                      </div>
+                      <div>
+                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                          {devsim('Device ID')}
+                        </p>
+                        <p className='text-sm text-blue-300 font-mono'>
+                          {selectedDevice.device_id}
                         </p>
                       </div>
                       <div>
                         <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                          {devsim('Contact')}
+                          {devsim('Vehicle Plate')}
                         </p>
-                        <p className='text-sm text-purple-300'>
-                          {selectedDevice.employee.contact_number}
-                        </p>
-                      </div>
-                      <div>
-                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                          {devsim('Address')}
-                        </p>
-                        <p className='text-sm text-purple-300'>
-                          {selectedDevice.employee.address}
+                        <p className='text-sm text-blue-300'>
+                          {selectedDevice.vehicle_plate_num}
                         </p>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
 
-        {/* Session Detail Modal */}
-        <Dialog
-          open={sessionDetailModalOpen}
-          onOpenChange={setSessionDetailModalOpen}
-        >
-          <DialogContent
-            className='bg-gray-900 border border-gray-700 text-white max-w-md'
-            style={{ position: 'fixed', zIndex: 9999 }}
+                  {/* Employee Info Section */}
+                  {selectedDevice.employee && (
+                    <div className='space-y-3'>
+                      <h4 className='text-sm font-medium text-gray-300'>
+                        {devsim('Assigned Employee')}
+                      </h4>
+                      <div className='grid grid-cols-2 gap-3'>
+                        <div>
+                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                            {devsim('Name')}
+                          </p>
+                          <p className='text-sm text-purple-300'>
+                            {getEmployeeDisplayName(selectedDevice.employee)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                            {devsim('Email')}
+                          </p>
+                          <p className='text-sm text-purple-300'>
+                            {selectedDevice.employee.email}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                            {devsim('Contact')}
+                          </p>
+                          <p className='text-sm text-purple-300'>
+                            {selectedDevice.employee.contact_number}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                            {devsim('Address')}
+                          </p>
+                          <p className='text-sm text-purple-300'>
+                            {selectedDevice.employee.address}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Session Detail Modal */}
+          <Dialog
+            open={sessionDetailModalOpen}
+            onOpenChange={setSessionDetailModalOpen}
           >
-            <DialogHeader>
-              <DialogTitle className='text-xl text-blue-400'>
-                {devsim('Session Details')}
-              </DialogTitle>
-            </DialogHeader>
+            <DialogContent
+              className='bg-gray-900 border border-gray-700 text-white max-w-md'
+              style={{ position: 'fixed', zIndex: 9999 }}
+            >
+              <DialogHeader>
+                <DialogTitle className='text-xl text-blue-400'>
+                  {devsim('Session Details')}
+                </DialogTitle>
+              </DialogHeader>
 
-            {selectedSession && (
-              <div className='space-y-4'>
-                <div className='space-y-3 pb-3 border-b border-gray-700'>
-                  <h4 className='text-sm font-medium text-gray-300'>
-                    {devsim('Time Information')}
-                  </h4>
-                  <div className='grid grid-cols-2 gap-3'>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Date')}
-                      </p>
-                      <p className='text-sm text-blue-300'>
-                        {new Date(selectedSession.start).toLocaleDateString()}
-                      </p>
+              {selectedSession && (
+                <div className='space-y-4'>
+                  <div className='space-y-3 pb-3 border-b border-gray-700'>
+                    <h4 className='text-sm font-medium text-gray-300'>
+                      {devsim('Time Information')}
+                    </h4>
+                    <div className='grid grid-cols-2 gap-3'>
+                      <div>
+                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                          {devsim('Date')}
+                        </p>
+                        <p className='text-sm text-blue-300'>
+                          {new Date(selectedSession.start).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                          {devsim('Day Assigned')}
+                        </p>
+                        <p className='text-sm text-blue-300'>
+                          {selectedSession.device_route.day_assigned.toUpperCase()}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Day Assigned')}
-                      </p>
-                      <p className='text-sm text-blue-300'>
-                        {selectedSession.device_route.day_assigned.toUpperCase()}
-                      </p>
+                  </div>
+
+                  <div className='space-y-3'>
+                    <h4 className='text-sm font-medium text-gray-300'>
+                      {devsim('Session Information')}
+                    </h4>
+                    <div className='grid grid-cols-1 gap-3'>
+                      <div>
+                        <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
+                          {devsim('Session ID')}
+                        </p>
+                        <p className='text-sm text-purple-300 font-mono'>
+                          {selectedSession.session_id}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className='space-y-3'>
-                  <h4 className='text-sm font-medium text-gray-300'>
-                    {devsim('Session Information')}
-                  </h4>
-                  <div className='grid grid-cols-1 gap-3'>
-                    <div>
-                      <p className='text-xs uppercase tracking-wider text-gray-500 mb-1'>
-                        {devsim('Session ID')}
-                      </p>
-                      <p className='text-sm text-purple-300 font-mono'>
-                        {selectedSession.session_id}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </div>
   )
