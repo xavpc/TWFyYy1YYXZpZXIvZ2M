@@ -113,7 +113,7 @@ export class DeviceRouteController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a device route' })
   @ApiParam({ name: 'id', description: 'Device route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
-  @ApiBody({ type: CreateDeviceRouteDto, description: 'Device route data to update' })
+  @ApiBody({ type: UpdateDeviceRouteDto, description: 'Device route data to update' })
   @ApiResponse({
     status: 200,
     description: 'Device route updated successfully',

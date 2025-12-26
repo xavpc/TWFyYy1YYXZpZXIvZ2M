@@ -8,9 +8,6 @@ import { Logger } from '@nestjs/common';
 @Injectable()
 export class EmployeeService {
   // private readonly logger = new Logger(EmployeeService.name);
-  //TODO: handle duplicate response on all service
-  //TODO: enhanced searching on all endpoints
-  //TODO: auth
   constructor(
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
