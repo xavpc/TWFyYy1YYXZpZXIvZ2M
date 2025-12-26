@@ -1,0 +1,66 @@
+-- Insert more dummy data into employee with Japanese names
+INSERT INTO employee (employee_id, first_name, middle_name, last_name, address, contact_number, email, age)
+VALUES 
+  (UUID(), 'Haruto', 'S.', 'Takahashi', '101 Sakura St', '555-1111', 'haruto.takahashi@example.com', 40),
+  (UUID(), 'Yuki', 'M.', 'Tanaka', '202 Fujiwara Ave', '555-2222', 'yuki.tanaka@example.com', 32),
+  (UUID(), 'Souta', 'K.', 'Kobayashi', '303 Kyoto Rd', '555-3333', 'souta.kobayashi@example.com', 45),
+  (UUID(), 'Hana', 'E.', 'Yamamoto', '404 Osaka Blvd', '555-4444', 'hana.yamamoto@example.com', 27),
+  (UUID(), 'Riku', 'J.', 'Fujimoto', '505 Hokkaido St', '555-5555', 'riku.fujimoto@example.com', 38);
+
+-- Insert more dummy data into device with Japanese-style names
+INSERT INTO device (device_id, device_name, vehicle_plate_num, status, employee_id)
+VALUES 
+  (UUID(), 'デバイス・サクラ (Device Sakura)', '桜-321', 'active', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1)),
+  (UUID(), 'デバイス・富士 (Device Fuji)', '富士-654', 'inactive', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1)),
+  (UUID(), 'デバイス・京都 (Device Kyoto)', '京都-987', 'active', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1)),
+  (UUID(), 'デバイス・嵐山 (Device Arashiyama)', '嵐山-159', 'inactive', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1)),
+  (UUID(), 'デバイス・神風 (Device Kamikaze)', '神風-753', 'active', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1));
+
+-- Insert more dummy data into route with Japanese-style names
+INSERT INTO route (route_id, route_name)
+VALUES 
+  (UUID(), 'ルート東京 (Route Tokyo)'),
+  (UUID(), 'ルート大阪 (Route Osaka)'),
+  (UUID(), 'ルート京都 (Route Kyoto)'),
+  (UUID(), 'ルート札幌 (Route Sapporo)'),
+  (UUID(), 'ルート福岡 (Route Fukuoka)');
+
+-- Insert 30 dummy data entries into device_location
+INSERT INTO device_location (device_location_id, latitude, longitude, timestamp, sequence, device_id)
+VALUES 
+  (UUID(), 35.6895, 139.6917, NOW(), 1, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Tokyo
+  (UUID(), 34.6937, 135.5023, NOW(), 2, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Osaka
+  (UUID(), 35.0116, 135.7681, NOW(), 3, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Kyoto
+  (UUID(), 43.0618, 141.3545, NOW(), 4, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Sapporo
+  (UUID(), 33.5904, 130.4017, NOW(), 5, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Fukuoka
+  (UUID(), 36.2048, 138.2529, NOW(), 6, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Japan Center
+  (UUID(), 26.2124, 127.6809, NOW(), 7, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Okinawa
+  (UUID(), 32.7503, 129.8777, NOW(), 8, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Nagasaki
+  (UUID(), 38.2682, 140.8694, NOW(), 9, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)),  -- Sendai
+  (UUID(), 39.7036, 141.1527, NOW(), 10, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Morioka
+  (UUID(), 34.3853, 132.4553, NOW(), 11, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Hiroshima
+  (UUID(), 35.4437, 139.6380, NOW(), 12, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Yokohama
+  (UUID(), 37.9022, 139.0236, NOW(), 13, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Niigata
+  (UUID(), 33.6066, 130.4182, NOW(), 14, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Fukuoka
+  (UUID(), 43.7750, 142.3649, NOW(), 15, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Asahikawa
+  (UUID(), 31.5965, 130.5571, NOW(), 16, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Kagoshima
+  (UUID(), 35.0210, 135.7556, NOW(), 17, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Kyoto
+  (UUID(), 34.7058, 135.5035, NOW(), 18, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Osaka
+  (UUID(), 35.6894, 139.6918, NOW(), 19, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Tokyo
+  (UUID(), 43.0621, 141.3544, NOW(), 20, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Sapporo
+  (UUID(), 33.5732, 130.4061, NOW(), 21, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Fukuoka
+  (UUID(), 36.5748, 139.2394, NOW(), 22, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Tochigi
+  (UUID(), 37.7503, 140.4679, NOW(), 23, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Fukushima
+  (UUID(), 34.6723, 135.4947, NOW(), 24, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Osaka
+  (UUID(), 35.0116, 135.7680, NOW(), 25, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Kyoto
+  (UUID(), 33.2494, 130.2987, NOW(), 26, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Kumamoto
+  (UUID(), 31.9077, 131.4202, NOW(), 27, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Miyazaki
+  (UUID(), 42.8200, 140.7400, NOW(), 28, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Hakodate
+  (UUID(), 39.4746, 141.1186, NOW(), 29, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)), -- Iwate
+  (UUID(), 34.6937, 135.5021, NOW(), 30, (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)); -- Osaka
+
+-- Verify inserted data
+SELECT * FROM employee;
+SELECT * FROM device;
+SELECT * FROM route;
+SELECT * FROM device_location;
