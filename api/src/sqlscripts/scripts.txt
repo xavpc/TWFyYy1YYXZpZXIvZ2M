@@ -1,0 +1,126 @@
+-- Create UUID v4 function if it doesn't exist
+DELIMITER $$
+CREATE FUNCTION IF NOT EXISTS UUID_V4()
+RETURNS CHAR(36)
+DETERMINISTIC
+BEGIN
+    RETURN LOWER(CONCAT(
+        HEX(RANDOM_BYTES(4)),
+        '-',
+        HEX(RANDOM_BYTES(2)),
+        '-4',
+        SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3),
+        '-',
+        HEX(FLOOR(ASCII(RANDOM_BYTES(1)) & 63) >> 4 | 128),
+        SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3),
+        '-',
+        HEX(RANDOM_BYTES(6))
+    ));
+END $$
+DELIMITER ;
+
+-- Insert employees with Japanese names using UUID v4
+INSERT INTO employee (employee_id, first_name, middle_name, last_name, address, contact_number, email, age)
+VALUES 
+  (UUID_V4(), 'Haruto', 'S.', 'Takahashi', '101 Sakura St', '555-1111', 'haruto.takahashi@example.com', 40),
+  (UUID_V4(), 'Yuki', 'M.', 'Tanaka', '202 Fujiwara Ave', '555-2222', 'yuki.tanaka@example.com', 32),
+  (UUID_V4(), 'Souta', 'K.', 'Kobayashi', '303 Kyoto Rd', '555-3333', 'souta.kobayashi@example.com', 45),
+  (UUID_V4(), 'Hana', 'E.', 'Yamamoto', '404 Osaka Blvd', '555-4444', 'hana.yamamoto@example.com', 27),
+  (UUID_V4(), 'Riku', 'J.', 'Fujimoto', '505 Hokkaido St', '555-5555', 'riku.fujimoto@example.com', 38);
+
+-- Insert devices with Japanese-style names using UUID v4
+INSERT INTO device (device_id, device_name, vehicle_plate_num, status, employee_id)
+SELECT 
+  UUID_V4(),
+  device_name,
+  vehicle_plate_num,
+  status,
+  employee_id
+FROM (
+  SELECT 'デバイス・サクラ (Device Sakura)' as device_name, '桜-321' as vehicle_plate_num, 'active' as status, (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1) as employee_id UNION ALL
+  SELECT 'デバイス・富士 (Device Fuji)', '富士-654', 'inactive', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1) UNION ALL
+  SELECT 'デバイス・京都 (Device Kyoto)', '京都-987', 'active', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1) UNION ALL
+  SELECT 'デバイス・嵐山 (Device Arashiyama)', '嵐山-159', 'inactive', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1) UNION ALL
+  SELECT 'デバイス・神風 (Device Kamikaze)', '神風-753', 'active', (SELECT employee_id FROM employee ORDER BY RAND() LIMIT 1)
+) as device_data;
+
+-- Insert routes with Japanese-style names using UUID v4
+INSERT INTO route (route_id, route_name)
+VALUES 
+  (UUID_V4(), 'ルート東京 (Route Tokyo)'),
+  (UUID_V4(), 'ルート大阪 (Route Osaka)'),
+  (UUID_V4(), 'ルート京都 (Route Kyoto)'),
+  (UUID_V4(), 'ルート札幌 (Route Sapporo)'),
+  (UUID_V4(), 'ルート福岡 (Route Fukuoka)');
+
+-- Insert route coordinates for each route
+INSERT INTO route_coordinates (route_coordinates_id, route_id, latitude, longitude)
+SELECT 
+    UUID_V4(),
+    route_id,
+    CASE 
+        WHEN route_name LIKE '%Tokyo%' THEN 35.6895
+        WHEN route_name LIKE '%Osaka%' THEN 34.6937
+        WHEN route_name LIKE '%Kyoto%' THEN 35.0116
+        WHEN route_name LIKE '%Sapporo%' THEN 43.0618
+        WHEN route_name LIKE '%Fukuoka%' THEN 33.5904
+    END AS latitude,
+    CASE 
+        WHEN route_name LIKE '%Tokyo%' THEN 139.6917
+        WHEN route_name LIKE '%Osaka%' THEN 135.5023
+        WHEN route_name LIKE '%Kyoto%' THEN 135.7681
+        WHEN route_name LIKE '%Sapporo%' THEN 141.3545
+        WHEN route_name LIKE '%Fukuoka%' THEN 130.4017
+    END AS longitude
+FROM route;
+
+-- Insert device locations using UUID v4
+INSERT INTO device_location (device_location_id, latitude, longitude, timestamp, sequence, device_id)
+SELECT 
+    UUID_V4(),
+    latitude,
+    longitude,
+    NOW(),
+    seq,
+    (SELECT device_id FROM device ORDER BY RAND() LIMIT 1)
+FROM (
+    SELECT 35.6895 as latitude, 139.6917 as longitude, 1 as seq UNION ALL  -- Tokyo
+    SELECT 34.6937, 135.5023, 2 UNION ALL  -- Osaka
+    SELECT 35.0116, 135.7681, 3 UNION ALL  -- Kyoto
+    SELECT 43.0618, 141.3545, 4 UNION ALL  -- Sapporo
+    SELECT 33.5904, 130.4017, 5 UNION ALL  -- Fukuoka
+    SELECT 36.2048, 138.2529, 6 UNION ALL  -- Japan Center
+    SELECT 26.2124, 127.6809, 7 UNION ALL  -- Okinawa
+    SELECT 32.7503, 129.8777, 8 UNION ALL  -- Nagasaki
+    SELECT 38.2682, 140.8694, 9 UNION ALL  -- Sendai
+    SELECT 39.7036, 141.1527, 10  -- Morioka
+) as locations;
+
+-- Add additional coordinates for each route to create paths
+INSERT INTO route_coordinates (route_coordinates_id, route_id, latitude, longitude)
+SELECT 
+    UUID_V4(),
+    r.route_id,
+    CASE 
+        WHEN r.route_name LIKE '%Tokyo%' THEN 35.6895 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Osaka%' THEN 34.6937 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Kyoto%' THEN 35.0116 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Sapporo%' THEN 43.0618 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Fukuoka%' THEN 33.5904 + (RAND() * 0.02 - 0.01)
+    END AS latitude,
+    CASE 
+        WHEN r.route_name LIKE '%Tokyo%' THEN 139.6917 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Osaka%' THEN 135.5023 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Kyoto%' THEN 135.7681 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Sapporo%' THEN 141.3545 + (RAND() * 0.02 - 0.01)
+        WHEN r.route_name LIKE '%Fukuoka%' THEN 130.4017 + (RAND() * 0.02 - 0.01)
+    END AS longitude
+FROM route r
+CROSS JOIN (SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers;
+
+-- Verify data
+SELECT * FROM employee;
+SELECT * FROM device;
+SELECT * FROM route;
+SELECT * FROM route_coordinates ORDER BY route_id;
+SELECT * FROM device_location;
