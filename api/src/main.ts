@@ -8,7 +8,7 @@ async function bootstrap() {
   
   const config = new DocumentBuilder()
     .setTitle('Garbage Collection Management API')
-    .setDescription('API endpoints for managing Garbage Collectioon System data')
+    .setDescription('API endpoints for managing Garbage Collectioon System data\nBase route: https://gcbackend-temporary.onrender.com')
     .setVersion('1.0')
     .build();
     
