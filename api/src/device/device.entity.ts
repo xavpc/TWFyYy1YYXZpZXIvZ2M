@@ -1,8 +1,9 @@
 import { Employee } from '../employee/employee.entity';
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { DeviceStatus } from './enums/device-status.enum';
-import { DeviceLocation } from './subFeatureLocation/device-location.entity';
+import { DeviceLocation } from './device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
+
 
 @Entity()
 export class Device {
