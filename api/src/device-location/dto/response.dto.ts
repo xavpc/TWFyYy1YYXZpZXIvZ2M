@@ -27,7 +27,7 @@ export class DeviceLocationResponse {
   })
   push_timestamp: Date;
   @ApiProperty({
-    description: 'The timestamp when the device location was pushed',
+    description: 'The timestamp when the device location was recorded',
     example: '2025-01-30T12:00:00Z',
   })
   current_location_timestamp: Date;
