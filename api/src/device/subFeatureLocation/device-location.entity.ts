@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Device } from "../device.entity";
 
 
@@ -17,10 +17,11 @@ export class DeviceLocation{
   @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
 
-  @Column()
+  @CreateDateColumn()
   timestamp: Date;
 
-  @Column()
+  @Index('IDX_SEQUENCE', { unique: true })
+  @Column('int', { unique: true })
   sequence: number;
 
 }
