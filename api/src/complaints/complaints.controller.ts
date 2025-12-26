@@ -3,7 +3,7 @@ import { ComplaintsService } from './complaints.service';
 import { CreateComplaintDto } from './dto/create-complaints.dto';
 import { UpdateComplaintDto } from './dto/update-complaints.dto';
 
-@Controller('complaints')
+@Controller('mobile.complaints')
 export class ComplaintsController {
   constructor(private readonly complaintsService: ComplaintsService) {}
 
