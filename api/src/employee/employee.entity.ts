@@ -1,22 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Device } from '../device/device.entity';
+
 @Entity()
 export class Employee {
   @PrimaryGeneratedColumn('uuid')
   employee_id: string;
 
-  @ManyToMany(() => Device, (device) => device.employees)
-  @JoinTable({
-    name: 'employee_devices', 
-    joinColumn: {
-      name: 'employee_id',
-      referencedColumnName: 'employee_id',
-    },
-    inverseJoinColumn: {
-      name: 'device_id',
-      referencedColumnName: 'device_id',
-    },
-  })
+  @OneToMany(() => Device, (device) => device.employee)
   devices: Device[];
   
   @Column({ nullable: false }) 
@@ -39,6 +29,4 @@ export class Employee {
 
   @Column('int', { nullable: false })
   age: number;
-
-
 }
