@@ -6,6 +6,9 @@ export class Device {
   @PrimaryGeneratedColumn('uuid')
   device_id: string;
 
+  @Column({ nullable: false }) 
+  device_name: string;
+
   @ManyToOne(() => Employee, (employee) => employee.devices)
   @JoinColumn({ name: 'employee_id' })  
   employee: Employee;
@@ -15,5 +18,4 @@ export class Device {
 
   @Column({ nullable: true })
   status: string;
-  device: Employee[];
 }
