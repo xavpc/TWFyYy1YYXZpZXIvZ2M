@@ -8,9 +8,8 @@ async function bootstrap() {
   
   const config = new DocumentBuilder()
     .setTitle('Garbage Collection Management API')
-    .setDescription('API endpoints for managing employee data')
+    .setDescription('API endpoints for managing Garbage Collectioon System data')
     .setVersion('1.0')
-    .addTag('employees')
     .build();
     
   const document = SwaggerModule.createDocument(app, config);
