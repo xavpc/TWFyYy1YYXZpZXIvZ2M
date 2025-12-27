@@ -53,7 +53,16 @@ export class EmployeeController {
 
   @Get('search/:field/:value')
   @ApiOperation({ summary: 'Search employees by specific field' })
-  @ApiParam({ name: 'field', enum: ['first_name', 'last_name', 'email', 'address'] })
+  @ApiParam({ name: 'field', enum: [
+    'first_name',
+    'middle_name',
+    'last_name',
+    'email',
+    'address',
+    'contact_number',
+    'age',
+    'employee_id'
+  ] })
   @ApiParam({ name: 'value', description: 'Search value' })
   async searchByField(
     @Param('field') field: keyof Omit<Employee, 'devices'>,
