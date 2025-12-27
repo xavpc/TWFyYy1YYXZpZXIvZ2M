@@ -37,6 +37,6 @@ export class CreateDeviceDto {
   })
   @IsOptional()
   @IsString()
-  @IsUUID('4', { each: true })
+  @IsUUID()
   employee_id?: string;
 }
