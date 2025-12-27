@@ -8,7 +8,6 @@ import { getTypeOrmConfig } from './config/typeorm.config';
 import { DeviceModule } from './device/device.module';
 import { DeviceLocationModule } from './device/device-location/device-location.module';
 import { RouteModule } from './route/route.module';
-import { RouteCoordinatesModule } from './route/route-coordinates/route-coordinates.module';
 
 
 
@@ -24,8 +23,7 @@ import { RouteCoordinatesModule } from './route/route-coordinates/route-coordina
     EmployeeModule,
     DeviceModule,
     DeviceLocationModule,
-    RouteModule,
-    RouteCoordinatesModule
+    RouteModule
     
   ],
   controllers: [AppController],
