@@ -16,11 +16,12 @@ import { CollectionPointsModule } from './collection-points/collection-points.mo
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      envFilePath: process.env.NODE_ENV === 'production' ? '.env.online' : '.env',
+    }),
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule],
-        useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
       inject: [ConfigService],
     }),
     EmployeeModule,
