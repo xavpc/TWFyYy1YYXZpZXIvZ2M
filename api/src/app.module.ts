@@ -9,6 +9,7 @@ import { DeviceModule } from './device/device.module';
 import { DeviceLocationModule } from './device-location/device-location.module';
 import { RouteModule } from './route/route.module';
 import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.module';
+import { DeviceRouteModule } from './device-route/device-route.module';
 
 
 
@@ -25,7 +26,8 @@ import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.mo
     DeviceModule,
     DeviceLocationModule,
     RouteModule,
-    RouteCoordinatesModule
+    RouteCoordinatesModule,
+    DeviceRouteModule,
     
   ],
   controllers: [AppController],

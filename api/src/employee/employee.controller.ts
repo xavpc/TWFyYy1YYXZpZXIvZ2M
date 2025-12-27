@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, Query, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmployeeResponse, EmployeeListResponse, ErrorResponse } from './dto/response.dto';
-import { Employee } from './employee.entity';
 
 @ApiTags('Employees')
 @Controller('web.employees')
@@ -50,98 +49,30 @@ export class EmployeeController {
     };
   }
 
-
-  @Get('search/:field/:value')
-  @ApiOperation({ summary: 'Search employees by specific field' })
-  @ApiParam({ name: 'field', enum: [
-    'first_name',
-    'middle_name',
-    'last_name',
-    'email',
-    'address',
-    'contact_number',
-    'age',
-    'employee_id'
-  ] })
-  @ApiParam({ name: 'value', description: 'Search value' })
-  async searchByField(
-    @Param('field') field: keyof Omit<Employee, 'devices'>,
-    @Param('value') value: string,
-  ) {
-    return this.employeeService.searchByField(field, value);
-  }
-
-  @Get('search')
-  @ApiOperation({
-    summary: 'Global search across all employee fields',
-    description: 
-      'This endpoint allows you to perform a search across multiple employee fields ' +
-      '(e.g., first_name, last_name, address, etc.). It returns all employees where ' +
-      'any of their fields contains the specified search term.\n\n' +
-      '**Example usage**:\n' +
-      '- Search by name: `/web.employees/search?global_search=hana` will return employees whose ' +
-      'first name, last name, or any other field contains "hana".\n' +
-      '- The search term is case-insensitive and will match partial text.'
-  })
-  @ApiQuery({
-    name: 'global_search',
-    description: 'Search term to query across all employee fields (e.g., first_name, last_name, address).',
-    required: true,
-    example: 'hana',
-  })
-  async globalSearch(@Query('global_search') searchTerm: string) {
-    if (!searchTerm) {
-      throw new BadRequestException('Search term is required');
-    }
-    return this.employeeService.globalSearch(searchTerm);
-  }
-
-  @Get('advanced-search')
-  @ApiOperation({
-    summary: 'Advanced search with multiple criteria',
-    description: 
-      'This endpoint allows you to perform an advanced search on employee fields based on multiple criteria. ' +
-      'The search criteria are provided as a JSON string, where the keys are the field names (e.g., first_name, last_name, address), ' +
-      'and the values are the search terms. This is similar to how tags or filters work in a library application, where you can filter ' +
-      'by multiple properties at once.\n\n' +
-      '### **Example usage**:\n' +
-      '- **Advanced search with multiple fields**:\n' +
-      '```\n' +
-      '/web.employees/advanced-search?criteria={"first_name":"Ha","last_name":"a","address":"404 Osaka Blvd"}\n' +
-      '```\n' +
-      'This will return all employees where the first name contains "Ha", the last name contains "a", and the address contains "404 Osaka Blvd".\n' +
-      'The search term is case-insensitive, and partial matches are allowed.\n\n' +
-      '**Supported fields**:\n' +
-      '- first_name\n' +
-      '- last_name\n' +
-      '- address\n' +
-      '- [add more fields as necessary]'
-  })
-  @ApiQuery({
-    name: 'criteria',
-    description: 'A JSON string of search criteria, where the keys are employee fields (e.g., first_name, last_name, address), and the values are the search terms. Use partial strings for a fuzzy search. Example: \`{"first_name":"Ha","last_name":"a","address":"404 Osaka Blvd"}\`',
-    required: true,
-    example: '{"first_name":"Ha","last_name":"a","address":"404 Osaka Blvd"}',
-  })
+  @Get(':id')
+  @ApiOperation({ summary: 'Get an employee by ID' })
+  @ApiParam({ name: 'id', description: 'Employee ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully returned matching employee records based on search criteria',
+    description: 'Employee retrieved successfully',
+    type: EmployeeResponse,
   })
   @ApiResponse({
-    status: 400,
-    description: 'Invalid search criteria format. Ensure it is a valid JSON string.',
+    status: 404,
+    description: 'Employee not found',
+    type: ErrorResponse,
   })
-  async advancedSearch(@Query('criteria') criteriaString: string) {
-    try {
-      const criteria = JSON.parse(criteriaString);
-      return this.employeeService.advancedSearch(criteria);
-    } catch (error) {
-      throw new BadRequestException('Invalid search criteria format');
+  async findOne(@Param('id') id: string) {
+    const employee = await this.employeeService.findOne(id);
+    if (!employee) {
+      throw new NotFoundException(`Employee with ID ${id} not found`);
     }
+    return {
+      success: true,
+      message: 'Employee retrieved successfully',
+      data: employee,
+    };
   }
-  
-  
-
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an employee' })
