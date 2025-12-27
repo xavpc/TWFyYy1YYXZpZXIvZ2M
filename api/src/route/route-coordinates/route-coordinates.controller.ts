@@ -2,7 +2,9 @@ import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } fr
 import { RouteCoordinatesService } from './route-coordinates.service';
 import { CreateRouteCoordinatesDto } from './dto/create-routeCoordinates.dto';
 import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Routes Coordinates(still under development)')
 @Controller('web.route-coordinates')
 export class RouteCoordinatesController {
   constructor(private readonly routeCoordinatesService: RouteCoordinatesService) {}
