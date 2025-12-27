@@ -4,6 +4,7 @@ import { DeviceStatus } from './enums/device-status.enum';
 import { DeviceLocation } from '../device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceRoute } from '../device-route/device-route.entity';
+import { CollectedPoints } from '../collected-points/collected-points.entity';
 
 
 @Entity()
@@ -17,6 +18,9 @@ export class Device {
 
   @OneToMany(() => DeviceLocation, (location) => location.device)
   device_locations: DeviceLocation[];
+
+  @OneToMany(() => CollectedPoints, (collected_points) => collected_points.device)
+  collected_points: CollectedPoints[];
 
   @Column({ nullable: false })
   @ApiProperty({
