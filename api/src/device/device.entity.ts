@@ -25,8 +25,7 @@ export class Device {
   })
   device_name: string;
 
-  @ManyToOne(() => Employee, (employee) => employee.devices)
-  @JoinColumn({ name: 'employee_id' })
+
 
   @OneToMany(() => DeviceRoute, deviceRoute => deviceRoute.device)
   deviceRoutes: DeviceRoute[];
@@ -35,6 +34,8 @@ export class Device {
     description: 'Employee assigned to the device',
     type: () => Employee,
   })
+  @ManyToOne(() => Employee, (employee) => employee.devices)
+  @JoinColumn({ name: 'employee_id' })
   employee: Employee;
 
   @Column({ nullable: false })
