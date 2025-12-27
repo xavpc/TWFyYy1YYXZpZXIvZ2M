@@ -37,14 +37,14 @@ export class RouteCoordinatesService {
 
   findAll(): Promise<RouteCoordinates[]> {
     return this.RouteCoordinatesRepository.find({
-      relations: ['Route']
+      relations: ['route']
     });
   }
 
   async findOne(id: string): Promise<RouteCoordinates> {
     const RouteCoordinates = await this.RouteCoordinatesRepository.findOne({
       where: { route_coordinates_id: id },
-      relations: ['Route']
+      relations: ['route']
     });
     if (!RouteCoordinates) {
       throw new NotFoundException(`Route Coordinates with ID ${id} not found`);
@@ -68,7 +68,7 @@ export class RouteCoordinatesService {
   findByRoute(RouteId: string): Promise<RouteCoordinates[]> {
     return this.RouteCoordinatesRepository.find({
       where: { route: { route_id: RouteId } },
-      relations: ['Route']
+      relations: ['route']
     });
   }
 }
