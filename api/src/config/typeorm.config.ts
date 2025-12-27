@@ -1,7 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { DataSourceOptions } from 'typeorm';
 
-
 export const getTypeOrmConfig = (configService: ConfigService): DataSourceOptions => ({
   type: 'mariadb',
   host: configService.get('DATABASE_HOST'),
