@@ -7,13 +7,14 @@ import { Device } from './device/device.entity';
 import { join } from 'path';
 import { DeviceLocation } from './device/device-location/device-location.entity';
 import { Route } from './route/route.entity';
+import { RouteCoordinates } from './route/route-coordinates/route-coordinates.entity';
 
 config();
 const configService = new ConfigService();
 
 export default new DataSource({
   ...getTypeOrmConfig(configService),
-  entities: [Employee, Device, DeviceLocation, Route],
+  entities: [Employee, Device, DeviceLocation, Route, RouteCoordinates],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   subscribers: [],
 });

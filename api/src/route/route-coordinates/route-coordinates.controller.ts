@@ -9,6 +9,7 @@ export class RouteCoordinatesController {
 
   @Post('')
   async create(@Body() createRouteCoordinatesDto: CreateRouteCoordinatesDto) {
+    console.log('Received DTO:', createRouteCoordinatesDto); 
     const newRouteCoordinates = await this.routeCoordinatesService.create(createRouteCoordinatesDto);
     return {
       success: true,

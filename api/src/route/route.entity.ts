@@ -3,13 +3,13 @@ import { RouteCoordinates } from './route-coordinates/route-coordinates.entity';
 
 @Entity()
 export class Route {
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   route_id: string;
 
   @OneToMany(() => RouteCoordinates, (coordinates) => coordinates.route)
   route_coordinates: RouteCoordinates[];
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   route_name: string;
 
 }
