@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { RouteCoordinates } from '../route-coordinates/route-coordinates.entity';
+import { DeviceRoute } from '../device-route/device-route.entity';
 
 @Entity()
 export class Route {
@@ -24,6 +25,11 @@ export class Route {
   })
   @OneToMany(() => RouteCoordinates, (coordinates) => coordinates.route)
   route_coordinates: RouteCoordinates[];
+
+
+
+  @OneToMany(() => DeviceRoute, deviceRoute => deviceRoute.route)
+  deviceRoutes: DeviceRoute[];
 
   @ApiProperty({
     description: 'Name of the route (must be unique)',
