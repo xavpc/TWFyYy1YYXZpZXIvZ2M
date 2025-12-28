@@ -2,14 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { LoggingInterceptor } from './Logging.interceptor';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule
-  //, {
-  //   logger: ['error', 'warn', 'debug'], // Add 'debug' here
-  // }
-);
-
+      , {
+        logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+      });
+  app.useGlobalInterceptors(new LoggingInterceptor());
   app.enableCors({
     origin: [
       'http://localhost:3000',
@@ -30,6 +30,6 @@ async function bootstrap() {
   SwaggerModule.setup('guide', app, document);
 
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
