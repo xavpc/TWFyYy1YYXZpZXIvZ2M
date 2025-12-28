@@ -11,7 +11,7 @@ export class DeviceLocation {
   @PrimaryGeneratedColumn('uuid')
   device_location_id: string;
 
-  @ManyToOne(() => Device, (device) => device.device_locations)
+  @ManyToOne(() => Device, (device) => device.device_locations, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'device_id' })  
   device: Device;
 
