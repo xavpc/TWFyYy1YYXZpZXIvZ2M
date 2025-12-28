@@ -34,19 +34,11 @@ export class DeviceLocation {
   longitude: number;
 
   @ApiProperty({
-    description: 'Timestamp when the device location was pushed.',
-    example: '2025-01-01T12:00:00Z',
-  })
-  @CreateDateColumn()
-  push_timestamp: Date;
-
-  @ApiProperty({
     description: 'Timestamp when the device location was created.',
     example: '2025-01-01T12:00:00Z',
   })
-  @Column('timestamp')
-  current_location_timestamp: Date;
-
+  @CreateDateColumn()
+  timestamp: Date;
 
   @ApiProperty({
     description: 'A unique sequence number for the device location.',

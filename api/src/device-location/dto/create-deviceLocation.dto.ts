@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsUUID, Min, Max, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsUUID, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateDeviceLocationDto {
@@ -33,12 +33,4 @@ export class CreateDeviceLocationDto {
   @IsNotEmpty()
   @IsUUID()
   device_id: string;
-
-  @ApiProperty({
-    description: 'Timestamp when the device location was recorded.',
-    example: '2025-01-01T12:00:00Z',
-  })
-  @IsNotEmpty()
-  @IsDateString()
-  current_location_timestamp: string; 
 }
