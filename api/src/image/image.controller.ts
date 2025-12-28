@@ -1,10 +1,9 @@
-import { Controller, Post, Get, UseInterceptors, UploadedFile, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Get, UseInterceptors, UploadedFile, Param, Delete, NotFoundException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { ImageService } from './image.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { Image } from './image.entity';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Images (API documentation still under development)')
@@ -35,13 +34,28 @@ export class ImageController {
   }
 
   @Get()
-  async findAll(): Promise<Image[]> {
-    return this.imageService.findAll();
+  async findAll() {
+    const images = await this.imageService.findAll();
+    return {
+      success: true,
+      message: 'Images retrieved successfully',
+      data: images,
+      total: images.length,
+    };
   }
 
+
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Image> {
-    return this.imageService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const image = await this.imageService.findOne(id);
+    if (!image) {
+      throw new NotFoundException(`Image with ID ${id} not found`);
+    }
+    return {
+      success: true,
+      message: 'Image retrieved successfully',
+      data: image,
+    };
   }
 
   @Get('route/:routeId')
@@ -55,5 +69,3 @@ export class ImageController {
       };
   }
 }
-
-//TODO: enhance get
