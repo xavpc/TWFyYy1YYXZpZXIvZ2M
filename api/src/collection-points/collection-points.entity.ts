@@ -8,7 +8,7 @@ export class CollectionPoints {
   @PrimaryGeneratedColumn('uuid')
   collection_point_id: string;
 
-  @ManyToOne(() => Route, (route) => route.collection_points)
+  @ManyToOne(() => Route, (route) => route.collection_points, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'route_id' })
   route: Route;
 

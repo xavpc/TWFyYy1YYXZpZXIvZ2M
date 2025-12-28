@@ -11,6 +11,7 @@ import { RouteModule } from './route/route.module';
 import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.module';
 import { DeviceRouteModule } from './device-route/device-route.module';
 import { CollectionPointsModule } from './collection-points/collection-points.module';
+import { CollectedPointsModule } from './collected-points/collected-points.module';
 
 
 
@@ -30,7 +31,8 @@ import { CollectionPointsModule } from './collection-points/collection-points.mo
     RouteModule,
     RouteCoordinatesModule,
     DeviceRouteModule,
-    CollectionPointsModule
+    CollectionPointsModule,
+    CollectedPointsModule,
     
   ],
   controllers: [AppController],

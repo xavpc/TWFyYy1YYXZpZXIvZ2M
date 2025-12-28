@@ -38,7 +38,7 @@ export class Device {
     description: 'Employee assigned to the device',
     type: () => Employee,
   })
-  @ManyToOne(() => Employee, (employee) => employee.devices)
+  @ManyToOne(() => Employee, (employee) => employee.devices, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
 
