@@ -12,7 +12,6 @@ import { DeviceRoute } from './device-route/device-route.entity';
 import { CollectionPoints } from './collection-points/collection-points.entity';
 import { join } from 'path';
 import { CollectedPoints } from './collected-points/collected-points.entity';
-import { Image } from './image/image.entity';
 
 // Load the appropriate .env file based on NODE_ENV
 config({
@@ -31,8 +30,7 @@ export default new DataSource({
     RouteCoordinates, 
     DeviceRoute, 
     CollectionPoints,
-    CollectedPoints,
-    Image,
+    CollectedPoints
   
   ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
