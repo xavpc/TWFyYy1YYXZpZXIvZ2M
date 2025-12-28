@@ -69,9 +69,9 @@ export class CreateEmployeeDto {
     pattern: japanPhoneRegex.toString(), // Convert regex to string for Swagger
   })
   @IsString()
-  @Matches(japanPhoneRegex, { 
-    message: 'Please enter a valid Japanese phone number (e.g., 090-1234-5678 or +81 90-1234-5678)'
-  })
+  // @Matches(japanPhoneRegex, { 
+  //   message: 'Please enter a valid Japanese phone number (e.g., 090-1234-5678 or +81 90-1234-5678)'
+  // })
   contact_number: string;
 
   @ApiProperty({
