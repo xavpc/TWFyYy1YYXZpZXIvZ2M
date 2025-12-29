@@ -7,7 +7,7 @@ import { EmployeeResponse, EmployeeListResponse, ErrorResponse } from './dto/res
 import { Employee } from './employee.entity';
 
 @ApiTags('Employees')
-@Controller('web.employees')
+@Controller('employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
@@ -79,7 +79,7 @@ export class EmployeeController {
       '(e.g., first_name, last_name, address, etc.). It returns all employees where ' +
       'any of their fields contains the specified search term.\n\n' +
       '**Example usage**:\n' +
-      '- Search by name: `/web.employees/search?global_search=hana` will return employees whose ' +
+      '- Search by name: `/employees/search?global_search=hana` will return employees whose ' +
       'first name, last name, or any other field contains "hana".\n' +
       '- The search term is case-insensitive and will match partial text.'
   })
@@ -107,7 +107,7 @@ export class EmployeeController {
       '### **Example usage**:\n' +
       '- **Advanced search with multiple fields**:\n' +
       '```\n' +
-      '/web.employees/advanced-search?criteria={"first_name":"Ha","last_name":"a","address":"404 Osaka Blvd"}\n' +
+      '/employees/advanced-search?criteria={"first_name":"Ha","last_name":"a","address":"404 Osaka Blvd"}\n' +
       '```\n' +
       'This will return all employees where the first name contains "Ha", the last name contains "a", and the address contains "404 Osaka Blvd".\n' +
       'The search term is case-insensitive, and partial matches are allowed.\n\n' +
