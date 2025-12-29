@@ -10,6 +10,18 @@ export class RouteCoordinatesResponse {
   route_coordinates_id: string;
 
   @ApiProperty({
+    description: 'The center latitude of the route coordinates',
+    example: 35.6895,
+  })
+  center_latitude: number;
+
+  @ApiProperty({
+    description: 'The center longitude of the route coordinates',
+    example: 139.6917,
+  })
+  center_longitude: number;
+
+  @ApiProperty({
     description: 'The latitude of the route coordinates',
     example: 35.6895,
   })
