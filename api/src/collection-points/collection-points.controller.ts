@@ -160,4 +160,50 @@ export class CollectionPointsController {
       message: 'Collection point deleted successfully',
     };
   }
+
+
+    @Delete('route/:routeId')
+    @ApiOperation({ summary: 'Delete all collection points for a specific route' })
+    @ApiParam({ name: 'routeId', description: 'Route ID', example: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f' })
+    @ApiResponse({
+      status: 200,
+      description: 'Collection points deleted successfully',
+      schema: {
+        example: {
+          success: true,
+          message: 'All collection points deleted successfully',
+          affected: 5,
+        },
+      },
+    })
+    @ApiResponse({
+      status: 404,
+      description: 'Route not found',
+      type: CollectionPointsErrorResponse,
+    })
+    async removeByRouteId(@Param('routeId') routeId: string) {
+      try {
+        const result = await this.collectionPointsService.removeAllByRouteId(routeId);
+        
+        if (result.affected === 0) {
+          return {
+            success: true,
+            message: 'collection points of route is empty. No collection points were deleted.',
+            affected: 0,
+          };
+        }
+        
+        return {
+          success: true,
+          message: 'All collection points deleted successfully',
+          affected: result.affected,
+        };
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw error;
+        }
+        throw error;
+      }
+    }
+  
 }

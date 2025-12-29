@@ -97,4 +97,24 @@ export class CollectionPointsService {
     }
     return collectionPoint;
   }
+
+
+    async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
+      const route = await this.routeRepository.findOne({
+        where: { route_id: routeId }
+      });
+      
+      if (!route) {
+        throw new NotFoundException(`Route with ID ${routeId} not found`);
+      }
+    
+      const result = await this.collectionPointsRepository
+        .createQueryBuilder()
+        .delete()
+        .from(CollectionPoints)
+        .where('route.route_id = :routeId', { routeId })
+        .execute();
+      
+      return { affected: result.affected ?? 0 };
+    }
 }
