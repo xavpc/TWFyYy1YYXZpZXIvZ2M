@@ -51,7 +51,7 @@ export class DeviceRouteService {
     } catch (error) {
       if (error instanceof QueryFailedError && error.message.includes('Duplicate entry')) {
         throw new ConflictException(
-          `Route with ID ${createDeviceRouteDto.route_id} is already assigned on ${createDeviceRouteDto.day_assigned}`
+          `Route with ID ${createDeviceRouteDto.route_id} and device with ID ${createDeviceRouteDto.device_id} is already assigned on ${createDeviceRouteDto.day_assigned}`
         );
       }
       throw error; 

@@ -5,7 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { DeviceRouteDay } from "./enums/device-route-day.enum";
 
 @Entity()
-@Unique(['route', 'day_assigned'])
+@Unique(['route', 'day_assigned', 'device'])
 export class DeviceRoute {
   @ApiProperty({
     description: 'Unique identifier for the device route',
