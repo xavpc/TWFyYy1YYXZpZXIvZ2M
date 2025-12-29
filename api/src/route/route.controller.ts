@@ -6,7 +6,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { RouteResponse, RouteListResponse, ErrorResponse } from './dto/response.dto'; // New response DTOs
 
 @ApiTags('Routes')
-@Controller('web.routes')
+@Controller('routes')
 export class RouteController {
   constructor(private readonly routeService: RouteService) {}
 
