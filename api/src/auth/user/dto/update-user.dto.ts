@@ -15,7 +15,4 @@ export class UpdateUserDto {
   })
   password?: string;
 
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
 }

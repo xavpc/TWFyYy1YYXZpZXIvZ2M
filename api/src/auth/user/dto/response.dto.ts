@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from '../user.entity';
+import { Users } from '../user.entity';
 import { UserRole } from '../enums/user-role.enum';
 import { UserStatus } from '../enums/user-status.enum';
 
@@ -7,7 +7,7 @@ export class UserResponse {
   @ApiProperty({ example: true })
   success: boolean;
 
-  @ApiProperty({ example: 'User operation successful' })
+  @ApiProperty({ example: 'Users operation successful' })
   message: string;
 
   @ApiProperty({
@@ -28,7 +28,7 @@ export class UserResponse {
       employee_id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' }
     }
   })
-  data: Partial<User>;
+  data: Partial<Users>;
 }
 
 export class UserListResponse {
@@ -57,7 +57,7 @@ export class UserListResponse {
       }
     }
   })
-  data: Partial<User>[];
+  data: Partial<Users>[];
 
   @ApiProperty({ example: 10 })
   total: number;
