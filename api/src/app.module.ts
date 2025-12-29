@@ -14,6 +14,7 @@ import { CollectionPointsModule } from './collection-points/collection-points.mo
 import { CollectedPointsModule } from './collected-points/collected-points.module';
 import { LoggingMiddleware } from './Logging.middleware';
 import { ImageModule } from './image/image.module';
+import { ComplaintsModule } from './complaints/complaints.module';
 
 
 
@@ -36,6 +37,7 @@ import { ImageModule } from './image/image.module';
     CollectionPointsModule,
     CollectedPointsModule,
     ImageModule,
+    ComplaintsModule
     
   ],
   controllers: [AppController],
