@@ -3,8 +3,21 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
+import { createDatabaseIfNeeded } from './create-db'; 
+
 
 async function bootstrap() {
+
+  try {
+    // Run the database auto-creation logic if databse not exist for testing app locally before starting NestJS.
+    await createDatabaseIfNeeded();
+    console.log('Database check completed. Starting the application...');
+  } catch (error) {
+    console.error('Failed to create database:', error);
+    process.exit(1);
+  }
+
+
     const app = await NestFactory.create(AppModule
       , {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
