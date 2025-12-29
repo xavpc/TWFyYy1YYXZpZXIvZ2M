@@ -3,7 +3,7 @@ import { DataSourceOptions } from 'typeorm';
 
 export const getTypeOrmConfig = (configService: ConfigService): DataSourceOptions => {
   return {
-    type: 'mysql',
+    type: 'mariadb',
     host: configService.get('DATABASE_HOST'),
     port: configService.get<number>('DATABASE_PORT'),
     username: configService.get('DATABASE_USER'),

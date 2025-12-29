@@ -72,7 +72,7 @@ export class DeviceLocationListResponse {
 }
 
 
-export class DeviceLocationErrorResponse {
+export class ErrorResponse {
   @ApiProperty({
     description: 'Error code',
     example: 'NOT_FOUND',

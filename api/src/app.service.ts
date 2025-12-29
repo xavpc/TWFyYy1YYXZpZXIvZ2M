@@ -3,11 +3,6 @@ import { DataSource } from 'typeorm';
 import { v2 as cloudinary } from 'cloudinary';
 import { getCloudinaryConfig } from './config/cloudinary.config';
 import { ConfigService } from '@nestjs/config';
-import { config } from 'dotenv';
-
-config({
-  path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
-});
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
@@ -15,6 +10,7 @@ export class AppService implements OnApplicationBootstrap {
     private dataSource: DataSource,
     private configService: ConfigService
   ) {
+    // Initialize Cloudinary with config
     cloudinary.config(getCloudinaryConfig(this.configService));
   }
 
@@ -46,8 +42,6 @@ export class AppService implements OnApplicationBootstrap {
   }
 
   getHello(): string {
-    const baseUrl = this.configService.get('BASE_URL');
-    
     return `
     <!DOCTYPE html>
     <html lang="en">
@@ -103,11 +97,15 @@ export class AppService implements OnApplicationBootstrap {
         <div class="container">
             <!-- Main Content -->
             <h1>Welcome to the API</h1>
-            <p>This is the base URL: ${baseUrl}</p>
-            <p>Goto <a href="${baseUrl}/guide">API Guide</a> for more details.</p>
+            <p>This is the base URL..</p>
+            <p>Goto <a href="https://gcbackend-temporary.onrender.com/guide">API Guide</a> for more details.</p>
         </div>
     </body>
     </html>
 `;
-  }
+
+
+}
+
+  
 }

@@ -3,15 +3,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { DeviceLocationService } from './device-location.service';
 import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
-import { DeviceLocationResponse, DeviceLocationListResponse, DeviceLocationErrorResponse } from './dto/response.dto';
+import { DeviceLocationResponse, DeviceLocationListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Device Locations')
-@Controller('device-locations')
+@Controller('mobile.device-locations')
 export class DeviceLocationController {
   constructor(private readonly deviceLocationService: DeviceLocationService) {}
 
   @Post('')
-  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Create a new device location' })
   @ApiBody({ type: CreateDeviceLocationDto, description: 'Device location data to create' })
   @ApiResponse({
@@ -22,7 +21,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async create(@Body() createDeviceLocationDto: CreateDeviceLocationDto) {
     const newDeviceLocation = await this.deviceLocationService.create(createDeviceLocationDto);
@@ -61,7 +60,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const deviceLocation = await this.deviceLocationService.findOne(id);
@@ -105,7 +104,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateDeviceLocationDto: UpdateDeviceLocationDto) {
     const updatedDeviceLocation = await this.deviceLocationService.update(id, updateDeviceLocationDto);
@@ -132,7 +131,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.deviceLocationService.remove(id);

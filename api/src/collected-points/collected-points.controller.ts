@@ -3,15 +3,14 @@ import { CollectedPointsService } from './collected-points.service';
 import { CreateCollectedPointsDto } from './dto/create-collected-points.dto';
 import { UpdateCollectedPointsDto } from './dto/update-collected-points.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { CollectedPointResponse, CollectedPointListResponse, CollectedPointsErrorResponse } from './dto/response.dto';
+import { CollectedPointResponse, CollectedPointListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Collected Points')
-@Controller('collected-points')
+@Controller('mobile.collected-points')
 export class CollectedPointsController {
   constructor(private readonly collectedPointsService: CollectedPointsService) {}
 
   @Post('')
-  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Create a new collected point' })
   @ApiBody({ type: CreateCollectedPointsDto, description: 'Collected point data to create' })
   @ApiResponse({
@@ -22,7 +21,7 @@ export class CollectedPointsController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: CollectedPointsErrorResponse,
+    type: ErrorResponse,
   })
   async create(@Body() createCollectedPointsDto: CreateCollectedPointsDto) {
     const newCollectedPoints = await this.collectedPointsService.create(createCollectedPointsDto);
@@ -61,7 +60,7 @@ export class CollectedPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collected point not found',
-    type: CollectedPointsErrorResponse,
+    type: ErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const collectedPoints = await this.collectedPointsService.findOne(id);
@@ -76,7 +75,6 @@ export class CollectedPointsController {
   }
 
   @Get('device/:deviceId')
-  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Get all collected points for a specific device' })
   @ApiParam({ name: 'deviceId', description: 'Device ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({
@@ -159,7 +157,7 @@ export class CollectedPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collected point not found',
-    type: CollectedPointsErrorResponse,
+    type: ErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateCollectedPointsDto: UpdateCollectedPointsDto) {
     const updatedCollectedPoints = await this.collectedPointsService.update(id, updateCollectedPointsDto);
@@ -186,7 +184,7 @@ export class CollectedPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collected point not found',
-    type: CollectedPointsErrorResponse,
+    type: ErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.collectedPointsService.remove(id);

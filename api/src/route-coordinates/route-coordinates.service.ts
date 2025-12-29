@@ -15,145 +15,67 @@ export class RouteCoordinatesService {
     private RouteRepository: Repository<Route>,
   ) {}
 
-  private calculateCenterPoint(coordinates: RouteCoordinates[]): { latitude: number; longitude: number } {
-    if (coordinates.length === 0) {
-      throw new Error('No coordinates provided');
-    }
-
-    const sumLat = coordinates.reduce((sum, coord) => sum + Number(coord.latitude), 0);
-    const sumLng = coordinates.reduce((sum, coord) => sum + Number(coord.longitude), 0);
-
-    return {
-      latitude: Number((sumLat / coordinates.length).toFixed(6)),
-      longitude: Number((sumLng / coordinates.length).toFixed(6))
-    };
-  }
-
-  private async updateRouteCenterPoint(routeId: string): Promise<void> {
-    const coordinates = await this.RouteCoordinatesRepository.find({
-      where: { route: { route_id: routeId } },
-      order: { sequence: 'ASC' }
-    });
-
-    if (coordinates.length >= 3) {
-      const centerPoint = this.calculateCenterPoint(coordinates);
-      
-      await this.RouteRepository.update(routeId, {
-        center_latitude: centerPoint.latitude,
-        center_longitude: centerPoint.longitude
-      });
-    }
-  }
-
   async create(createRouteCoordinatesDto: CreateRouteCoordinatesDto): Promise<RouteCoordinates> {
-    const route = await this.RouteRepository.findOne({
-      where: { route_id: createRouteCoordinatesDto.route_id }
-    });
+    const RouteCoordinates = this.RouteCoordinatesRepository.create(createRouteCoordinatesDto);
     
-    if (!route) {
-      throw new NotFoundException(
-        `Route with ID ${createRouteCoordinatesDto.route_id} not found`
-      );
+    if (createRouteCoordinatesDto.route_id) {
+        const Route = await this.RouteRepository.findOne({
+            where: { route_id: createRouteCoordinatesDto.route_id }
+        });
+        
+        if (!Route) {
+            throw new NotFoundException(
+                `Route with ID ${createRouteCoordinatesDto.route_id} not found`
+            );
+        }
+        
+        const highestSequence = await this.RouteCoordinatesRepository.findOne({
+            where: { route: { route_id: createRouteCoordinatesDto.route_id } },
+            order: { sequence: 'DESC' }
+        });
+        
+        RouteCoordinates.sequence = highestSequence ? highestSequence.sequence + 1 : 1;
+        RouteCoordinates.route = Route;
     }
 
-    const existingCoordinates = await this.RouteCoordinatesRepository.count({
-      where: { route: { route_id: createRouteCoordinatesDto.route_id } }
-    });
-
-    const routeCoordinates = this.RouteCoordinatesRepository.create({
-      ...createRouteCoordinatesDto,
-      sequence: existingCoordinates + 1,
-      route: route
-    });
-
-    await this.RouteCoordinatesRepository.save(routeCoordinates);
-
-    await this.updateRouteCenterPoint(route.route_id);
-
-    return routeCoordinates;
+    return this.RouteCoordinatesRepository.save(RouteCoordinates);
   }
 
-  async findAll(): Promise<RouteCoordinates[]> {
+  findAll(): Promise<RouteCoordinates[]> {
     return this.RouteCoordinatesRepository.find({
-      relations: ['route'],
-      order: { sequence: 'ASC' }
+      relations: ['route']
     });
   }
 
   async findOne(id: string): Promise<RouteCoordinates> {
-    const routeCoordinates = await this.RouteCoordinatesRepository.findOne({
+    const RouteCoordinates = await this.RouteCoordinatesRepository.findOne({
       where: { route_coordinates_id: id },
       relations: ['route']
     });
-    if (!routeCoordinates) {
+    if (!RouteCoordinates) {
       throw new NotFoundException(`Route Coordinates with ID ${id} not found`);
     }
-    return routeCoordinates;
+    return RouteCoordinates;
   }
 
   async update(id: string, updateRouteCoordinatesDto: UpdateRouteCoordinatesDto): Promise<RouteCoordinates> {
-    const routeCoordinates = await this.findOne(id);
-    Object.assign(routeCoordinates, updateRouteCoordinatesDto);
-    await this.RouteCoordinatesRepository.save(routeCoordinates);
-
-    await this.updateRouteCenterPoint(routeCoordinates.route.route_id);
-
-    return routeCoordinates;
+    const RouteCoordinates = await this.findOne(id);
+    Object.assign(RouteCoordinates, updateRouteCoordinatesDto);
+    return this.RouteCoordinatesRepository.save(RouteCoordinates);
   }
 
   async remove(id: string): Promise<void> {
-    const routeCoordinates = await this.findOne(id);
-    const routeId = routeCoordinates.route.route_id;
-    const currentSequence = routeCoordinates.sequence;
-
     const result = await this.RouteCoordinatesRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Route Coordinates with ID ${id} not found`);
     }
-
-    await this.RouteCoordinatesRepository
-      .createQueryBuilder()
-      .update(RouteCoordinates)
-      .set({ sequence: () => 'sequence - 1' })
-      .where('route_id = :routeId AND sequence > :currentSequence', {
-        routeId,
-        currentSequence
-      })
-      .execute();
-
-    await this.updateRouteCenterPoint(routeId);
   }
 
-  async findByRoute(routeId: string): Promise<RouteCoordinates[]> {
+  findByRoute(RouteId: string): Promise<RouteCoordinates[]> {
     return this.RouteCoordinatesRepository.find({
-      where: { route: { route_id: routeId } },
-      relations: ['route'],
-      order: { sequence: 'ASC' }
+        where: { route: { route_id: RouteId } },
+        relations: ['route'],
+        order: { sequence: 'ASC' }  
     });
-  }
-
-
-  async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
-    const route = await this.RouteRepository.findOne({
-      where: { route_id: routeId }
-    });
-    
-    if (!route) {
-      throw new NotFoundException(`Route with ID ${routeId} not found`);
-    }
-  
-    const result = await this.RouteCoordinatesRepository
-      .createQueryBuilder()
-      .delete()
-      .from(RouteCoordinates)
-      .where('route.route_id = :routeId', { routeId })
-      .execute();
-    
-    await this.RouteRepository.update(routeId, {
-      center_latitude: 0,
-      center_longitude: 0
-    });
-    
-    return { affected: result.affected ?? 0 };
-  }
+}
 }

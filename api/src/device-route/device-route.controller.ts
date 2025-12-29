@@ -3,10 +3,10 @@ import { DeviceRouteService } from './device-route.service';
 import { CreateDeviceRouteDto } from './dto/create-device-route.dto';
 import { UpdateDeviceRouteDto } from './dto/update-device-route.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { DeviceRouteResponse, DeviceRouteListResponse, DeviceRouteErrorResponse } from './dto/response.dto';
+import { DeviceRouteResponse, DeviceRouteListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Device Routes')
-@Controller('device-routes')
+@Controller('mobile.device-routes')
 export class DeviceRouteController {
   constructor(private readonly deviceRouteService: DeviceRouteService) {}
 
@@ -21,7 +21,7 @@ export class DeviceRouteController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: DeviceRouteErrorResponse,
+    type: ErrorResponse,
   })
   async create(@Body() createDeviceRouteDto: CreateDeviceRouteDto) {
     const newDeviceRoute = await this.deviceRouteService.create(createDeviceRouteDto);
@@ -60,7 +60,7 @@ export class DeviceRouteController {
   @ApiResponse({
     status: 404,
     description: 'Device route not found',
-    type: DeviceRouteErrorResponse,
+    type: ErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const deviceRoute = await this.deviceRouteService.findOne(id);
@@ -75,7 +75,6 @@ export class DeviceRouteController {
   }
 
   @Get('device/:deviceId')
-  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Get all device routes for a specific device' })
   @ApiParam({ name: 'deviceId', description: 'Device ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({
@@ -123,7 +122,7 @@ export class DeviceRouteController {
   @ApiResponse({
     status: 404,
     description: 'Device route not found',
-    type: DeviceRouteErrorResponse,
+    type: ErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateDeviceRouteDto: UpdateDeviceRouteDto) {
     const updatedDeviceRoute = await this.deviceRouteService.update(id, updateDeviceRouteDto);
@@ -150,7 +149,7 @@ export class DeviceRouteController {
   @ApiResponse({
     status: 404,
     description: 'Device route not found',
-    type: DeviceRouteErrorResponse,
+    type: ErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.deviceRouteService.remove(id);

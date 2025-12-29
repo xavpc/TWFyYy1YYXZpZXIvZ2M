@@ -26,7 +26,7 @@ export class RouteListResponse {
   total: number;
 }
 
-export class RouteErrorResponse {
+export class ErrorResponse {
   @ApiProperty({ example: false })
   success: boolean;
 
