@@ -113,58 +113,65 @@ export class CollectedPointsController {
     };
   }
 
-  @Get('collection-point/:collectionPointId')
+  @Get('collection-point/:collectionPointId/:sessionId')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({
-    summary: 'Check if a collection point has been collected(temporary)',
+    summary: 'Check if a collection point has been collected',
     description: 
-      'Retrieves all collected points for a specific collection point. If any collected points are returned in the response, ' +
-      'it means the collection point has been collected. If the response is empty, the collection point has not been collected yet.\n\n' +
+      'Verifies if a collection point has been collected during a given session. ' +
+      'If `isCollected` is `true`, the collection point has been collected; if `false`, it has not been collected.\n\n' +
       '**Usage Scenario:**\n' +
-      '- This endpoint acts as a verification tool to check whether a collection point has been collected by a device.\n\n' +
+      '- This endpoint is used to confirm whether a specific collection point has already been processed within a particular session.\n\n' +
       '**Example Request:**\n' +
-      '`GET /collected-points/collection-point/123e4567-e89b-12d3-a456-426614174000`\n\n' +
-      '**Example Response (Collection Point Collected):**\n' +
+      '`GET /collected-points/collection-point/123e4567-e89b-12d3-a456-426614174000/0a458882-4db0-4f67-a916-6753975e1da4`\n\n' +
+      '**Example Response (Collected):**\n' +
       '```json\n' +
       '{\n' +
       '  "success": true,\n' +
-      '  "message": "Collected points retrieved successfully",\n' +
-      '  "data": [\n' +
-      '    {\n' +
-      '      "collected_point_id": "abc123",\n' +
-      '      "device_id": "device789",\n' +
-      '      "collection_point_id": "123e4567-e89b-12d3-a456-426614174000",\n' +
-      '      "push_timestamp": "2024-02-10T12:00:00Z",\n' +
-      '      "collected_timestamp": "2024-02-10T11:55:00Z"\n' +
-      '    }\n' +
-      '  ],\n' +
-      '  "total": 1\n' +
+      '  "message": "Collection point has been collected.",\n' +
+      '  "isCollected": true\n' +
       '}\n' +
       '```\n\n' +
-      '**Example Response (Collection Point Not Collected):**\n' +
+      '**Example Response (Not Collected):**\n' +
       '```json\n' +
       '{\n' +
       '  "success": true,\n' +
-      '  "message": "No collected points found for the given collection point",\n' +
-      '  "data": [],\n' +
-      '  "total": 0\n' +
+      '  "message": "Collection point has not been collected.",\n' +
+      '  "isCollected": false\n' +
       '}\n' +
       '```'
   })
   @ApiParam({ name: 'collectionPointId', description: 'Collection Point ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({ name: 'sessionId', description: 'Session ID', example: '0a458882-4db0-4f67-a916-6753975e1da4' })
   @ApiResponse({
     status: 200,
-    description: 'Collected points retrieved successfully',
-    type: CollectedPointListResponse,
+    description: 'Collection status retrieved successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Collection point has been collected.',
+        isCollected: true
+      }
+    }
   })
-  async findByCollectionPoint(@Param('collectionPointId') collectionPointId: string) {
-    const collectedPoints = await this.collectedPointsService.findByCollectionPoint(collectionPointId);
+  async checkCollectionStatus(
+    @Param('collectionPointId') collectionPointId: string,
+    @Param('sessionId') sessionId: string
+  ) {
+    const isCollected = await this.collectedPointsService.isCollectionAlreadyCollected(
+      collectionPointId,
+      sessionId
+    );
+  
     return {
       success: true,
-      message: 'Collected points retrieved successfully for the collection point',
-      data: collectedPoints,
-      total: collectedPoints.length,
+      message: isCollected 
+        ? 'Collection point has been collected.'
+        : 'Collection point has not been collected.',
+      isCollected
     };
   }
+  
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a collected point' })
