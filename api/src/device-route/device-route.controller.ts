@@ -159,4 +159,94 @@ export class DeviceRouteController {
       message: 'Device route deleted successfully',
     };
   }
+
+
+
+      @Delete('route/:routeId')
+      @ApiOperation({ summary: 'Delete all device-route for a specific route' })
+      @ApiParam({ name: 'routeId', description: 'Route ID', example: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f' })
+      @ApiResponse({
+        status: 200,
+        description: 'Device-Route deleted successfully',
+        schema: {
+          example: {
+            success: true,
+            message: 'All Device-Route deleted successfully',
+            affected: 5,
+          },
+        },
+      })
+      @ApiResponse({
+        status: 404,
+        description: 'Route not found',
+        type: DeviceRouteErrorResponse,
+      })
+      async removeByRouteId(@Param('routeId') routeId: string) {
+        try {
+          const result = await this.deviceRouteService.removeAllByRouteId(routeId);
+          
+          if (result.affected === 0) {
+            return {
+              success: true,
+              message: 'device-routes of route is empty. No device-routes points were deleted.',
+              affected: 0,
+            };
+          }
+          
+          return {
+            success: true,
+            message: 'All device-routes deleted successfully',
+            affected: result.affected,
+          };
+        } catch (error) {
+          if (error instanceof NotFoundException) {
+            throw error;
+          }
+          throw error;
+        }
+      }
+
+      @Delete('device/:deviceId')
+      @ApiOperation({ summary: 'Delete all device-routes for a specific device' })
+      @ApiParam({ name: 'deviceId', description: 'Device ID', example: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f' })
+      @ApiResponse({
+        status: 200,
+        description: 'Device-Routes deleted successfully',
+        schema: {
+          example: {
+            success: true,
+            message: 'All device-routes deleted successfully',
+            affected: 5,
+          },
+        },
+      })
+      @ApiResponse({
+        status: 404,
+        description: 'Device not found',
+        type: DeviceRouteErrorResponse,
+      })
+      async removeByDeviceId(@Param('deviceId') deviceId: string) {
+        try {
+          const result = await this.deviceRouteService.removeAllByDeviceId(deviceId);
+          
+          if (result.affected === 0) {
+            return {
+              success: true,
+              message: 'device-routes of route is empty. No device-routes points were deleted.',
+              affected: 0,
+            };
+          }
+          
+          return {
+            success: true,
+            message: 'All device-routes deleted successfully',
+            affected: result.affected,
+          };
+        } catch (error) {
+          if (error instanceof NotFoundException) {
+            throw error;
+          }
+          throw error;
+        }
+      }
 }
