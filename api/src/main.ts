@@ -30,6 +30,17 @@ async function bootstrap() {
     .build();
     
   const document = SwaggerModule.createDocument(app, config);
+  document.tags = (document.tags || []).filter(tag => tag.name !== 'App');
+  document.paths = Object.fromEntries(
+    Object.entries(document.paths).filter(([_, endpoint]) => {
+      return !Object.values(endpoint).some((operation: any) => operation.tags?.includes('App'));
+    })
+  );
+  document.tags = [
+    { name: 'FOR MOBILE USE', description: 'Endpoints intended for mobile applications' },
+    ...(document.tags || []).filter(tag => tag.name !== 'FOR MOBILE USE'),
+  ];
+
   SwaggerModule.setup('guide', app, document);
 
   app.useGlobalPipes(new ValidationPipe());
