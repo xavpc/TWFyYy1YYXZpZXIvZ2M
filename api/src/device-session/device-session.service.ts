@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { DeviceSession } from './device-session.entity';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
-import { UpdateDeviceSessionDto } from './dto/device-sessoin-update.dto';
+import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
 
 @Injectable()
 export class DeviceSessionService {

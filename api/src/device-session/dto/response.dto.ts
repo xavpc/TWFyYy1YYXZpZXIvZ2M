@@ -1,0 +1,44 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { DeviceSession } from '../device-session.entity';
+
+export class DeviceSessionResponse {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Device session request successful' })
+  message: string;
+
+  @ApiProperty({ type: DeviceSession })
+  data: DeviceSession;
+}
+
+export class DeviceSessionListResponse {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Device sessions retrieved successfully' })
+  message: string;
+
+  @ApiProperty({ type: [DeviceSession], description: 'List of device sessions' })
+  data: DeviceSession[];
+
+  @ApiProperty({ example: 5, description: 'Total number of sessions' })
+  total: number;
+}
+
+export class DeviceSessionErrorResponse {
+  @ApiProperty({ example: false })
+  success: boolean;
+
+  @ApiProperty({ example: 'Device session not found' })
+  message: string;
+
+  @ApiProperty({
+    example: {
+      code: 'NOT_FOUND',
+      details: 'No device session found with the specified ID',
+    },
+    required: false,
+  })
+  error?: Record<string, any>;
+}
