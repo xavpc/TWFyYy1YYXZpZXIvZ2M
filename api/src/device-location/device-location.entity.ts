@@ -49,7 +49,7 @@ export class DeviceLocation {
   @Column('timestamp')
   current_location_timestamp: Date;
 
-  @ManyToOne(() => DeviceSession, (session) => session.device_locations)
+  @ManyToOne(() => DeviceSession, (session) => session.device_locations, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'session_id' })
   session: DeviceSession;
 }
