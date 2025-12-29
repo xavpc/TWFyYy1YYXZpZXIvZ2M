@@ -21,7 +21,7 @@ export class AuthController {
     @Ip() ip: string,
     @Res() res: Response
   ) {
-    return this.authService.login(credentials.username, credentials.password, ip, res);
+    await this.authService.login(credentials.username, credentials.password, ip, res);
   }
 
   @ApiOperation({ summary: 'Logout user' })

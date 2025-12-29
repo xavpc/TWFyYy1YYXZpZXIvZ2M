@@ -53,13 +53,17 @@ export class AuthService {
 
     this.setTokenCookies(res, tokens);
 
-    console.log(`token set to user: ${tokens}`)
-    return {
+    console.log('Access token generated:', tokens.accessToken.substring(0, 20) + '...');
+    console.log('Refresh token generated:', tokens.refreshToken.substring(0, 20) + '...');
+    const userData = {
       user_id: user.user_id,
       username: user.username,
       role: user.role,
       employee_id: user.employee?.employee_id
     };
+    
+    res.json(userData);
+    return; 
   }
 
   async logout(res: Response) {
