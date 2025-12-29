@@ -4,40 +4,41 @@ import { IsNull, Repository } from 'typeorm';
 import { DeviceSession } from './device-session.entity';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
 import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
-import { Route } from '../route/route.entity';
+import { DeviceRoute } from '../device-route/device-route.entity';
 
 @Injectable()
 export class DeviceSessionService {
   constructor(
     @InjectRepository(DeviceSession)
     private deviceSessionRepository: Repository<DeviceSession>,
-    @InjectRepository(Route)
-    private routeRepository: Repository<Route>,
+    @InjectRepository(DeviceRoute)
+    private deviceRouteRepository: Repository<DeviceRoute>,
   ) {}
 
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
-    const route = await this.routeRepository.findOne({
-      where: { route_id: createDeviceSessionDto.route_id }
+    const device_route = await this.deviceRouteRepository.findOne({
+      where: { device_route_id: createDeviceSessionDto.device_route_id }
     });
     
-    if (!route) {
+    if (!device_route) {
       throw new NotFoundException(
-        `Route with ID ${createDeviceSessionDto.route_id} not found`
+        `Device Route with ID ${createDeviceSessionDto.device_route_id} not found`
       );
     }
     
     const deviceSession = this.deviceSessionRepository.create({
       ...createDeviceSessionDto,
-      route: route,
+      device_route: device_route,
       start: new Date(), 
     });
     return await this.deviceSessionRepository.save(deviceSession);
   }
 
   async findAll(): Promise<DeviceSession[]> {
-    return await this.deviceSessionRepository.find();
+    return await this.deviceSessionRepository.find({
+      relations: ['device_route']
+    });
   }
-
   async findOne(session_id: string): Promise<DeviceSession> {
     const session = await this.deviceSessionRepository.findOne({ 
       where: { session_id },
@@ -54,6 +55,7 @@ export class DeviceSessionService {
   async findByDeviceId(device_id: string): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository
       .createQueryBuilder('session')
+      .innerJoinAndSelect('session.device_route', 'device_route')
       .innerJoinAndSelect(
         'session.device_locations', 
         'device_locations'
@@ -138,6 +140,7 @@ export class DeviceSessionService {
     
     const query = this.deviceSessionRepository
       .createQueryBuilder('session')
+      .leftJoinAndSelect('session.device_route', 'device_route')
       .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
     if (deviceId) {
@@ -150,8 +153,8 @@ export class DeviceSessionService {
 
   findByRoute(routeId: string, deviceId?: string): Promise<DeviceSession[]> {
     const query = this.deviceSessionRepository.createQueryBuilder('session')
-      .leftJoinAndSelect('session.route', 'route')
-      .where('route.route_id = :routeId', { routeId });
+      .leftJoinAndSelect('session.device_route', 'device_route')
+      .where('device_route.route_id = :routeId', { routeId });
     
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
@@ -175,8 +178,8 @@ export class DeviceSessionService {
     
     const query = this.deviceSessionRepository
       .createQueryBuilder('session')
-      .leftJoinAndSelect('session.route', 'route')
-      .where('route.route_id = :routeId', { routeId })
+      .leftJoinAndSelect('session.device_route', 'device_route')
+      .where('device_route.route_id = :routeId', { routeId })
       .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
     if (deviceId) {

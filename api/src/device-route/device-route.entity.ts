@@ -1,8 +1,9 @@
 import { Device } from "../device/device.entity";
 import { Route } from "../route/route.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceRouteDay } from "./enums/device-route-day.enum";
+import { DeviceSession } from "../device-session/device-session.entity";
 
 @Entity()
 @Unique(['route', 'day_assigned', 'device'])
@@ -40,4 +41,11 @@ export class DeviceRoute {
     example: DeviceRouteDay.MONDAY,
   })
   day_assigned: DeviceRouteDay;
+
+  @ApiProperty({
+    description: 'List of Session on this Device Route',
+    type: [DeviceSession]
+  })
+  @OneToMany(() => DeviceSession, (device_session) => device_session.device_route)
+  device_sessions: DeviceSession[];
 }
