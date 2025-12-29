@@ -116,18 +116,6 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async updateStatus(id: string, status: UserStatus): Promise<Users> {
-    const user = await this.userRepository.findOne({
-      where: { user_id: id }
-    });
-
-    if (!user) {
-      throw new NotFoundException('Users not found');
-    }
-
-    user.status = status;
-    return this.userRepository.save(user);
-  }
 
   async remove(id: string): Promise<void> {
     const result = await this.userRepository.delete(id);
@@ -137,18 +125,6 @@ export class UserService {
     }
   }
 
-  async changePassword(id: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: { user_id: id }
-    });
-
-    if (!user) {
-      throw new NotFoundException('Users not found');
-    }
-
-    user.hashed_password = await this.hashPassword(newPassword);
-    await this.userRepository.save(user);
-  }
 
   async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
