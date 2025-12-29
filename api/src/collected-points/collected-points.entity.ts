@@ -3,6 +3,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGenerat
 import { Device } from "../device/device.entity";
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceSession } from "../device-session/device-session.entity";
+import { Transform } from "class-transformer";
 
 @Entity()
 @Unique(['collection_point', 'session'])
@@ -43,8 +44,19 @@ export class CollectedPoints {
     example: '2024-02-10T11:55:00Z'
   })
   @Column('timestamp')
+  @Transform(({ value }) => {
+    if (value instanceof Date) {
+      // Preserve the original time components but format as ISO string with Z
+      return `${value.getFullYear()}-${
+        String(value.getMonth() + 1).padStart(2, '0')}-${
+        String(value.getDate()).padStart(2, '0')}T${
+        String(value.getHours()).padStart(2, '0')}:${
+        String(value.getMinutes()).padStart(2, '0')}:${
+        String(value.getSeconds()).padStart(2, '0')}.000Z`;
+    }
+    return value;
+  })
   collected_timestamp: Date;
-
 
   @ApiProperty({
     description: 'The associated session',
