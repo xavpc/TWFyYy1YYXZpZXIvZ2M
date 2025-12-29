@@ -22,6 +22,12 @@ export class RouteCoordinatesResponse {
   longitude: number;
 
   @ApiProperty({
+    description: 'A unique sequence number for the route coordinates, to know the precedence of points',
+    example: 1,
+  })
+  sequence: number;
+
+  @ApiProperty({
     description: 'The route associated with these coordinates',
     type: () => Route, // Use a DTO for Route if available
     example: {
@@ -31,10 +37,13 @@ export class RouteCoordinatesResponse {
   })
   route: Route;
 
+
+
   constructor(routeCoordinates: RouteCoordinates) {
     this.route_coordinates_id = routeCoordinates.route_coordinates_id;
     this.latitude = routeCoordinates.latitude;
     this.longitude = routeCoordinates.longitude;
+    this.sequence = routeCoordinates.sequence;
     this.route = routeCoordinates.route; // Assuming the route object is linked here
   }
 }
