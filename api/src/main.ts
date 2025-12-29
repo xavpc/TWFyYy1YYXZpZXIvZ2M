@@ -4,26 +4,24 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
 import { createDatabaseIfNeeded } from './create-db'; 
-import { config } from 'dotenv';
-config({
-  path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
-});
+
 
 async function bootstrap() {
 
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      await createDatabaseIfNeeded();
-      console.log('Production environment: Database check completed. Starting the application...');
-    } catch (error) {
-      console.error('Failed to create database:', error);
-      process.exit(1);
+
+    // Run the database auto-creation logic if databse not exist for testing app locally before starting NestJS.
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        // This will ensure the target database exists before starting the application.
+        await createDatabaseIfNeeded();
+        console.log('Database check completed. Starting the application...');
+      } catch (error) {
+        console.error('Failed to create database:', error);
+        process.exit(1);
+      }
+    } else {
+      console.log('Production environment detected, skipping database auto-creation.');
     }
-  } else {
-    console.log('Development environment: Skipping database creation check.');
-  }
-
-
     const app = await NestFactory.create(AppModule
       , {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
