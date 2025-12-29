@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsEmail, IsOptional, Min, Max, IsNotEmpty, MinLength, MaxLength, IsEnum, Matches } from 'class-validator';
+import { IsString, IsInt, IsEmail, IsOptional, Min, Max, IsNotEmpty, MinLength, MaxLength, IsEnum, Matches, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { nameRegex, japanPhoneRegex, emailRegex } from '../utils/regex';
 import { EmployeeStatus } from '../enums/employee-status.enum';
@@ -26,10 +26,10 @@ export class CreateEmployeeDto {
   })
   @IsString()
   @IsOptional()
+  @ValidateIf((o, value) => value !== '')  
   @MinLength(2, { message: 'Middle name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Middle name cannot exceed 50 characters' })
   middle_name?: string;
-
   @ApiProperty({
     description: 'Employee\'s last name (姓)',
     example: 'Sato',
