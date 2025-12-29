@@ -16,6 +16,7 @@ async function bootstrap() {
       'http://localhost:3001',
       'http://localhost:5173',
       'https://gcweb-psi.vercel.app',
+      'https://gc-webb.netlify.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
