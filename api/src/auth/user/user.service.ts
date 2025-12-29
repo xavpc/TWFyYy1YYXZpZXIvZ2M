@@ -1,58 +1,79 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { Users } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserStatus } from './enums/user-status.enum';
 import * as bcrypt from 'bcrypt';
+import { Employee } from 'src/employee/employee.entity';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(Users)
+    private userRepository: Repository<Users>,
+
+    @InjectRepository(Employee)
+    private employeeRepository: Repository<Employee>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const existingUser = await this.userRepository.findOne({
-      where: { username: createUserDto.username }
-    });
+async create(createUserDto: CreateUserDto): Promise<Users> {
+  // Check if username already exists
+  const existingUser = await this.userRepository.findOne({
+    where: { username: createUserDto.username }
+  });
 
-    if (existingUser) {
-      throw new ConflictException('Username already exists');
-    }
+  if (existingUser) {
+    throw new ConflictException('User already exists');
+  }
+  
+  // If an employee_id is provided, verify the employee exists
+  if (createUserDto.employee_id) {
+    // First check if any user already has this employee assigned
+    const existingEmployeeUser = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.employee_id = :employeeId', { employeeId: createUserDto.employee_id })
+      .getOne();
 
-    const existingEmployee = await this.userRepository.findOne({
-      where: { employee_id: createUserDto.employee_id }
-    });
-
-    if (existingEmployee) {
+    if (existingEmployeeUser) {
       throw new ConflictException('Employee already has a user account');
     }
-
-    const hashedPassword = await this.hashPassword(createUserDto.password);
-
-    const newUser = this.userRepository.create({
-      ...createUserDto,
-      hashed_password: hashedPassword,
-      status: UserStatus.ACTIVE
-    });
-
-    return this.userRepository.save(newUser);
+    
+    // Then check if the employee exists at all
+    const employeeExists = await this.employeeRepository
+      .createQueryBuilder('employee')
+      .where('employee.employee_id = :id', { id: createUserDto.employee_id })
+      .getOne();
+      
+    if (!employeeExists) {
+      throw new NotFoundException(`Employee with ID ${createUserDto.employee_id} not found`);
+    }
   }
 
-  async findAll(): Promise<User[]> {
+  // Hash password and create user
+  const hashedPassword = await this.hashPassword(createUserDto.password);
+
+  const newUser = this.userRepository.create({
+    ...createUserDto,
+    hashed_password: hashedPassword,
+    status: UserStatus.ACTIVE
+  });
+
+  return this.userRepository.save(newUser);
+}
+
+  async findAll(): Promise<Users[]> {
     return this.userRepository.find({
-      select: ['user_id', 'username', 'role', 'status', 'employee_id'],
+      select: ['user_id', 'username', 'role', 'status'],
       relations: ['employee']
     });
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<Users> {
     const user = await this.userRepository.findOne({
       where: { user_id: id },
-      select: ['user_id', 'username', 'role', 'status', 'employee_id'],
+      select: ['user_id', 'username', 'role', 'status'],
       relations: ['employee']
     });
 
@@ -63,7 +84,7 @@ export class UserService {
     return user;
   }
 
-  async findByUsername(username: string): Promise<User> {
+  async findByUsername(username: string): Promise<Users> {
     const user = await this.userRepository.findOne({
       where: { username },
       relations: ['employee']
@@ -76,7 +97,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Users> {
     const user = await this.userRepository.findOne({
       where: { user_id: id }
     });
@@ -105,7 +126,7 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async updateStatus(id: string, status: UserStatus): Promise<User> {
+  async updateStatus(id: string, status: UserStatus): Promise<Users> {
     const user = await this.userRepository.findOne({
       where: { user_id: id }
     });

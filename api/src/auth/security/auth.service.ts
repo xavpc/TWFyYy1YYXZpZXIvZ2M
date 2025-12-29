@@ -31,6 +31,7 @@ export class AuthService {
  
     try {
       await this.loginLimiter.consume(ip);
+      console.log(`logging in for ip:${ip}`)
     } catch {
       throw new UnauthorizedException('Too many login attempts. Please try again later.');
     }
@@ -40,24 +41,24 @@ export class AuthService {
     if (!user || user.status !== 'active') {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    console.log(`logging in user: ${user.username}`)
 
     const isPasswordValid = await this.verifyPassword(password, user.hashed_password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    console.log(`password is valid: ${isPasswordValid}`)
     const tokens = await this.generateTokens(user);
 
 
     this.setTokenCookies(res, tokens);
 
-
+    console.log(`token set to user: ${tokens}`)
     return {
       user_id: user.user_id,
       username: user.username,
       role: user.role,
-      employee_id: user.employee_id
+      employee_id: user.employee?.employee_id
     };
   }
 
@@ -70,7 +71,7 @@ export class AuthService {
       sub: user.user_id,
       username: user.username,
       role: user.role,
-      employee_id: user.employee_id
+      employee_id: user.employee?.employee_id
     };
 
     const [accessToken, refreshToken] = await Promise.all([

@@ -4,7 +4,7 @@ import { UserStatus } from "./enums/user-status.enum";
 import { UserRole } from "./enums/user-role.enum";
 
 @Entity()
-export class User {
+export class Users {
   @Column('char', { primary: true, length: 36, generated: 'uuid' })
   user_id: string;
 
@@ -19,9 +19,6 @@ export class User {
   })
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
-
-  @Column({ nullable: false })
-  employee_id: string;
 
   @Column({ nullable: false })
   username: string;
