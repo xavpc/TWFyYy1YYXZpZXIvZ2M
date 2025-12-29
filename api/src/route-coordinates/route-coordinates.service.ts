@@ -73,6 +73,41 @@ export class RouteCoordinatesService {
     return routeCoordinates;
   }
 
+  async createBatch(dtos: CreateRouteCoordinatesDto[]): Promise<RouteCoordinates[]> {
+    if (!dtos.length) {
+      return [];
+    }
+    
+    const routeId = dtos[0].route_id;
+    if (!dtos.every(dto => dto.route_id === routeId)) {
+      throw new Error('All coordinates in batch must belong to the same route');
+    }
+  
+    const route = await this.RouteRepository.findOne({
+      where: { route_id: routeId }
+    });
+    
+    if (!route) {
+      throw new NotFoundException(`Route with ID ${routeId} not found`);
+    }
+  
+    const entities = dtos.map(dto => {
+      return this.RouteCoordinatesRepository.create({
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        sequence: dto.sequence,
+        route: route
+      });
+    });
+  
+    const savedCoordinates = await this.RouteCoordinatesRepository.save(entities);
+    
+    await this.updateRouteCenterPoint(routeId);
+    
+    return savedCoordinates;
+  }
+
+
   async findAll(): Promise<RouteCoordinates[]> {
     return this.RouteCoordinatesRepository.find({
       relations: ['route'],

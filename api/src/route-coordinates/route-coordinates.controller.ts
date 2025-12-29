@@ -32,6 +32,41 @@ export class RouteCoordinatesController {
     };
   }
 
+
+  @Post('batch')
+  @ApiOperation({ summary: 'Create multiple route coordinates in batch' })
+  @ApiBody({ 
+    type: [CreateRouteCoordinatesDto], 
+    description: 'Array of route coordinates data to create' 
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Route coordinates created successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Route coordinates batch created successfully',
+        data: [], 
+        total: 0  
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid input data',
+    type: RouteCoordinatesErrorResponse,
+  })
+  async createBatch(@Body() createRouteCooridnatesDtos: CreateRouteCoordinatesDto[]) {
+    const newRouteCoordinates = await this.routeCoordinatesService.createBatch(createRouteCooridnatesDtos);
+    return {
+      success: true,
+      message: 'Route coordinates batch created successfully',
+      data: newRouteCoordinates.map(coord => new RouteCoordinatesResponse(coord)),
+      total: newRouteCoordinates.length
+    };
+  }
+
+
   @Get()
   @ApiOperation({ summary: 'Get all route coordinates' })
   @ApiResponse({
