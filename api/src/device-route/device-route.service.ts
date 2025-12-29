@@ -42,7 +42,8 @@ export class DeviceRouteService {
 
     const deviceRoute = this.deviceRouteRepository.create({
       device: device,
-      route: route
+      route: route,
+      day_assigned: createDeviceRouteDto.day_assigned
     });
   
     return this.deviceRouteRepository.save(deviceRoute);
