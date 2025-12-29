@@ -9,7 +9,7 @@ export class CollectionPoints {
     description: 'Unique identifier for the collection point',
     format: 'uuid'
   })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   collection_point_id: string;
 
   @ApiProperty({

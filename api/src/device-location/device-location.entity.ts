@@ -8,7 +8,7 @@ export class DeviceLocation {
     description: 'Unique identifier for the device location.',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   device_location_id: string;
 
   @ManyToOne(() => Device, (device) => device.device_locations, { nullable: false, onDelete: 'CASCADE' })
