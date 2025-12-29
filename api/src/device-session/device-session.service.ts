@@ -151,10 +151,10 @@ export class DeviceSessionService {
     return await query.getMany();
   }
 
-  findByRoute(routeId: string, deviceId?: string): Promise<DeviceSession[]> {
+  findByDeviceRoute(deviceRouteId: string, deviceId?: string): Promise<DeviceSession[]> {
     const query = this.deviceSessionRepository.createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
-      .where('device_route.route_id = :routeId', { routeId });
+      .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId });
     
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
@@ -166,7 +166,7 @@ export class DeviceSessionService {
   
 
   async findSessionsByRouteAndDate(
-    routeId: string,
+    deviceRouteId: string,
     date: Date,
     deviceId?: string
   ): Promise<DeviceSession[]> {
@@ -179,7 +179,7 @@ export class DeviceSessionService {
     const query = this.deviceSessionRepository
       .createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
-      .where('device_route.route_id = :routeId', { routeId })
+      .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId })
       .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
     if (deviceId) {
