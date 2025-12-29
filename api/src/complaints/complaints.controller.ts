@@ -10,7 +10,7 @@ import {
 } from './dto/response.dto';
 
 @ApiTags('Complaints')
-@Controller('mobile.complaints')
+@Controller('complaints')
 export class ComplaintsController {
   constructor(private readonly complaintsService: ComplaintsService) {}
 

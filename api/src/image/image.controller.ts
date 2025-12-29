@@ -11,7 +11,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { UpdateImageDto } from './dto/update-image.dto';
 
 @ApiTags('Images')
-@Controller('mobile.images')
+@Controller('images')
 export class ImageController {
   constructor(
     private readonly cloudinaryService: CloudinaryService,
