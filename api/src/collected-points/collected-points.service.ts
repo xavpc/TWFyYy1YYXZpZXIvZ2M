@@ -79,14 +79,14 @@ export class CollectedPointsService {
 
   findAll(): Promise<CollectedPoints[]> {
     return this.collectedPointsRepository.find({
-      relations: ['device', 'collection_point']
+      relations: ['device', 'collection_point', 'session']
     });
   }
 
   async findOne(id: string): Promise<CollectedPoints> {
     const CollectedPoints = await this.collectedPointsRepository.findOne({
       where: { collected_point_id: id },
-      relations: ['device', 'collection_point']
+      relations: ['device', 'collection_point', 'session']
     });
     if (!CollectedPoints) {
       throw new NotFoundException(`Collected Point with ID ${id} not found`);
