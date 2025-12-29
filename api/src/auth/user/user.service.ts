@@ -13,55 +13,45 @@ export class UserService {
   constructor(
     @InjectRepository(Users)
     private userRepository: Repository<Users>,
-
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
   ) {}
 
-async create(createUserDto: CreateUserDto): Promise<Users> {
-  // Check if username already exists
-  const existingUser = await this.userRepository.findOne({
-    where: { username: createUserDto.username }
-  });
-
-  if (existingUser) {
-    throw new ConflictException('User already exists');
-  }
+  async create(createUserDto: CreateUserDto): Promise<Users> {
+    const existingUser = await this.userRepository.findOne({
+      where: { username: createUserDto.username }
+    });
   
-  // If an employee_id is provided, verify the employee exists
-  if (createUserDto.employee_id) {
-    // First check if any user already has this employee assigned
-    const existingEmployeeUser = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.employee_id = :employeeId', { employeeId: createUserDto.employee_id })
-      .getOne();
-
-    if (existingEmployeeUser) {
-      throw new ConflictException('Employee already has a user account');
+    if (existingUser) {
+      throw new ConflictException('Username already exists');
     }
-    
-    // Then check if the employee exists at all
-    const employeeExists = await this.employeeRepository
-      .createQueryBuilder('employee')
-      .where('employee.employee_id = :id', { id: createUserDto.employee_id })
-      .getOne();
-      
-    if (!employeeExists) {
-      throw new NotFoundException(`Employee with ID ${createUserDto.employee_id} not found`);
+  
+    if (createUserDto.employee_id) {
+      const existingUserWithEmployee = await this.userRepository.findOne({
+        where: { 
+          employee: { employee_id: createUserDto.employee_id } 
+        },
+        relations: ['employee']
+      });
+  
+      if (existingUserWithEmployee) {
+        throw new ConflictException('Employee already has a user account');
+      }
     }
+  
+    const hashedPassword = await this.hashPassword(createUserDto.password);
+  
+    const newUser = this.userRepository.create({
+      username: createUserDto.username,
+      hashed_password: hashedPassword,
+      role: createUserDto.role,
+      status: UserStatus.ACTIVE
+    });
+  
+    if (createUserDto.employee_id) {
+      newUser.employee = { employee_id: createUserDto.employee_id } as Employee;
+    }
+  
+    return this.userRepository.save(newUser);
   }
-
-  // Hash password and create user
-  const hashedPassword = await this.hashPassword(createUserDto.password);
-
-  const newUser = this.userRepository.create({
-    ...createUserDto,
-    hashed_password: hashedPassword,
-    status: UserStatus.ACTIVE
-  });
-
-  return this.userRepository.save(newUser);
-}
 
   async findAll(): Promise<Users[]> {
     return this.userRepository.find({
@@ -78,7 +68,7 @@ async create(createUserDto: CreateUserDto): Promise<Users> {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Users not found');
     }
 
     return user;
@@ -91,7 +81,7 @@ async create(createUserDto: CreateUserDto): Promise<Users> {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Users not found');
     }
 
     return user;
@@ -103,7 +93,7 @@ async create(createUserDto: CreateUserDto): Promise<Users> {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Users not found');
     }
 
     if (updateUserDto.username && updateUserDto.username !== user.username) {
@@ -132,7 +122,7 @@ async create(createUserDto: CreateUserDto): Promise<Users> {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Users not found');
     }
 
     user.status = status;
@@ -143,7 +133,7 @@ async create(createUserDto: CreateUserDto): Promise<Users> {
     const result = await this.userRepository.delete(id);
     
     if (result.affected === 0) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Users not found');
     }
   }
 
@@ -153,7 +143,7 @@ async create(createUserDto: CreateUserDto): Promise<Users> {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Users not found');
     }
 
     user.hashed_password = await this.hashPassword(newPassword);

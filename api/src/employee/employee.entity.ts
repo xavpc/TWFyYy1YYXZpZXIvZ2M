@@ -76,4 +76,7 @@ export class Employee {
     description: 'Employee status'
   })
   status: EmployeeStatus;
+
+  @OneToOne(() => Users, user => user.employee)
+  user: Users;
 }

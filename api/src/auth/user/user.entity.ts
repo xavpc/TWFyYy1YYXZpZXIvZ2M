@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Employee } from "../../employee/employee.entity";
 import { UserStatus } from "./enums/user-status.enum";
 import { UserRole } from "./enums/user-role.enum";
+import { Employee } from "../../employee/employee.entity";
 
 @Entity()
 export class Users {
@@ -14,9 +14,8 @@ export class Users {
   })
   role: UserRole;
 
-  @OneToOne(() => Employee, {
-    onDelete: 'CASCADE'
-  })
+
+  @OneToOne(() => Employee, employee => employee.user)
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
 
