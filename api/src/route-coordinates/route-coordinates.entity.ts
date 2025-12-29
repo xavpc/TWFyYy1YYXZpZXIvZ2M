@@ -18,6 +18,20 @@ export class RouteCoordinates {
 
 
   @ApiProperty({
+    description: 'Center Latitude of the route coordinate',
+    example: 35.6895,
+  })
+  @Column('decimal', { precision: 8, scale: 6 })
+  center_latitude: number;
+
+  @ApiProperty({
+    description: 'Center Longitude of the route coordinate',
+    example: 139.6917,
+  })
+  @Column('decimal', { precision: 9, scale: 6 })
+  center_longitude: number;
+
+  @ApiProperty({
     description: 'Latitude of the route coordinate',
     example: 35.6895,
   })

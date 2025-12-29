@@ -91,7 +91,27 @@ from typing import List, Dict, Tuple
 
 
 #for online
-COORDINATES_DATA: List[Tuple[str, float, float]] = [
+def calculate_route_centers(coordinates_data):
+    route_points = {}
+    
+    # Group coordinates by route_id
+    for route_id, lat, lon in coordinates_data:
+        if route_id not in route_points:
+            route_points[route_id] = {'lats': [], 'lons': []}
+        route_points[route_id]['lats'].append(lat)
+        route_points[route_id]['lons'].append(lon)
+    
+    # Calculate centers
+    route_centers = {}
+    for route_id, points in route_points.items():
+        center_lat = sum(points['lats']) / len(points['lats'])
+        center_lon = sum(points['lons']) / len(points['lons'])
+        route_centers[route_id] = (center_lat, center_lon)
+    
+    return route_centers
+
+# Original coordinate data
+ORIGINAL_COORDINATES = [
     # Ueno Route
     ('07c121b9-e848-11ef-bc07-c59fca171525', 35.7100, 139.7700),
     ('07c121b9-e848-11ef-bc07-c59fca171525', 35.7115, 139.7715),
@@ -177,8 +197,31 @@ COORDINATES_DATA: List[Tuple[str, float, float]] = [
     ('085d33af-e848-11ef-bc07-c59fca171525', 35.6760, 139.7660)
 ]
 
+# Calculate centers
+centers = calculate_route_centers(ORIGINAL_COORDINATES)
+
+# Create new coordinates data with centers and sequence numbers
+COORDINATES_DATA = []
+sequence_counter = {}
+
+for route_id, lat, lon in ORIGINAL_COORDINATES:
+    # Initialize sequence counter for new routes
+    if route_id not in sequence_counter:
+        sequence_counter[route_id] = 1
+    
+    # Get center coordinates for this route
+    center_lat, center_lon = centers[route_id]
+    
+    # Add to new data structure with center coordinates and sequence
+    COORDINATES_DATA.append(
+        (route_id, center_lat, center_lon, lat, lon, sequence_counter[route_id])
+    )
+    
+    # Increment sequence counter for this route
+    sequence_counter[route_id] += 1
+
 def post_coordinates():
-    url = "https://gcbackend-temporary.onrender.com/mobile.route-coordinates/"  # Base URL
+    url = "https://gcbackend-temporary.onrender.com/mobile.route-coordinates/"
     headers = {
         "Content-Type": "application/json"
     }
@@ -186,23 +229,32 @@ def post_coordinates():
     success_count = 0
     error_count = 0
     
-    for route_id, lat, lon in COORDINATES_DATA:
+    for route_id, center_lat, center_lon, lat, lon, seq in COORDINATES_DATA:
         payload = {
             "route_id": route_id,
+            "center_latitude": center_lat,
+            "center_longitude": center_lon,
             "latitude": lat,
-            "longitude": lon
+            "longitude": lon,
+            "sequence": seq
         }
         
         try:
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
             success_count += 1
-            print(f"Successfully posted coordinates: {lat}, {lon} for route {route_id}")
+            print(f"Successfully posted coordinates for route {route_id}:")
+            print(f"  Center: ({center_lat:.4f}, {center_lon:.4f})")
+            print(f"  Point {seq}: ({lat:.4f}, {lon:.4f})")
         except requests.exceptions.RequestException as e:
             error_count += 1
-            print(f"Error posting coordinates: {lat}, {lon} for route {route_id}")
+            print(f"Error posting coordinates for route {route_id}:")
+            print(f"  Center: ({center_lat:.4f}, {center_lon:.4f})")
+            print(f"  Point {seq}: ({lat:.4f}, {lon:.4f})")
             print(f"Error: {str(e)}")
             print(f"Response: {response.text if hasattr(response, 'text') else 'No response text'}")
+        
+        print("---")
     
     print(f"\nSummary:")
     print(f"Total coordinates: {len(COORDINATES_DATA)}")
@@ -211,3 +263,6 @@ def post_coordinates():
 
 if __name__ == "__main__":
     post_coordinates()
+
+
+    #TODO: entity downgrade
