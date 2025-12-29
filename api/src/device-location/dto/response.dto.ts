@@ -34,10 +34,16 @@ export class DeviceLocationResponse {
 
   @ApiProperty({
     description: 'The device associated with this device location',
-    type: String, // Or map it directly to a device DTO if required
+    type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   device_id: string;
+
+  @ApiProperty({
+    description: 'The UUID of the device session associated with this location.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  session_id: string;
 
   constructor(deviceLocation: DeviceLocation) {
     this.device_location_id = deviceLocation.device_location_id;
@@ -45,7 +51,8 @@ export class DeviceLocationResponse {
     this.longitude = deviceLocation.longitude;
     this.push_timestamp = deviceLocation.push_timestamp;
     this.current_location_timestamp = deviceLocation.current_location_timestamp;
-    this.device_id = deviceLocation.device.device_id; // Assuming a device object is linked here
+    this.device_id = deviceLocation.device.device_id; 
+    this.session_id = deviceLocation.session.session_id
   }
 }
 

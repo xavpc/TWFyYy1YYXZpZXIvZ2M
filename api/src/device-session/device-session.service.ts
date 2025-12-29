@@ -40,8 +40,16 @@ export class DeviceSessionService {
   async findByDeviceId(device_id: string): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository
       .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_locations', 'device_locations')
-      .where('device_locations.device_id = :device_id', { device_id })
+      .innerJoinAndSelect(
+        'session.device_locations', 
+        'device_locations'
+      )
+      .innerJoin(
+        'device_locations.device',
+        'device',
+        'device.device_id = :device_id',
+        { device_id }
+      )
       .distinct(true)
       .getMany();
   }
