@@ -75,6 +75,7 @@ export class DeviceRouteController {
   }
 
   @Get('device/:deviceId')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Get all device routes for a specific device' })
   @ApiParam({ name: 'deviceId', description: 'Device ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({

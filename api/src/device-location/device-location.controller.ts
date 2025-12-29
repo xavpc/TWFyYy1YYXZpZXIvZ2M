@@ -11,6 +11,7 @@ export class DeviceLocationController {
   constructor(private readonly deviceLocationService: DeviceLocationService) {}
 
   @Post('')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Create a new device location' })
   @ApiBody({ type: CreateDeviceLocationDto, description: 'Device location data to create' })
   @ApiResponse({

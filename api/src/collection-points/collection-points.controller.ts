@@ -72,6 +72,7 @@ export class CollectionPointsController {
   }
 
   @Get('route/:routeId')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Get all collection points for a specific route' })
   @ApiParam({ name: 'routeId', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({
