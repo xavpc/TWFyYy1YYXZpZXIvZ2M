@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, Primary
 import { ApiProperty } from '@nestjs/swagger';
 import { Device } from "../device/device.entity";
 import { DeviceSession } from "../device-session/device-session.entity";
+import { Route } from "../route/route.entity";
 
 @Entity()
 export class DeviceLocation {
@@ -51,5 +52,4 @@ export class DeviceLocation {
   @ManyToOne(() => DeviceSession, (session) => session.device_locations)
   @JoinColumn({ name: 'session_id' })
   session: DeviceSession;
-
 }

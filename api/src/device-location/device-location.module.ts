@@ -4,7 +4,7 @@ import { DeviceLocationController } from "./device-location.controller";
 import { DeviceLocationService } from "./device-location.service";
 import { DeviceLocation } from "./device-location.entity";
 import { Device } from "../device/device.entity";
-import { DeviceSession } from "src/device-session/device-session.entity";
+import { DeviceSession } from "../device-session/device-session.entity";
 
 @Module({
     imports: [TypeOrmModule.forFeature([DeviceLocation, Device, DeviceSession])],
