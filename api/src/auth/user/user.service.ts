@@ -5,14 +5,13 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserStatus } from './enums/user-status.enum';
-import { AuthService } from '../security/auth.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private authService: AuthService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -32,7 +31,7 @@ export class UserService {
       throw new ConflictException('Employee already has a user account');
     }
 
-    const hashedPassword = await this.authService.hashPassword(createUserDto.password);
+    const hashedPassword = await this.hashPassword(createUserDto.password);
 
     const newUser = this.userRepository.create({
       ...createUserDto,
@@ -97,7 +96,7 @@ export class UserService {
     }
 
     if (updateUserDto.password) {
-      const hashedPassword = await this.authService.hashPassword(updateUserDto.password);
+      const hashedPassword = await this.hashPassword(updateUserDto.password);
       user.hashed_password = hashedPassword;
       delete updateUserDto.password;
     }
@@ -136,7 +135,12 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    user.hashed_password = await this.authService.hashPassword(newPassword);
+    user.hashed_password = await this.hashPassword(newPassword);
     await this.userRepository.save(user);
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
   }
 }

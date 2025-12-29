@@ -112,8 +112,5 @@ export class AuthService {
     return bcrypt.compare(plainText, hashedPassword);
   }
 
-  async hashPassword(password: string): Promise<string> {
-    const saltRounds = 10;
-    return bcrypt.hash(password, saltRounds);
-  }
+
 }
