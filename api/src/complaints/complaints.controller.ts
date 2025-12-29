@@ -6,7 +6,7 @@ import { UpdateComplaintDto } from './dto/update-complaints.dto';
 import { 
   ComplaintResponse,
   ComplaintListResponse,
-  ComplaintsErrorResponse
+  ErrorResponse
 } from './dto/response.dto';
 
 @ApiTags('Complaints')
@@ -25,7 +25,7 @@ export class ComplaintsController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ComplaintsErrorResponse
+    type: ErrorResponse
   })
   async create(@Body() createComplaintDto: CreateComplaintDto) {
     const complaint = await this.complaintsService.create(createComplaintDto);
@@ -68,7 +68,7 @@ export class ComplaintsController {
   @ApiResponse({
     status: 404,
     description: 'Complaint not found',
-    type: ComplaintsErrorResponse
+    type: ErrorResponse
   })
   async findOne(@Param('id', ParseUUIDPipe) complaint_id: string) {
     const complaint = await this.complaintsService.findOne(complaint_id);
@@ -95,7 +95,7 @@ export class ComplaintsController {
   @ApiResponse({
     status: 404,
     description: 'Complaint not found',
-    type: ComplaintsErrorResponse
+    type: ErrorResponse
   })
   async update(
     @Param('id', ParseUUIDPipe) complaint_id: string,
@@ -129,7 +129,7 @@ export class ComplaintsController {
   @ApiResponse({
     status: 404,
     description: 'Complaint not found',
-    type: ComplaintsErrorResponse
+    type: ErrorResponse
   })
   async remove(@Param('id', ParseUUIDPipe) complaint_id: string) {
     await this.complaintsService.remove(complaint_id);

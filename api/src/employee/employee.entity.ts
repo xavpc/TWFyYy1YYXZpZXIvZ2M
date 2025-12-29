@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, OneToOne } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Users } from '../auth/user/user.entity';
+import { User } from '../auth/user/user.entity';
 import { Device } from '../device/device.entity';
 import { EmployeeStatus } from './enums/employee-status.enum';
 
@@ -65,6 +65,11 @@ export class Employee {
   })
   age: number;
 
+  @OneToOne(() => User, (user) => user.employee, {
+    onDelete: 'CASCADE'
+  })
+  user: User;
+
   @Column({
     type: 'enum',
     enum: EmployeeStatus,
@@ -76,7 +81,4 @@ export class Employee {
     description: 'Employee status'
   })
   status: EmployeeStatus;
-
-  @OneToOne(() => Users, user => user.employee)
-  user: Users;
 }

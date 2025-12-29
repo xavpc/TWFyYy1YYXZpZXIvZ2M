@@ -1,10 +1,10 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Employee } from "../../employee/employee.entity";
 import { UserStatus } from "./enums/user-status.enum";
 import { UserRole } from "./enums/user-role.enum";
-import { Employee } from "../../employee/employee.entity";
 
 @Entity()
-export class Users {
+export class User {
   @Column('char', { primary: true, length: 36, generated: 'uuid' })
   user_id: string;
 
@@ -14,10 +14,14 @@ export class Users {
   })
   role: UserRole;
 
-
-  @OneToOne(() => Employee, employee => employee.user)
+  @OneToOne(() => Employee, {
+    onDelete: 'CASCADE'
+  })
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
+
+  @Column({ nullable: false })
+  employee_id: string;
 
   @Column({ nullable: false })
   username: string;

@@ -16,8 +16,6 @@ import { LoggingMiddleware } from './Logging.middleware';
 import { ImageModule } from './image/image.module';
 import { ComplaintsModule } from './complaints/complaints.module';
 import { OsrmModule } from './third-party/routing-engine/osrm/osrm.module';
-import { AuthModule } from './auth/security/auth.module';
-import { UserModule } from './auth/user/user.module';
 
 
 
@@ -41,9 +39,7 @@ import { UserModule } from './auth/user/user.module';
     CollectedPointsModule,
     ImageModule,
     ComplaintsModule,
-    OsrmModule,
-    AuthModule,
-    UserModule
+    OsrmModule
     
   ],
   controllers: [AppController],

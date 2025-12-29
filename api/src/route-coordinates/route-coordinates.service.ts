@@ -131,29 +131,4 @@ export class RouteCoordinatesService {
       order: { sequence: 'ASC' }
     });
   }
-
-
-  async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
-    const route = await this.RouteRepository.findOne({
-      where: { route_id: routeId }
-    });
-    
-    if (!route) {
-      throw new NotFoundException(`Route with ID ${routeId} not found`);
-    }
-  
-    const result = await this.RouteCoordinatesRepository
-      .createQueryBuilder()
-      .delete()
-      .from(RouteCoordinates)
-      .where('route.route_id = :routeId', { routeId })
-      .execute();
-    
-    await this.RouteRepository.update(routeId, {
-      center_latitude: 0,
-      center_longitude: 0
-    });
-    
-    return { affected: result.affected ?? 0 };
-  }
 }
