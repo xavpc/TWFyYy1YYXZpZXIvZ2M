@@ -6,7 +6,7 @@ import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
 import { RouteCoordinatesResponse, RouteCoordinatesListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Routes Coordinates')
-@Controller('mobile.route-coordinates')
+@Controller('route-coordinates')
 export class RouteCoordinatesController {
   constructor(private readonly routeCoordinatesService: RouteCoordinatesService) {}
 
@@ -75,6 +75,7 @@ export class RouteCoordinatesController {
   }
 
   @Get('route/:routeId')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Get all route coordinates for a specific route' })
   @ApiParam({ name: 'routeId', description: 'Route ID', example: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f' })
   @ApiResponse({

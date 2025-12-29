@@ -16,30 +16,20 @@ export class RouteCoordinatesService {
   ) {}
 
   async create(createRouteCoordinatesDto: CreateRouteCoordinatesDto): Promise<RouteCoordinates> {
-    const RouteCoordinates = this.RouteCoordinatesRepository.create(createRouteCoordinatesDto);
+    const route = await this.RouteRepository.findOne({
+        where: { route_id: createRouteCoordinatesDto.route_id }
+    });
     
-    if (createRouteCoordinatesDto.route_id) {
-        const Route = await this.RouteRepository.findOne({
-            where: { route_id: createRouteCoordinatesDto.route_id }
-        });
-        
-        if (!Route) {
-            throw new NotFoundException(
-                `Route with ID ${createRouteCoordinatesDto.route_id} not found`
-            );
-        }
-        
-        const highestSequence = await this.RouteCoordinatesRepository.findOne({
-            where: { route: { route_id: createRouteCoordinatesDto.route_id } },
-            order: { sequence: 'DESC' }
-        });
-        
-        RouteCoordinates.sequence = highestSequence ? highestSequence.sequence + 1 : 1;
-        RouteCoordinates.route = Route;
+    if (!route) {
+        throw new NotFoundException(
+            `Route with ID ${createRouteCoordinatesDto.route_id} not found`
+        );
     }
 
-    return this.RouteCoordinatesRepository.save(RouteCoordinates);
-  }
+    const routeCoordinates = this.RouteCoordinatesRepository.create(createRouteCoordinatesDto);
+    routeCoordinates.route = route
+    return this.RouteCoordinatesRepository.save(routeCoordinates);
+}
 
   findAll(): Promise<RouteCoordinates[]> {
     return this.RouteCoordinatesRepository.find({

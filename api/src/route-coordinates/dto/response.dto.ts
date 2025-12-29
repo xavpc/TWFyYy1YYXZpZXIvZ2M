@@ -31,10 +31,12 @@ export class RouteCoordinatesResponse {
 
   @ApiProperty({
     description: 'The route associated with these coordinates',
-    type: () => Route, // Use a DTO for Route if available
+    type: () => Route,
     example: {
       route_id: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f',
       route_name: 'Route D',
+      center_latitude: 35.6895,
+      center_longitude: 139.6917
     },
   })
   route: Route;
