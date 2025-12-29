@@ -4,11 +4,6 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
 import { createDatabaseIfNeeded } from './create-db'; 
-import { config } from 'dotenv';
-config({
-  path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
-});
-
 async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {

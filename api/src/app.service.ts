@@ -3,11 +3,6 @@ import { DataSource } from 'typeorm';
 import { v2 as cloudinary } from 'cloudinary';
 import { getCloudinaryConfig } from './config/cloudinary.config';
 import { ConfigService } from '@nestjs/config';
-import { config } from 'dotenv';
-
-config({
-  path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
-});
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
