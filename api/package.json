@@ -8,8 +8,7 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "copy-views": "xcopy /E /I views dist\\views",
-    "build": "nest build && npm run copy-views",
+    "build": "nest build",
     "start:dev": "cross-env NODE_ENV=development nest start --watch",
     "start:debug": "cross-env NODE_ENV=development nest start --debug --watch",
     "start:prod": "cross-env NODE_ENV=production npm run build && cross-env NODE_ENV=production node dist/main",
