@@ -54,14 +54,14 @@ export class DeviceLocationService {
 
   findAll(): Promise<DeviceLocation[]> {
     return this.deviceLocationRepository.find({
-      relations: ['device']
+      relations: ['device', 'session']
     });
   }
 
   async findOne(id: string): Promise<DeviceLocation> {
     const deviceLocation = await this.deviceLocationRepository.findOne({
       where: { device_location_id: id },
-      relations: ['device']
+      relations: ['device', 'session']
     });
     if (!deviceLocation) {
       throw new NotFoundException(`Device Location with ID ${id} not found`);
@@ -85,7 +85,14 @@ export class DeviceLocationService {
   findByDevice(deviceId: string): Promise<DeviceLocation[]> {
     return this.deviceLocationRepository.find({
       where: { device: { device_id: deviceId } },
-      relations: ['device']
+      relations: ['device', 'session']
+    });
+  }
+
+  findBySession(sessionId: string): Promise<DeviceLocation[]> {
+    return this.deviceLocationRepository.find({
+      where: { session: { session_id: sessionId } },
+      relations: ['device', 'session']
     });
   }
 }

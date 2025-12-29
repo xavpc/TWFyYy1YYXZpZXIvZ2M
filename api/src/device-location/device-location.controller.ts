@@ -93,6 +93,24 @@ export class DeviceLocationController {
     };
   }
 
+  @Get('session/:sessionId')
+  @ApiOperation({ summary: 'Get all device locations for a specific session' })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Device locations retrieved successfully',
+    type: DeviceLocationListResponse,
+  })
+  async findBySession(@Param('sessionId') sessionId: string) {
+    const deviceLocations = await this.deviceLocationService.findBySession(sessionId);
+    return {
+      success: true,
+      message: 'Device locations retrieved successfully for the session',
+      data: deviceLocations,
+      total: deviceLocations.length,
+    };
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a device location' })
   @ApiParam({ name: 'id', description: 'Device location ID', example: '123e4567-e89b-12d3-a456-426614174000' })
