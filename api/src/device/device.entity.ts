@@ -14,7 +14,7 @@ export class Device {
     description: 'Unique device ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   device_id: string;
 
   @OneToMany(() => DeviceLocation, (location) => location.device)

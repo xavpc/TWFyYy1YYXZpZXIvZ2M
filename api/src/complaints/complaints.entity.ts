@@ -7,7 +7,7 @@ import { Device } from "../device/device.entity";
 
 @Entity()
 export class Complaints {
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   complaint_id: string;
 
 

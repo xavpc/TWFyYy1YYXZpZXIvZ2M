@@ -10,7 +10,7 @@ export class DeviceRoute {
     description: 'Unique identifier for the device route',
     format: 'uuid'
   })
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   device_route_id: string;
 
   @ApiProperty({

@@ -5,7 +5,7 @@ import { UserRole } from "./enums/user-role.enum";
 
 @Entity()
 export class User {
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   user_id: string;
 
   @Column({
