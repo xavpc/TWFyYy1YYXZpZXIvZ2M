@@ -12,6 +12,7 @@ export class DeviceSessionService {
     private deviceSessionRepository: Repository<DeviceSession>,
   ) {}
 
+
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
     const deviceSession = this.deviceSessionRepository.create({
       ...createDeviceSessionDto,
@@ -20,11 +21,9 @@ export class DeviceSessionService {
     return await this.deviceSessionRepository.save(deviceSession);
   }
 
-
   async findAll(): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository.find();
   }
-
 
   async findOne(session_id: string): Promise<DeviceSession> {
     const session = await this.deviceSessionRepository.findOne({ 
@@ -37,6 +36,21 @@ export class DeviceSessionService {
     }
     
     return session;
+  }
+
+  async update(
+    session_id: string, 
+    updateDeviceSessionDto: UpdateDeviceSessionDto
+  ): Promise<DeviceSession> {
+    const session = await this.findOne(session_id);
+    
+
+    const updatedSession = await this.deviceSessionRepository.save({
+      ...session,
+      ...updateDeviceSessionDto,
+    });
+    
+    return updatedSession;
   }
 
 
@@ -58,6 +72,20 @@ export class DeviceSessionService {
   }
 
 
+  async findActiveSessions(): Promise<DeviceSession[]> {
+    return await this.deviceSessionRepository.find({
+      where: { end: IsNull() },
+    });
+  }
 
 
+  async findSessionsByDateRange(
+    startDate: Date, 
+    endDate: Date
+  ): Promise<DeviceSession[]> {
+    return await this.deviceSessionRepository
+      .createQueryBuilder('session')
+      .where('session.start BETWEEN :startDate AND :endDate', { startDate, endDate })
+      .getMany();
+  }
 }
