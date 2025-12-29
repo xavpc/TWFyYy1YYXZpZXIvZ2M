@@ -146,7 +146,7 @@ export class EmployeeController {
   @Put(':id')
   @ApiOperation({ summary: 'Update an employee' })
   @ApiParam({ name: 'id', description: 'Employee ID', example: '123e4567-e89b-12d3-a456-426614174000' })
-  @ApiBody({ type: CreateEmployeeDto, description: 'Employee data to update' })
+  @ApiBody({ type: UpdateEmployeeDto, description: 'Employee data to update' })
   @ApiResponse({
     status: 200,
     description: 'Employee updated successfully',
