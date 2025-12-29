@@ -10,8 +10,9 @@ export class AutoSessionEndService {
     private readonly deviceSessionService: DeviceSessionService,
   ) {}
 
-  // Run every 10 seconds
-  @Cron('*/10 * * * * *')
+  @Cron('0 0 * * *', {
+    timeZone: 'Asia/Singapore' // or 'Asia/Manila', 'Asia/Hong_Kong', etc. (UTC+8 zones)
+  })
   async handleCronEndSessions() {
     this.logger.debug('Running auto session end job...');
     
