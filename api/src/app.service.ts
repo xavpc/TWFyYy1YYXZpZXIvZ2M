@@ -3,7 +3,6 @@ import { DataSource } from 'typeorm';
 import { v2 as cloudinary } from 'cloudinary';
 import { getCloudinaryConfig } from './config/cloudinary.config';
 import { ConfigService } from '@nestjs/config';
-import * as ejs from 'ejs';
 import { config } from 'dotenv';
 
 config({
@@ -12,60 +11,6 @@ config({
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
-  private readonly welcomeTemplate = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to NestJS</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f0f0f0;
-        }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            width: 100%;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 1rem;
-        }
-        p {
-            color: #666;
-            margin-bottom: 1rem;
-        }
-        .api-url {
-            background-color: #f8f9fa;
-            padding: 0.5rem;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Welcome to Your NestJS Application</h1>
-        <p>Your application is running successfully!</p>
-        <p>Base API URL: <span class="api-url"><%= baseUrl %></span></p>
-        <p>Start building your awesome application.</p>
-    </div>
-</body>
-</html>
-  `;
-
   constructor(
     private dataSource: DataSource,
     private configService: ConfigService
@@ -101,12 +46,68 @@ export class AppService implements OnApplicationBootstrap {
   }
 
   getHello(): string {
-    try {
-      const baseUrl = this.configService.get('BASE_URL');
-      return ejs.render(this.welcomeTemplate, { baseUrl });
-    } catch (error) {
-      console.error('Error rendering template:', error);
-      return 'Error rendering welcome page';
-    }
+    const baseUrl = this.configService.get('BASE_URL');
+    
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>API Guide</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+                background: #ffffff;
+                text-align: center;
+                color: #333;
+            }
+            .container {
+                background: #fff;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                max-width: 400px;
+                width: 90%;
+            }
+            h1 {
+                font-size: 1.8rem;
+                font-weight: 600;
+                margin: 10px 0;
+            }
+            p {
+                font-size: 1rem;
+                font-weight: 300;
+                margin: 5px 0;
+            }
+            a {
+                color: #007bff;
+                font-weight: 500;
+                text-decoration: none;
+                transition: 0.3s;
+            }
+            a:hover {
+                color: #0056b3;
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- Main Content -->
+            <h1>Welcome to the API</h1>
+            <p>This is the base URL: ${baseUrl}</p>
+            <p>Goto <a href="${baseUrl}/guide">API Guide</a> for more details.</p>
+        </div>
+    </body>
+    </html>
+`;
   }
 }
