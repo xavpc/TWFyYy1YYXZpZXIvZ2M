@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Route } from '../route/route.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -28,14 +28,4 @@ export class RouteCoordinates {
   })
   @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
-
-    @ApiProperty({
-      description: 'A unique sequence number for the coute coordinates, to know the precedence of points',
-      example: 1,
-    })
-    @Column({
-      type: 'int',
-      nullable: false
-    })
-    sequence: number;
 }

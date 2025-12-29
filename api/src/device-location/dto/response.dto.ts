@@ -33,6 +33,12 @@ export class DeviceLocationResponse {
   current_location_timestamp: Date;
 
   @ApiProperty({
+    description: 'The sequence number of the device location entry',
+    example: 1,
+  })
+  sequence: number;
+
+  @ApiProperty({
     description: 'The device associated with this device location',
     type: String, // Or map it directly to a device DTO if required
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -45,6 +51,7 @@ export class DeviceLocationResponse {
     this.longitude = deviceLocation.longitude;
     this.push_timestamp = deviceLocation.push_timestamp;
     this.current_location_timestamp = deviceLocation.current_location_timestamp;
+    this.sequence = deviceLocation.sequence;
     this.device_id = deviceLocation.device.device_id; // Assuming a device object is linked here
   }
 }

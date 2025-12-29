@@ -47,4 +47,12 @@ export class DeviceLocation {
   @Column('timestamp')
   current_location_timestamp: Date;
 
+
+  @ApiProperty({
+    description: 'A unique sequence number for the device location.',
+    example: 1,
+  })
+  @Index('IDX_SEQUENCE', { unique: true })
+  @Column({ type: 'int', unique: true, nullable: false, default: 0 })
+  sequence: number;
 }
