@@ -8,16 +8,20 @@ import { createDatabaseIfNeeded } from './create-db';
 
 async function bootstrap() {
 
-  try {
+
     // Run the database auto-creation logic if databse not exist for testing app locally before starting NestJS.
-    await createDatabaseIfNeeded();
-    console.log('Database check completed. Starting the application...');
-  } catch (error) {
-    console.error('Failed to create database:', error);
-    process.exit(1);
-  }
-
-
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        // This will ensure the target database exists before starting the application.
+        await createDatabaseIfNeeded();
+        console.log('Database check completed. Starting the application...');
+      } catch (error) {
+        console.error('Failed to create database:', error);
+        process.exit(1);
+      }
+    } else {
+      console.log('Production environment detected, skipping database auto-creation.');
+    }
     const app = await NestFactory.create(AppModule
       , {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
