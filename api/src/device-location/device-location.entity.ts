@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { Device } from "../device/device.entity";
+import { DeviceSession } from "../device-session/device-session.entity";
 
 @Entity()
 export class DeviceLocation {
@@ -46,5 +47,9 @@ export class DeviceLocation {
   })
   @Column('timestamp')
   current_location_timestamp: Date;
+
+  @ManyToOne(() => DeviceSession, (session) => session.device_locations)
+  @JoinColumn({ name: 'session_id' })
+  session: DeviceSession;
 
 }
