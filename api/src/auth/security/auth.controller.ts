@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { ApiKeyGuard } from './guards/api-key.guard'
 import { JwtAuthGuardv2 } from './guards/jwt.guard';
 import { Response } from 'express';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -13,6 +13,22 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'User logged in successfully' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'API Key for authentication',
+    required: true,
+    example: 'qweqweqwe'
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        username: { type: 'string', example: 'admin' },
+        password: { type: 'string', example: 'admin123' }
+      },
+      required: ['username', 'password']
+    }
+  })
   @UseGuards(ApiKeyGuard)
   @HttpCode(200)
   @Post('login')
