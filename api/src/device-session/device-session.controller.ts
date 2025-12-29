@@ -204,22 +204,19 @@ export class DeviceSessionController {
     }
   }
 
-  @Get('date-range')
-  @ApiOperation({ summary: 'Find sessions within a date range' })
-  @ApiQuery({ name: 'startDate', description: 'Start date for range search (ISO format)' })
-  @ApiQuery({ name: 'endDate', description: 'End date for range search (ISO format)' })
-  @ApiResponse({ status: 200, description: 'List of sessions in date range', type: DeviceSessionListResponse })
-  async findSessionsByDateRange(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+  @Get('by-date')
+  @ApiOperation({ summary: 'Find sessions for a specific date' })
+  @ApiQuery({ name: 'date', description: 'Date to search for sessions (ISO format)' })
+  @ApiResponse({ status: 200, description: 'List of sessions for the specified date', type: DeviceSessionListResponse })
+  async findSessionsByDate(
+    @Query('date') dateString: string,
   ): Promise<DeviceSessionListResponse> {
-    const sessions = await this.deviceSessionService.findSessionsByDateRange(
-      new Date(startDate),
-      new Date(endDate),
-    );
+    const date = new Date(dateString);
+    const sessions = await this.deviceSessionService.findSessionsByDate(date);
+    
     return {
       success: true,
-      message: 'Device sessions within date range retrieved successfully',
+      message: 'Device sessions for specified date retrieved successfully',
       data: sessions,
       total: sessions.length
     };

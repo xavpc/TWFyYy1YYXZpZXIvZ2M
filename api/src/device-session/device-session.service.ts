@@ -126,13 +126,18 @@ export class DeviceSessionService {
     });
   }
 
-  async findSessionsByDateRange(
-    startDate: Date, 
-    endDate: Date
+  async findSessionsByDate(
+    date: Date
   ): Promise<DeviceSession[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
     return await this.deviceSessionRepository
       .createQueryBuilder('session')
-      .where('session.start BETWEEN :startDate AND :endDate', { startDate, endDate })
+      .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay })
       .getMany();
   }
 
