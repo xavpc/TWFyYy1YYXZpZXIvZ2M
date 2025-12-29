@@ -3,7 +3,7 @@ import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { RouteResponse, RouteListResponse, ErrorResponse } from './dto/response.dto'; // New response DTOs
+import { RouteResponse, RouteListResponse, RouteErrorResponse } from './dto/response.dto'; // New response DTOs
 
 @ApiTags('Routes')
 @Controller('routes')
@@ -21,7 +21,7 @@ export class RouteController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: RouteErrorResponse,
   })
   async create(@Body() createRouteDto: CreateRouteDto) {
     const newRoute = await this.routeService.create(createRouteDto);
@@ -60,7 +60,7 @@ export class RouteController {
   @ApiResponse({
     status: 404,
     description: 'Route not found',
-    type: ErrorResponse,
+    type: RouteErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const route = await this.routeService.findOne(id);
@@ -86,12 +86,12 @@ export class RouteController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: RouteErrorResponse,
   })
   @ApiResponse({
     status: 404,
     description: 'Route not found',
-    type: ErrorResponse,
+    type: RouteErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateRouteDto: UpdateRouteDto) {
     const updatedRoute = await this.routeService.update(id, updateRouteDto);
@@ -118,7 +118,7 @@ export class RouteController {
   @ApiResponse({
     status: 404,
     description: 'Route not found',
-    type: ErrorResponse,
+    type: RouteErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.routeService.remove(id);

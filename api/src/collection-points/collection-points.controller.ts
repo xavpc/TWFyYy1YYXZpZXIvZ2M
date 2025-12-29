@@ -3,7 +3,7 @@ import { CollectionPointsService } from './collection-points.service';
 import { CreateCollectionPointsDto } from './dto/create-collection-points.dto';
 import { UpdateCollectionPointsDto } from './dto/update-collection-points.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { CollectionPointResponse, CollectionPointListResponse, ErrorResponse } from './dto/response.dto';
+import { CollectionPointResponse, CollectionPointListResponse, CollectionPointsErrorResponse } from './dto/response.dto';
 
 @ApiTags('Collection Points')
 @Controller('collection-points')
@@ -21,7 +21,7 @@ export class CollectionPointsController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: CollectionPointsErrorResponse,
   })
   async create(@Body() CreateCollectionPointsDto: CreateCollectionPointsDto) {
     const newCollectionPoint = await this.collectionPointsService.create(CreateCollectionPointsDto);
@@ -60,7 +60,7 @@ export class CollectionPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collection point not found',
-    type: ErrorResponse,
+    type: CollectionPointsErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const collectionPoint = await this.collectionPointsService.findOne(id);
@@ -101,7 +101,7 @@ export class CollectionPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collection point not found',
-    type: ErrorResponse,
+    type: CollectionPointsErrorResponse,
   })
   async findByName(@Param('name') name: string) {
     const collectionPoint = await this.collectionPointsService.findByName(name);
@@ -124,7 +124,7 @@ export class CollectionPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collection point not found',
-    type: ErrorResponse,
+    type: CollectionPointsErrorResponse,
   })
   async update(@Param('id') id: string, @Body() UpdateCollectionPointsDto: UpdateCollectionPointsDto) {
     const updatedCollectionPoint = await this.collectionPointsService.update(id, UpdateCollectionPointsDto);
@@ -151,7 +151,7 @@ export class CollectionPointsController {
   @ApiResponse({
     status: 404,
     description: 'Collection point not found',
-    type: ErrorResponse,
+    type: CollectionPointsErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.collectionPointsService.remove(id);

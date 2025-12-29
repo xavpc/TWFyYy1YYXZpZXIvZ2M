@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { DeviceService } from './device.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
-import { DeviceResponse, DeviceListResponse, ErrorResponse } from './dto/response.dto';  // Ensure these DTOs are created as per your pattern
+import { DeviceResponse, DeviceListResponse, DeviceErrorResponse } from './dto/response.dto';  // Ensure these DTOs are created as per your pattern
 
 @ApiTags('Devices')
 @Controller('devices')
@@ -21,7 +21,7 @@ export class DeviceController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: DeviceErrorResponse,
   })
   async create(@Body() createDeviceDto: CreateDeviceDto) {
     const newDevice = await this.deviceService.create(createDeviceDto);
@@ -60,7 +60,7 @@ export class DeviceController {
   @ApiResponse({
     status: 404,
     description: 'Device not found',
-    type: ErrorResponse,
+    type: DeviceErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const device = await this.deviceService.findOne(id);
@@ -105,12 +105,12 @@ export class DeviceController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: DeviceErrorResponse,
   })
   @ApiResponse({
     status: 404,
     description: 'Device not found',
-    type: ErrorResponse,
+    type: DeviceErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto) {
     const updatedDevice = await this.deviceService.update(id, updateDeviceDto);
@@ -137,7 +137,7 @@ export class DeviceController {
   @ApiResponse({
     status: 404,
     description: 'Device not found',
-    type: ErrorResponse,
+    type: DeviceErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.deviceService.remove(id);

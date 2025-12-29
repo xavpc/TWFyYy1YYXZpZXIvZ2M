@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { DeviceLocationService } from './device-location.service';
 import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
-import { DeviceLocationResponse, DeviceLocationListResponse, ErrorResponse } from './dto/response.dto';
+import { DeviceLocationResponse, DeviceLocationListResponse, DeviceLocationErrorResponse } from './dto/response.dto';
 
 @ApiTags('Device Locations')
 @Controller('device-locations')
@@ -22,7 +22,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: DeviceLocationErrorResponse,
   })
   async create(@Body() createDeviceLocationDto: CreateDeviceLocationDto) {
     const newDeviceLocation = await this.deviceLocationService.create(createDeviceLocationDto);
@@ -61,7 +61,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: ErrorResponse,
+    type: DeviceLocationErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const deviceLocation = await this.deviceLocationService.findOne(id);
@@ -105,7 +105,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: ErrorResponse,
+    type: DeviceLocationErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateDeviceLocationDto: UpdateDeviceLocationDto) {
     const updatedDeviceLocation = await this.deviceLocationService.update(id, updateDeviceLocationDto);
@@ -132,7 +132,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: ErrorResponse,
+    type: DeviceLocationErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.deviceLocationService.remove(id);
