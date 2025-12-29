@@ -11,7 +11,7 @@ export class Route {
     description: 'Unique identifier for the route (UUID)',
     example: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f',
   })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   route_id: string;
 
   @ApiProperty({
