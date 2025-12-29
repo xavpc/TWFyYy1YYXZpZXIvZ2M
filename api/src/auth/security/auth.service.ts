@@ -94,7 +94,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private setTokenCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
+  public setTokenCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
     res.cookie('access_token', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -117,6 +117,20 @@ export class AuthService {
 
   async verifyPassword(plainText: string, hashedPassword: string): Promise<boolean> {
     return bcrypt.compare(plainText, hashedPassword);
+  }
+
+  async refreshTokens(payload: JwtPayload) {
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '15m'
+    });
+    
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '7d'
+    });
+    
+    return { accessToken, refreshToken };
   }
 
 
