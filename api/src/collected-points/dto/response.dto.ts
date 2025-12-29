@@ -62,7 +62,7 @@ export class CollectedPointListResponse {
   }
 }
 
-export class ErrorResponse {
+export class CollectedPointsErrorResponse {
   @ApiProperty({
     description: 'Error code',
     example: 'NOT_FOUND',
