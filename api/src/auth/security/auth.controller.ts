@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Get, Res, Ip, HttpCode } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiKeyGuard } from './guards/api-key.guard';
-import { JwtAuthGuard } from './guards/jwt.guard';
+import { ApiKeyGuard } from './guards/api-key.guard'
+import { JwtAuthGuardv2 } from './guards/jwt.guard';
 import { Response } from 'express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -26,7 +26,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'User logged out successfully' })
-  @UseGuards(JwtAuthGuard)
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(JwtAuthGuardv2)
   @Post('logout')
   async logout(@Res() res: Response) {
     await this.authService.logout(res);

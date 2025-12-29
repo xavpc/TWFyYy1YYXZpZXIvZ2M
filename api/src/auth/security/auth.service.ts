@@ -83,7 +83,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '15m'
+        expiresIn: '2s'
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -94,12 +94,12 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  public setTokenCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
+  private setTokenCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
     res.cookie('access_token', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000 
+      maxAge: 2000
     });
 
     res.cookie('refresh_token', tokens.refreshToken, {
@@ -117,20 +117,6 @@ export class AuthService {
 
   async verifyPassword(plainText: string, hashedPassword: string): Promise<boolean> {
     return bcrypt.compare(plainText, hashedPassword);
-  }
-
-  async refreshTokens(payload: JwtPayload) {
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '15m'
-    });
-    
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '7d'
-    });
-    
-    return { accessToken, refreshToken };
   }
 
 
