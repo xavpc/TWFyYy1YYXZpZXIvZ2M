@@ -8,7 +8,7 @@ export class RouteCoordinates {
     description: 'Unique identifier for the route coordinates (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   route_coordinates_id: string;
 
   @ManyToOne(() => Route, (route) => route.route_coordinates, { nullable: false, onDelete: 'CASCADE' })
@@ -16,6 +16,20 @@ export class RouteCoordinates {
   route: Route;
 
 
+
+  @ApiProperty({
+    description: 'Center Latitude of the route coordinate',
+    example: 35.6895,
+  })
+  @Column('decimal', { precision: 8, scale: 6 })
+  center_latitude: number;
+
+  @ApiProperty({
+    description: 'Center Longitude of the route coordinate',
+    example: 139.6917,
+  })
+  @Column('decimal', { precision: 9, scale: 6 })
+  center_longitude: number;
 
   @ApiProperty({
     description: 'Latitude of the route coordinate',

@@ -12,7 +12,7 @@ export class Image {
     example: '123e4567-e89b-12d3-a456-426614174000',
     format: 'uuid'
   })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   image_id: string;
 
   @ApiProperty({

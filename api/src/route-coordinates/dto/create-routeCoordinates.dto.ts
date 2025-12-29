@@ -13,6 +13,26 @@ export class CreateRouteCoordinatesDto {
 
 
   @ApiProperty({
+    description: 'Center Latitude of the route coordinate (range: -90 to 90)',
+    example: 35.6895,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  center_latitude: number;
+
+  @ApiProperty({
+    description: 'Center Longitude of the route coordinate (range: -180 to 180)',
+    example: 139.6917,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  center_longitude: number;
+
+  @ApiProperty({
     description: 'Latitude of the route coordinate (range: -90 to 90)',
     example: 35.6895,
   })

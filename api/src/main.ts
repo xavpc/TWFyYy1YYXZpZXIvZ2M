@@ -13,8 +13,10 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
+      'http://localhost:3001',
       'http://localhost:5173',
       'https://gcweb-psi.vercel.app',
+      'https://gc-webb.netlify.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -31,6 +33,6 @@ async function bootstrap() {
   SwaggerModule.setup('guide', app, document);
 
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.BACKEND_PORT ?? 3001);
 }
 bootstrap();
