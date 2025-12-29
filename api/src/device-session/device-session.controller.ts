@@ -104,6 +104,26 @@
       };
     }
 
+    @Get('by-route-and-date')
+    @ApiOperation({ summary: 'Find sessions by route ID and date' })
+    @ApiQuery({ name: 'routeId', description: 'Route ID', required: true })
+    @ApiQuery({ name: 'date', description: 'Date to search for sessions (ISO format)', required: true })
+    @ApiResponse({ status: 200, description: 'List of sessions matching filters', type: DeviceSessionListResponse })
+    async findSessionsByRouteAndDate(
+      @Query('routeId') routeId: string,
+      @Query('date') dateString: string,
+    ): Promise<DeviceSessionListResponse> {
+      const date = new Date(dateString);
+      const sessions = await this.deviceSessionService.findSessionsByRouteAndDate(routeId, date);
+      
+      return {
+        success: true,
+        message: 'Device sessions for specified route and date retrieved successfully',
+        data: sessions,
+        total: sessions.length
+      };
+    }
+
     @Get(':session_id')
     @ApiOperation({ summary: 'Find a device session by ID' })
     @ApiParam({ name: 'session_id', description: 'Session ID to find' })
