@@ -1,10 +1,11 @@
 import { Device } from "../device/device.entity";
 import { Route } from "../route/route.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceRouteDay } from "./enums/device-route-day.enum";
 
 @Entity()
+@Unique(['route', 'day_assigned'])
 export class DeviceRoute {
   @ApiProperty({
     description: 'Unique identifier for the device route',
@@ -32,7 +33,6 @@ export class DeviceRoute {
   @Column({
     type: 'enum',
     enum: DeviceRouteDay,
-    nullable: true 
   })
   @ApiProperty({
     description: 'Routes will be asigned on a specific day for a device',

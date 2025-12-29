@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { DeviceRoute } from './device-route.entity';
 import { CreateDeviceRouteDto } from './dto/create-device-route.dto';
 import { UpdateDeviceRouteDto } from './dto/update-device-route.dto';
@@ -46,7 +46,16 @@ export class DeviceRouteService {
       day_assigned: createDeviceRouteDto.day_assigned
     });
   
-    return this.deviceRouteRepository.save(deviceRoute);
+    try {
+      return await this.deviceRouteRepository.save(deviceRoute);
+    } catch (error) {
+      if (error instanceof QueryFailedError && error.message.includes('Duplicate entry')) {
+        throw new ConflictException(
+          `Route with ID ${createDeviceRouteDto.route_id} is already assigned on ${createDeviceRouteDto.day_assigned}`
+        );
+      }
+      throw error; 
+    }
   }
 
   findAll(): Promise<DeviceRoute[]> {
