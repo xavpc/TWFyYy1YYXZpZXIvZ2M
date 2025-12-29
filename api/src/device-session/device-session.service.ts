@@ -4,17 +4,31 @@ import { IsNull, Repository } from 'typeorm';
 import { DeviceSession } from './device-session.entity';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
 import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
+import { Route } from '../route/route.entity';
 
 @Injectable()
 export class DeviceSessionService {
   constructor(
     @InjectRepository(DeviceSession)
     private deviceSessionRepository: Repository<DeviceSession>,
+    @InjectRepository(Route)
+    private routeRepository: Repository<Route>,
   ) {}
 
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
+    const route = await this.routeRepository.findOne({
+      where: { route_id: createDeviceSessionDto.route_id }
+    });
+    
+    if (!route) {
+      throw new NotFoundException(
+        `Route with ID ${createDeviceSessionDto.route_id} not found`
+      );
+    }
+    
     const deviceSession = this.deviceSessionRepository.create({
       ...createDeviceSessionDto,
+      route: route,
       start: new Date(), 
     });
     return await this.deviceSessionRepository.save(deviceSession);
