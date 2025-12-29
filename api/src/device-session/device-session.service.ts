@@ -121,4 +121,11 @@ export class DeviceSessionService {
       .where('session.start BETWEEN :startDate AND :endDate', { startDate, endDate })
       .getMany();
   }
+
+  findByRoute(routeId: string): Promise<DeviceSession[]> {
+    return this.deviceSessionRepository.find({
+      where: { route: { route_id: routeId } },
+      relations: ['route']
+    });
+  }
 }
