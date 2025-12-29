@@ -19,6 +19,14 @@ export class CreateCollectedPointsDto {
     collection_point_id: string;
 
     @ApiProperty({
+        description: 'The UUID of the device session',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+    })
+    @IsNotEmpty()
+    @IsUUID()
+    session_id: string;
+
+    @ApiProperty({
         description: 'Timestamp when the point was collected by the device',
         example: '2024-02-10T11:55:00Z',
     })

@@ -5,9 +5,10 @@ import { CollectedPoints } from "./collected-points.entity";
 import { CollectionPoints } from "../collection-points/collection-points.entity";
 import { CollectedPointsController } from "./collected-points.controller";
 import { CollectedPointsService } from "./collected-points.service";
+import { DeviceSession } from "../device-session/device-session.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Device, CollectedPoints, CollectionPoints])],
+    imports: [TypeOrmModule.forFeature([Device, CollectedPoints, CollectionPoints, DeviceSession])],
     controllers: [CollectedPointsController],
     providers: [CollectedPointsService]
 })

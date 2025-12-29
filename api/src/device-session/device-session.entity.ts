@@ -1,6 +1,7 @@
 import { DeviceLocation } from "../device-location/device-location.entity";
 import { Column, Entity, OneToMany } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
+import { CollectedPoints } from "../collected-points/collected-points.entity";
 
 @Entity()
 export class DeviceSession {
@@ -36,4 +37,11 @@ export class DeviceSession {
   })
   @OneToMany(() => DeviceLocation, (deviceLocation) => deviceLocation.session)
   device_locations: DeviceLocation[];
+
+  @ApiProperty({
+    description: 'List of Collected Points recorded during this session',
+    type: [DeviceLocation]
+  })
+  @OneToMany(() => CollectedPoints, (collectedPoints) => collectedPoints.session)
+  collected_points: CollectedPoints[];
 }

@@ -32,9 +32,16 @@ export class CollectedPointResponse {
   })
   collected_timestamp: Date;
 
+  @ApiProperty({
+      description: 'The UUID of the device session',
+      example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  session_id: string;
+
   constructor(collectedPoint: CollectedPoints) {
     this.collected_point_id = collectedPoint.collected_point_id;
     this.device_id = collectedPoint.device.device_id;
+    this.session_id = collectedPoint.session.session_id;
     this.collection_point_id = collectedPoint.collection_point.collection_point_id;
     this.push_timestamp = collectedPoint.push_timestamp;
     this.collected_timestamp = collectedPoint.collected_timestamp;
