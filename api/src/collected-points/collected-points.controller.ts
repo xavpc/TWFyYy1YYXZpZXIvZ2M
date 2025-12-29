@@ -11,6 +11,7 @@ export class CollectedPointsController {
   constructor(private readonly collectedPointsService: CollectedPointsService) {}
 
   @Post('')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Create a new collected point' })
   @ApiBody({ type: CreateCollectedPointsDto, description: 'Collected point data to create' })
   @ApiResponse({
@@ -75,6 +76,7 @@ export class CollectedPointsController {
   }
 
   @Get('device/:deviceId')
+  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Get all collected points for a specific device' })
   @ApiParam({ name: 'deviceId', description: 'Device ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({
