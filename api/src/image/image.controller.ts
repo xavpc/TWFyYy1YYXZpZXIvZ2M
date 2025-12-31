@@ -1,4 +1,4 @@
-import { Controller, Post, Get, UseInterceptors, UploadedFile, Param, Delete, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, UseInterceptors, UploadedFile, Param, Delete, NotFoundException, BadRequestException, Body, Put } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { ImageService } from './image.service';
@@ -8,6 +8,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiParam, ApiBody } fr
 import { UploadImageDto } from './dto/upload-image.dto';
 import { ImageResponseDto, ImageListResponseDto } from './dto/image-response.dto';
 import { existsSync, mkdirSync } from 'fs';
+import { UpdateImageDto } from './dto/update-image.dto';
 
 @ApiTags('Images')
 @Controller('mobile.images')
@@ -109,6 +110,36 @@ export class ImageController {
       message: 'Images retrieved successfully',
       data: images,
       total: images.length,
+    };
+  }
+
+  @Put(':id')
+  @ApiOperation({ 
+    summary: 'Update an image',
+    description: 'Update image details including status, filename, and image URL'
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Image ID to update',
+    example: '80de6341-e1e1-11ef-9da2-54ee75718d0f'
+  })
+  @ApiBody({ type: UpdateImageDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Image updated successfully',
+    type: ImageResponseDto
+  })
+  @ApiResponse({ status: 404, description: 'Image not found' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateImageDto: UpdateImageDto
+  ) {
+    const updatedImage = await this.imageService.update(id, updateImageDto);
+    return {
+      success: true,
+      message: 'Image updated successfully',
+      data: updatedImage,
     };
   }
 }
