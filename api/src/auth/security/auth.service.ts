@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { UserService } from '../user/user.service';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Response } from 'express';
 
 @Injectable()
