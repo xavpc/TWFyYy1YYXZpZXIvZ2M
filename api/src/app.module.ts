@@ -21,6 +21,7 @@ import { UserModule } from './auth/user/user.module';
 import { DeviceSessionModule } from './device-session/device-session.module';
 import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ReportsModule } from './reports/reports.module';
 
 
 
@@ -49,7 +50,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     AuthModule,
     UserModule,
     DeviceSessionModule,
-    ScheduledTasksModule
+    ScheduledTasksModule,
+    ReportsModule,
     
   ],
   controllers: [AppController],

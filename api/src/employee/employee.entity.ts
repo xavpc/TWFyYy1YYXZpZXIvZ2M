@@ -23,7 +23,7 @@ export class Employee {
   })
   first_name: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true,  default: null })
   @ApiProperty({
     description: 'Middle name of the employee',
     example: 'Yuji',  

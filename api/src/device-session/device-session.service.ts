@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { And, IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { DeviceSession } from './device-session.entity';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
 import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
 import { DeviceRoute } from '../device-route/device-route.entity';
+import { Reports } from '../reports/reports.entity';
 
 @Injectable()
 export class DeviceSessionService {
@@ -13,6 +14,8 @@ export class DeviceSessionService {
     private deviceSessionRepository: Repository<DeviceSession>,
     @InjectRepository(DeviceRoute)
     private deviceRouteRepository: Repository<DeviceRoute>,
+    @InjectRepository(Reports)
+    private reportRepository: Repository<Reports>,
   ) {}
 
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
@@ -245,6 +248,38 @@ export class DeviceSessionService {
   async removeAll(): Promise<DeviceSession[]> {
     const sessions = await this.deviceSessionRepository.find();
     return await this.deviceSessionRepository.remove(sessions);
+  }
+
+
+  async findRecentlyEndedSessions(lookbackHours = 24): Promise<DeviceSession[]> {
+    const lookbackDate = new Date();
+    lookbackDate.setHours(lookbackDate.getHours() - lookbackHours);
+    
+    return this.deviceSessionRepository.find({
+      where: {
+        end: And(Not(IsNull()), MoreThanOrEqual(lookbackDate)), // Only recent completed sessions
+      },
+      relations: [
+        'device_route',
+        'device_route.route',
+        'device_route.device',
+        'device_route.device.employee'
+      ],
+      order: {
+        end: 'DESC', 
+      },
+    });
+  }
+  
+
+  async sessionHasReport(session_id: string): Promise<boolean> {
+    const reportCount = await this.reportRepository.count({
+      where: {
+        session: { session_id }
+      }
+    });
+    
+    return reportCount > 0;
   }
 
 }

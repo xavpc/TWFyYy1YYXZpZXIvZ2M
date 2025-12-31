@@ -1,8 +1,9 @@
 import { DeviceLocation } from "../device-location/device-location.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { CollectedPoints } from "../collected-points/collected-points.entity";
 import { DeviceRoute } from "../device-route/device-route.entity";
+import { Reports } from "../reports/reports.entity";
 
 @Entity()
 export class DeviceSession {
@@ -29,7 +30,7 @@ export class DeviceSession {
     required: false,
     nullable: true
   })
-  @Column('timestamp', { nullable: true })
+  @Column('timestamp', { nullable: true,  default: null })
   end: Date;
 
   @ApiProperty({
@@ -45,8 +46,12 @@ export class DeviceSession {
   })
   @OneToMany(() => CollectedPoints, (collectedPoints) => collectedPoints.session)
   collected_points: CollectedPoints[];
-
-
+  @ApiProperty({
+    description: 'Associated report for this session',
+    type: () => Reports 
+  })
+  @OneToOne(() => Reports, (reports) => reports.session, { nullable: true, onDelete: 'CASCADE' })
+  reports: Reports;
 
   @ApiProperty({
     description: 'Associated deviceRoute of this session',
