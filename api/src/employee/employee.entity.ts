@@ -23,13 +23,6 @@ export class Employee {
   })
   first_name: string;
 
-  @Column({ nullable: false })
-  @ApiProperty({
-    description: 'First name in Katakana (名カタカナ)',
-    example: 'タケシ', 
-  })
-  first_name_kana: string;
-
   @Column({ nullable: true })
   @ApiProperty({
     description: 'Middle name of the employee',
@@ -43,13 +36,6 @@ export class Employee {
     example: 'Sato',  
   })
   last_name: string;
-
-  @Column({ nullable: false })
-  @ApiProperty({
-    description: 'Last name in Katakana (姓カタカナ)',
-    example: 'サトウ',  
-  })
-  last_name_kana: string;
 
   @Column({ nullable: false })
   @ApiProperty({
