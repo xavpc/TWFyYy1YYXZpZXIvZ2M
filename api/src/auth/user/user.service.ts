@@ -5,14 +5,13 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserStatus } from './enums/user-status.enum';
-import { AuthService } from '../security/auth.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private authService: AuthService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -32,7 +31,7 @@ export class UserService {
       throw new ConflictException('Employee already has a user account');
     }
 
-    const hashedPassword = await this.authService.hashPassword(createUserDto.password);
+    const hashedPassword = await this.hashPassword(createUserDto.password);
 
     const newUser = this.userRepository.create({
       ...createUserDto,
@@ -97,8 +96,7 @@ export class UserService {
     }
 
     if (updateUserDto.password) {
-      const hashedPassword = await this.authService.hashPassword(updateUserDto.password);
-      user.hashed_password = hashedPassword;
+      updateUserDto.password = await this.hashPassword(updateUserDto.password);
       delete updateUserDto.password;
     }
 
@@ -127,7 +125,11 @@ export class UserService {
     }
   }
 
-  async changePassword(id: string, newPassword: string): Promise<void> {
+  async validatePassword(plainTextPassword: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(plainTextPassword, hashedPassword);
+  }
+
+  async changePassword(id: string, currentPassword: string, newPassword: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { user_id: id }
     });
@@ -136,7 +138,17 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    user.hashed_password = await this.authService.hashPassword(newPassword);
+    const isPasswordValid = await this.validatePassword(currentPassword, user.hashed_password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    user.hashed_password = await this.hashPassword(newPassword);
     await this.userRepository.save(user);
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
   }
 }
