@@ -6,7 +6,7 @@ import { UpdateDeviceDto } from './dto/update-device.dto';
 import { DeviceResponse, DeviceListResponse, ErrorResponse } from './dto/response.dto';  // Ensure these DTOs are created as per your pattern
 
 @ApiTags('Devices')
-@Controller('web.devices')
+@Controller('devices')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 

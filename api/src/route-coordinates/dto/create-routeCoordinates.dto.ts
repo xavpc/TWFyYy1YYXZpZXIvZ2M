@@ -10,6 +10,8 @@ export class CreateRouteCoordinatesDto {
   @IsUUID()
   route_id: string;
 
+
+
   @ApiProperty({
     description: 'Latitude of the route coordinate (range: -90 to 90)',
     example: 35.6895,
@@ -29,4 +31,12 @@ export class CreateRouteCoordinatesDto {
   @Min(-180)
   @Max(180)
   longitude: number;
+
+  @ApiProperty({
+    description: 'A unique sequence number for the coute coordinates, to know the precedence of points',
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  sequence: number;
 }

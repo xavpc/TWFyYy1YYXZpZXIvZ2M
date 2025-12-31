@@ -11,7 +11,7 @@ export class Route {
     description: 'Unique identifier for the route (UUID)',
     example: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f',
   })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   route_id: string;
 
   @ApiProperty({
@@ -43,4 +43,19 @@ export class Route {
   })
   @Column({ nullable: false, unique: true })
   route_name: string;
+
+
+  @ApiProperty({
+    description: 'Center Latitude of the route coordinate',
+    example: 35.6895,
+  })
+  @Column('decimal', { precision: 8, scale: 6 })
+  center_latitude: number;
+
+  @ApiProperty({
+    description: 'Center Longitude of the route coordinate',
+    example: 139.6917,
+  })
+  @Column('decimal', { precision: 9, scale: 6 })
+  center_longitude: number;
 }

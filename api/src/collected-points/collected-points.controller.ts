@@ -6,7 +6,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { CollectedPointResponse, CollectedPointListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Collected Points')
-@Controller('mobile.collected-points')
+@Controller('collected-points')
 export class CollectedPointsController {
   constructor(private readonly collectedPointsService: CollectedPointsService) {}
 

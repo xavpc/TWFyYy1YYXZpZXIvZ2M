@@ -15,6 +15,8 @@ export class RouteCoordinates {
   @JoinColumn({ name: 'route_id' })
   route: Route;
 
+
+
   @ApiProperty({
     description: 'Latitude of the route coordinate',
     example: 35.6895,

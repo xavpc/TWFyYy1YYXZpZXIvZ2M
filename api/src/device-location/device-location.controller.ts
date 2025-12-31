@@ -6,7 +6,7 @@ import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
 import { DeviceLocationResponse, DeviceLocationListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Device Locations')
-@Controller('mobile.device-locations')
+@Controller('device-locations')
 export class DeviceLocationController {
   constructor(private readonly deviceLocationService: DeviceLocationService) {}
 

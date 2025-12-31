@@ -6,7 +6,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { DeviceRouteResponse, DeviceRouteListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Device Routes')
-@Controller('mobile.device-routes')
+@Controller('device-routes')
 export class DeviceRouteController {
   constructor(private readonly deviceRouteService: DeviceRouteService) {}
 
