@@ -31,6 +31,7 @@ export class ResetMigrations1742444618751 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE \`device_location\` ADD CONSTRAINT \`FK_c822d6948bcf70a95527e46a96f\` FOREIGN KEY (\`device_id\`) REFERENCES \`device\`(\`device_id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`device_location\` ADD CONSTRAINT \`FK_4a7339bb286ec828b950bfa89cc\` FOREIGN KEY (\`session_id\`) REFERENCES \`device_session\`(\`session_id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`device\` ADD CONSTRAINT \`FK_b2ef775a0a71c156fcb7e8cc000\` FOREIGN KEY (\`employee_id\`) REFERENCES \`employee\`(\`employee_id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`device\` ADD CONSTRAINT \`chk_device_id_nonempty\` CHECK (\`device_id\` <> '');`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
