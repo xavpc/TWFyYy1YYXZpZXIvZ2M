@@ -43,6 +43,7 @@ async function bootstrap() {
       'https://gcweb-psi.vercel.app',
       'https://gc-web-one.vercel.app',
       'https://gcweb-six.vercel.app',
+      'https://gcweb-ten.vercel.app',
       'https://gcweb-fake.vercel.app',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
