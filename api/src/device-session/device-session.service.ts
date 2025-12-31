@@ -54,11 +54,8 @@ export class DeviceSessionService {
     return session;
   }
 
-  async findByDeviceId(
-    device_id: string,
-    getActive: boolean = false
-  ): Promise<DeviceSession[]> {
-    const query = this.deviceSessionRepository
+  async findByDeviceId(device_id: string): Promise<DeviceSession[]> {
+    return await this.deviceSessionRepository
       .createQueryBuilder('session')
       .innerJoinAndSelect('session.device_route', 'device_route')
       .leftJoinAndSelect('device_route.device', 'device_route_device')
@@ -72,27 +69,16 @@ export class DeviceSessionService {
         'device',
         'device.device_id = :device_id',
         { device_id }
-      );
-    
-
-    if (getActive) {
-      query.andWhere('session.end IS NULL');
-    } else {
-      query.andWhere('session.end IS NOT NULL');
-    }
-    
-    query.distinct(true);
-    
-    return await query.getMany();
+      )
+      .distinct(true)
+      .getMany();
   }
 
   async findActiveSessionByDeviceId(device_id: string): Promise<DeviceSession | null> {
     const session = await this.deviceSessionRepository
       .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device_route_device')
-      .leftJoinAndSelect('device_route.route', 'device_route_route')
-      .where('device_route.device_id = :device_id', { device_id })
+      .leftJoinAndSelect('session.device_locations', 'device_locations')
+      .where('device_locations.device_id = :device_id', { device_id })
       .andWhere('session.end IS NULL')
       .getOne();
     
@@ -143,14 +129,12 @@ export class DeviceSessionService {
   async findActiveSessions(): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository.find({
       where: { end: IsNull() },
-      relations: ['device_route', 'device_route.device', 'device_route.route']
     });
   }
 
   async findSessionsByDate(
     date: Date,
-    deviceId?: string,
-    getActive: boolean = false
+    deviceId?: string
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -165,13 +149,6 @@ export class DeviceSessionService {
       .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
-
-    if (getActive) {
-      query.andWhere('session.end IS NULL');
-    } else {
-      query.andWhere('session.end IS NOT NULL');
-    }
-    
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
            .andWhere('device_locations.device_id = :deviceId', { deviceId });
@@ -179,24 +156,13 @@ export class DeviceSessionService {
     
     return await query.getMany();
   }
-  
 
-  findByDeviceRoute(
-    deviceRouteId: string, 
-    deviceId?: string, 
-    getActive: boolean = false
-  ): Promise<DeviceSession[]> {
+  findByDeviceRoute(deviceRouteId: string, deviceId?: string): Promise<DeviceSession[]> {
     const query = this.deviceSessionRepository.createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
       .leftJoinAndSelect('device_route.device', 'device_route_device')
       .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId });
-    
-    if (getActive) {
-      query.andWhere('session.end IS NULL');
-    } else {
-      query.andWhere('session.end IS NOT NULL');
-    }
     
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
@@ -206,13 +172,11 @@ export class DeviceSessionService {
     return query.getMany();
   }
   
-  
 
   async findSessionsByRouteAndDate(
     deviceRouteId: string,
     date: Date,
-    deviceId?: string,
-    getActive: boolean = false
+    deviceId?: string
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -227,12 +191,6 @@ export class DeviceSessionService {
       .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId })
       .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
-    
-    if (getActive) {
-      query.andWhere('session.end IS NULL');
-    } else {
-      query.andWhere('session.end IS NOT NULL');
-    }
     
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
