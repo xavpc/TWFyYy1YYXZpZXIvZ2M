@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from 
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { EmployeeResponse, EmployeeListResponse, ErrorResponse } from './dto/response.dto';
+import { EmployeeResponse, EmployeeListResponse, EmployeeErrorResponse } from './dto/response.dto';
 import { Employee } from './employee.entity';
 
 @ApiTags('Employees')
@@ -22,7 +22,7 @@ export class EmployeeController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: EmployeeErrorResponse,
   })
   async create(@Body() createEmployeeDto: CreateEmployeeDto) {
     const newEmployee = await this.employeeService.create(createEmployeeDto);
@@ -155,12 +155,12 @@ export class EmployeeController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: ErrorResponse,
+    type: EmployeeErrorResponse,
   })
   @ApiResponse({
     status: 404,
     description: 'Employee not found',
-    type: ErrorResponse,
+    type: EmployeeErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
     const updatedEmployee = await this.employeeService.update(id, updateEmployeeDto);
@@ -187,7 +187,7 @@ export class EmployeeController {
   @ApiResponse({
     status: 404,
     description: 'Employee not found',
-    type: ErrorResponse,
+    type: EmployeeErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.employeeService.remove(id);

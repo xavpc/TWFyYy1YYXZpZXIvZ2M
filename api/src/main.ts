@@ -3,8 +3,22 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
-
+import { createDatabaseIfNeeded } from './create-db'; 
 async function bootstrap() {
+
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      await createDatabaseIfNeeded();
+      console.log('Production environment: Database check completed. Starting the application...');
+    } catch (error) {
+      console.error('Failed to create database:', error);
+      process.exit(1);
+    }
+  } else {
+    console.log('Development environment: Skipping database creation check.');
+  }
+
+
     const app = await NestFactory.create(AppModule
       , {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],

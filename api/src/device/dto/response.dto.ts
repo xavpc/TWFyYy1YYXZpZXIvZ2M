@@ -27,7 +27,7 @@ export class DeviceListResponse {
     total: number;
   }
 
-  export class ErrorResponse {
+  export class DeviceErrorResponse {
     @ApiProperty({ example: false })
     success: boolean;
   

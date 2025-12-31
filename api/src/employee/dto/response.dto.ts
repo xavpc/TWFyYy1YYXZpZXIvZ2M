@@ -26,7 +26,7 @@ export class EmployeeListResponse {
   total: number;
 }
 
-export class ErrorResponse {
+export class EmployeeErrorResponse {
   @ApiProperty({ example: false })
   success: boolean;
 
