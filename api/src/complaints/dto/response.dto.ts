@@ -1,71 +1,133 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Complaints } from '../complaints.entity';
 
-export class ComplaintResponse {
+class ImageResponse {
   @ApiProperty({
-    description: 'Unique complaint ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
-  complaint_id: string;
-
-  @ApiProperty({
-    description: 'Associated image ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    description: 'Unique identifier of the image',
+    example: '76ef3dc7-becf-4b40-b9e7-fdd2b7cf66b6'
   })
   image_id: string;
 
   @ApiProperty({
-    description: 'Associated device ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    description: 'URL of the image',
+    example: 'https://res.cloudinary.com/dzlzm64uw/image/upload/v1739186762/route-images/awgzvos6lckphidvmw3k.jpg'
+  })
+  image_url: string;
+
+  @ApiProperty({
+    description: 'Filename of the image',
+    example: 'Garbagehope-637x417.jpg'
+  })
+  file_name: string;
+
+  @ApiProperty({
+    description: 'Status of the image',
+    example: 'active'
+  })
+  status: string;
+}
+
+class DeviceResponse {
+  @ApiProperty({
+    description: 'Unique identifier of the device',
+    example: '80dd42a9-e1e1-11ef-9da2-54ee75718d0f'
   })
   device_id: string;
 
   @ApiProperty({
-    description: 'Complaint title',
+    description: 'Name of the device',
+    example: 'デバイス・サクラ (Device Sakura)'
+  })
+  device_name: string;
+
+  @ApiProperty({
+    description: 'Vehicle plate number',
+    example: '桜-321'
+  })
+  vehicle_plate_num: string;
+
+  @ApiProperty({
+    description: 'Status of the device',
+    example: 'active'
+  })
+  status: string;
+}
+
+export class ComplaintResponse {
+  @ApiProperty({
+    description: 'Unique identifier of the complaint',
+    example: 'f741a36d-e59d-4de2-ac89-26cb4a277b0c'
+  })
+  complaint_id: string;
+
+  @ApiProperty({
+    description: 'Title of the complaint',
     example: 'Trash not thrown correctly'
   })
   title: string;
 
   @ApiProperty({
-    description: 'Detailed complaint description',
+    description: 'Detailed description of the complaint',
     example: 'Trash not thrown on their respective collection point'
   })
   description: string;
 
   @ApiProperty({
-    description: 'Latitude coordinate',
-    example: 40.712776
+    description: 'Latitude coordinate of complaint location',
+    example: '40.712776'
   })
-  latitude: number;
+  latitude: string;
 
   @ApiProperty({
-    description: 'Longitude coordinate',
-    example: -74.005974
+    description: 'Longitude coordinate of complaint location',
+    example: '-74.005974'
   })
-  longitude: number;
+  longitude: string;
 
   @ApiProperty({
-    description: 'Timestamp when complaint was pushed to system',
-    example: '2023-06-15T10:30:00Z'
+    description: 'Timestamp when the complaint was pushed',
+    example: '2025-02-10T13:24:00.933Z'
   })
-  push_timestamp: Date;
+  push_timestamp: string;
 
   @ApiProperty({
-    description: 'Timestamp when complaint actually occurred',
-    example: '2023-06-15T10:30:00Z'
+    description: 'Timestamp of when the complaint occurred',
+    example: '2023-06-15T10:30:00.000Z'
   })
-  complaint_timestamp: Date;
+  complaint_timestamp: string;
+
+  @ApiProperty({
+    description: 'Image associated with the complaint',
+    type: ImageResponse
+  })
+  image: ImageResponse;
+
+  @ApiProperty({
+    description: 'Device associated with the complaint',
+    type: DeviceResponse
+  })
+  device: DeviceResponse;
 
   constructor(complaint: Complaints) {
     this.complaint_id = complaint.complaint_id;
-    this.image_id = complaint.image?.image_id;
-    this.device_id = complaint.device?.device_id;
     this.title = complaint.title;
     this.description = complaint.description;
-    this.latitude = complaint.latitude;
-    this.longitude = complaint.longitude;
-    this.push_timestamp = complaint.push_timestamp;
-    this.complaint_timestamp = complaint.complaint_timestamp;
+    this.latitude = complaint.latitude.toString();
+    this.longitude = complaint.longitude.toString();
+    this.push_timestamp = complaint.push_timestamp.toISOString();
+    this.complaint_timestamp = complaint.complaint_timestamp.toISOString();
+    this.image = {
+      image_id: complaint.image.image_id,
+      image_url: complaint.image.image_url,
+      file_name: complaint.image.file_name,
+      status: complaint.image.status
+    };
+    this.device = {
+      device_id: complaint.device.device_id,
+      device_name: complaint.device.device_name,
+      vehicle_plate_num: complaint.device.vehicle_plate_num,
+      status: complaint.device.status
+    };
   }
 }
 

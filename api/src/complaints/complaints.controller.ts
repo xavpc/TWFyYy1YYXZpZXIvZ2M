@@ -48,7 +48,7 @@ export class ComplaintsController {
     return {
       success: true,
       message: 'Complaints retrieved successfully',
-      data: complaints.map(c => new ComplaintResponse(c)),
+      data: complaints,
       total: complaints.length
     };
   }
@@ -75,7 +75,7 @@ export class ComplaintsController {
     return {
       success: true,
       message: 'Complaint retrieved successfully',
-      data: new ComplaintResponse(complaint)
+      data: complaint
     };
   }
 
@@ -105,7 +105,7 @@ export class ComplaintsController {
     return {
       success: true,
       message: 'Complaint updated successfully',
-      data: new ComplaintResponse(updatedComplaint)
+      data: updatedComplaint
     };
   }
 
