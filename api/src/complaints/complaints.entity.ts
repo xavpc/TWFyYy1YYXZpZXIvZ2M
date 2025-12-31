@@ -22,7 +22,7 @@ export class Complaints {
 
   @Column({ nullable: false, unique: true })
   title: string;
-  
+
   @Column({ nullable: false, unique: true })
   description: string;
 
@@ -32,8 +32,11 @@ export class Complaints {
   @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
 
-  @CreateDateColumn()
-  timestamp: Date;
-  
 
+  @CreateDateColumn()
+  push_timestamp: Date;
+
+
+  @Column('timestamp')
+  complaint_timestamp: Date;
 }
