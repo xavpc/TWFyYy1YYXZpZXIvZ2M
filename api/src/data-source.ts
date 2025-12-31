@@ -1,4 +1,3 @@
-// 3. src/data-source.ts
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
@@ -14,6 +13,7 @@ import { join } from 'path';
 import { CollectedPoints } from './collected-points/collected-points.entity';
 import { Image } from './image/image.entity';
 import { Complaints } from './complaints/complaints.entity';
+import { User } from './auth/user/user.entity';
 
 // Load the appropriate .env file based on NODE_ENV
 config({
@@ -35,6 +35,7 @@ export default new DataSource({
     CollectedPoints,
     Image,
     Complaints,
+    User
   
   ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
