@@ -90,7 +90,7 @@ COORDINATES_DATA: List[Tuple[str, float, float]] = [
 ]
 
 def post_coordinates():
-    url = "http://localhost:3000/"  # Base URL
+    url = "http://localhost:3000/mobile.route-coordinates/"  # Base URL
     headers = {
         "Content-Type": "application/json"
     }
