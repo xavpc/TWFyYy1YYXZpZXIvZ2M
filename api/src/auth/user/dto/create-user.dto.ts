@@ -9,10 +9,10 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
-  // @MinLength(8)
-  // @Matches(STRONG_PASSWORD, {
-  //   message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character',
-  // })
+  @MinLength(8)
+  @Matches(STRONG_PASSWORD, {
+    message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character',
+  })
   password: string;
 
   @IsNotEmpty()

@@ -4,21 +4,24 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
 import { createDatabaseIfNeeded } from './create-db'; 
+
+
 async function bootstrap() {
 
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      await createDatabaseIfNeeded();
-      console.log('Production environment: Database check completed. Starting the application...');
-    } catch (error) {
-      console.error('Failed to create database:', error);
-      process.exit(1);
+
+    // Run the database auto-creation logic if databse not exist for testing app locally before starting NestJS.
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        // This will ensure the target database exists before starting the application.
+        await createDatabaseIfNeeded();
+        console.log('Database check completed. Starting the application...');
+      } catch (error) {
+        console.error('Failed to create database:', error);
+        process.exit(1);
+      }
+    } else {
+      console.log('Production environment detected, skipping database auto-creation.');
     }
-  } else {
-    console.log('Development environment: Skipping database creation check.');
-  }
-
-
     const app = await NestFactory.create(AppModule
       , {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -30,7 +33,7 @@ async function bootstrap() {
       'http://localhost:3001',
       'http://localhost:5173',
       'https://gcweb-psi.vercel.app',
-      'https://gc-webb.netlify.app'
+      'https://gc-web-one.vercel.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

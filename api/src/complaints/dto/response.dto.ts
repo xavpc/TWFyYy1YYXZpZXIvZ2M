@@ -150,7 +150,7 @@ export class ComplaintListResponse {
   }
 }
 
-export class ComplaintsErrorResponse {
+export class ErrorResponse {
   @ApiProperty({
     description: 'Error code',
     example: 'NOT_FOUND'
