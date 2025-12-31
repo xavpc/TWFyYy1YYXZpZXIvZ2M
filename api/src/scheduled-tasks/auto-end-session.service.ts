@@ -23,6 +23,7 @@ export class AutoSessionEndService {
       
       if (activeSessions.length === 0) {
         this.logger.debug('No active sessions found to end');
+        await this.runReportGenerationWithRetries();
         return;
       }
       
@@ -41,7 +42,7 @@ export class AutoSessionEndService {
     }
   }
   
-  private async runReportGenerationWithRetries(maxRetries = 3) {
+  public async runReportGenerationWithRetries(maxRetries = 3) {
     this.logger.debug(`Starting report generation with ${maxRetries} max retries`);
     
     let retryCount = 0;
@@ -52,7 +53,7 @@ export class AutoSessionEndService {
         retryCount++;
         this.logger.debug(`Report generation attempt ${retryCount}/${maxRetries}`);
         
-        await this.autoReportGenerationService.handleAutoReportGeneration();
+        await this.autoReportGenerationService.manuallyGenerateReports();
         success = true;
         this.logger.debug('Report generation completed successfully');
         

@@ -5,6 +5,7 @@ import { Reports } from './reports.entity';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { FilterReportDto } from './dto/filter-report.dto';
+import { AutoSessionEndService } from 'src/scheduled-tasks/auto-end-session.service';
 
 
 @ApiTags('reports')
@@ -12,7 +13,10 @@ import { FilterReportDto } from './dto/filter-report.dto';
 @ApiBearerAuth()
 // @UseGuards(JwtAuthGuard)
 export class ReportsController {
-  constructor(private readonly reportService: ReportsService) {}
+  constructor(
+    private readonly reportService: ReportsService,
+    private readonly autoSessionEndService: AutoSessionEndService
+  ) {}
 
 
 
@@ -21,6 +25,24 @@ export class ReportsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Returns all reports that match the filters' })
   findAll(@Query() filterDto: FilterReportDto): Promise<{ data: Reports[], total: number }> {
     return this.reportService.findAll(filterDto);
+  }
+
+  @Post('generate')
+  @ApiOperation({ summary: 'Manually trigger auto report generation with retries' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Report generation process started successfully' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.INTERNAL_SERVER_ERROR, 
+    description: 'Failed to start report generation process' 
+  })
+  async triggerReportGeneration() {
+    await this.autoSessionEndService.runReportGenerationWithRetries();
+    return { 
+      status: HttpStatus.OK,
+      message: 'Report generation process started successfully'
+    };
   }
 
   @Get(':id')
@@ -40,6 +62,8 @@ export class ReportsController {
   update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto): Promise<Reports> {
     return this.reportService.update(id, updateReportDto);
   }
+
+
 
 //   @Delete(':id')
 //   @ApiOperation({ summary: 'Delete a report' })
