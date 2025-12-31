@@ -94,11 +94,39 @@ export class DeviceRouteService {
       relations: ['device', 'route']
     });
   }
-  findByRoute(routeId: string): Promise<DeviceRoute[]> {
-    return this.deviceRouteRepository.find({
+
+
+  async findByRoute(routeId: string, groupByDevice: boolean = false): Promise<DeviceRoute[] | any[]> {
+    const deviceRoutes = await this.deviceRouteRepository.find({
       where: { route: { route_id: routeId } },
-      relations: ['route','device']
+      relations: ['route', 'device'],
+      order: {
+        day_assigned: 'ASC' 
+      }
     });
+    if (!groupByDevice) {
+      return deviceRoutes;
+    }
+    const deviceMap = new Map();
+    
+    deviceRoutes.forEach(deviceRoute => {
+      const deviceId = deviceRoute.device.device_id;
+      
+      if (!deviceMap.has(deviceId)) {
+        deviceMap.set(deviceId, {
+          ...deviceRoute,
+          day_assigned: [deviceRoute.day_assigned]
+        });
+      } else {
+        const existing = deviceMap.get(deviceId);
+        existing.day_assigned.push(deviceRoute.day_assigned);
+      }
+    });
+        
+    return Array.from(deviceMap.values()).map(item => ({
+      ...item,
+      day_assigned: item.day_assigned.join(', ')
+    }));
   }
 
     async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
