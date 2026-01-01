@@ -5,6 +5,24 @@ import { GmapsService } from './gmaps.service';
 export class GmapsController {
   constructor(private readonly gmapsService: GmapsService) {}
 
+  @Get('snap-path')
+  async getSnappedPath(@Query('coordinates') coordinates: string) {
+    try {
+      const coordPairs = coordinates.split('|').map(pair => {
+        const coords = pair.split(',').map(Number);
+        if (coords.length !== 2 || coords.some(isNaN)) {
+          throw new Error('Invalid coordinate format');
+        }
+        return [coords[0], coords[1]] as [number, number];
+      });
+      
+      return await this.gmapsService.getSnappedPath(coordPairs);
+    } catch (error) {
+      console.error('Snap path error:', error);
+      throw error;
+    }
+  }
+  
   @Get('route')
   async getRoute(
     @Query('start') start: string,
