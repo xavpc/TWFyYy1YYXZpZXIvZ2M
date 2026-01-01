@@ -42,7 +42,7 @@ export class CollectionPoints {
     description: 'Name of the collection point',
     example: 'Downtown Collection Point'
   })
-  @Column({ nullable: false, unique: true })
+  @Column({ nullable: false, unique: false })
   collection_point_name: string;
 
   @ApiProperty({

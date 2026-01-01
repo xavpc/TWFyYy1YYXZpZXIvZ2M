@@ -32,38 +32,55 @@ export class CollectionPointsController {
     };
   }
 
-  @Post('batch')
-  @ApiOperation({ summary: 'Create multiple collection points in batch' })
-  @ApiBody({ 
-    type: [CreateCollectionPointsDto], 
-    description: 'Array of collection points data to create' 
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Collection points created successfully',
-    schema: {
-      example: {
-        success: true,
-        message: 'Collection points batch created successfully',
-        data: [], 
-        total: 0  
-      }
-    }
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid input data',
-    type: CollectionPointsErrorResponse,
-  })
-  async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]) {
-    const newCollectionPoints = await this.collectionPointsService.createBatch(createCollectionPointsDto);
-    return {
+@Post('batch')
+@ApiOperation({ summary: 'Create multiple collection points in batch' })
+@ApiBody({ 
+  type: [CreateCollectionPointsDto], 
+  description: 'Array of collection points data to create' 
+})
+@ApiResponse({
+  status: 201,
+  description: 'Collection points created successfully',
+  schema: {
+    example: {
       success: true,
       message: 'Collection points batch created successfully',
-      data: newCollectionPoints.map(col => new CollectionPointResponse(col)),
-      total: newCollectionPoints.length
-    };
+      data: [
+        {
+          collection_point_id: "123e4567-e89b-12d3-a456-426614174000",
+          collection_point_name: "Downtown Collection Point",
+          latitude: 40.712776,
+          longitude: -74.005974,
+          sequence: 1,
+          route: {
+            route_id: "456e7890-e89b-12d3-a456-426614174000",
+            route_name: "Route A"
+          }
+        }
+      ],
+      total: 1
+    }
   }
+})
+@ApiResponse({
+  status: 400,
+  description: 'Bad Request - Invalid input data',
+  type: CollectionPointsErrorResponse,
+})
+@ApiResponse({
+  status: 409,
+  description: 'Conflict - Duplicate collection point names',
+  type: CollectionPointsErrorResponse,
+})
+async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]) {
+  const newCollectionPoints = await this.collectionPointsService.createBatch(createCollectionPointsDto);
+  return {
+    success: true,
+    message: 'Collection points batch created successfully',
+    data: newCollectionPoints,
+    total: newCollectionPoints.length
+  };
+}
 
 
   @Get()
