@@ -173,10 +173,32 @@ async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.collectionPointsRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Collection Point with ID ${id} not found`);
-    }
+    await this.collectionPointsRepository.manager.transaction(async manager => {
+      const collectionPointToDelete = await manager.findOne(CollectionPoints, {
+        where: { collection_point_id: id },
+        relations: ['route']
+      });
+
+      if (!collectionPointToDelete) {
+        throw new NotFoundException(`Collection Point with ID ${id} not found`);
+      }
+
+      const routeId = collectionPointToDelete.route.route_id;
+      const deletedSequence = collectionPointToDelete.sequence;
+
+      await manager.delete(CollectionPoints, id);
+
+
+      await manager
+        .createQueryBuilder()
+        .update(CollectionPoints)
+        .set({ 
+          sequence: () => 'sequence - 1' 
+        })
+        .where('route.route_id = :routeId', { routeId })
+        .andWhere('sequence > :deletedSequence', { deletedSequence })
+        .execute();
+    });
   }
 
   async removeBySequence(route_id: string, sequence: number): Promise<void> {
