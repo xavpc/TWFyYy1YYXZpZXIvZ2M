@@ -72,7 +72,7 @@ export class RouteService {
       page = 1,
       limit = 10,
       sort_by = 'route_name',
-      sort_order = 'ASC',
+      sort_order = 'updated_at',
     } = filterDto;
 
     const skip = (page - 1) * limit;

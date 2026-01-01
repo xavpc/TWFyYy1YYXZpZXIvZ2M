@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { RouteCoordinates } from '../route-coordinates/route-coordinates.entity';
 import { DeviceRoute } from '../device-route/device-route.entity';
@@ -68,4 +68,21 @@ export class Route {
     default: 138.2529
   })
   center_longitude: number;
+
+
+  @CreateDateColumn()
+  @ApiProperty({
+    description: 'Date and time when the employee was created',
+    example: '2024-01-15T10:30:00Z',
+  })
+  created_at: Date;
+
+  @UpdateDateColumn()
+  @ApiProperty({
+    description: 'Date and time when the employee was last updated',
+    example: '2024-01-20T14:45:00Z',
+  })
+  updated_at: Date;
+
+  
 }
