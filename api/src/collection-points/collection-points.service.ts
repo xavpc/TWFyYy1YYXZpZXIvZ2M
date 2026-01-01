@@ -258,4 +258,5 @@ async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]
       
       return { affected: result.affected ?? 0 };
     }
+    
 }
