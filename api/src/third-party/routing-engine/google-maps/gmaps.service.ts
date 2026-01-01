@@ -35,7 +35,10 @@ export class GmapsRoutingService {
         throw new Error(`Google Maps API error: ${response.data.status}`);
       }
       
-      return response.data;
+      return {
+        polyline: response.data.routes?.[0]?.overview_polyline?.points,
+        waypoint_order: response.data.routes?.[0]?.waypoint_order ?? [],
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Google Maps API Error:', {
