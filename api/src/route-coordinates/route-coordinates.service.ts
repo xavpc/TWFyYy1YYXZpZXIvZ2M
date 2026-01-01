@@ -192,4 +192,83 @@ export class RouteCoordinatesService {
     
     return { affected: result.affected ?? 0 };
   }
+
+  async removeUserPointWithGeneratedPoints(id: string): Promise<void> {
+    const userPoint = await this.findOne(id);
+    
+    if (!userPoint.is_user_point) {
+      throw new Error('This operation can only be performed on user points');
+    }
+
+    const routeId = userPoint.route.route_id;
+    const userPointSequence = userPoint.sequence;
+
+    const allCoordinates = await this.RouteCoordinatesRepository.find({
+      where: { route: { route_id: routeId } },
+      order: { sequence: 'ASC' }
+    });
+
+    // Find the previous and next user points
+    const previousUserPoint = allCoordinates
+      .filter(coord => coord.is_user_point && coord.sequence < userPointSequence)
+      .pop(); // Get the last one (closest to current)
+
+    const nextUserPoint = allCoordinates
+      .find(coord => coord.is_user_point && coord.sequence > userPointSequence);
+
+    // Determine the range of sequences to delete
+    let startSequence: number;
+    let endSequence: number;
+
+    if (!previousUserPoint && !nextUserPoint) {
+      // This is the only user point, delete everything
+      startSequence = 1;
+      endSequence = Math.max(...allCoordinates.map(c => c.sequence));
+    } else if (!previousUserPoint) {
+      // This is the first user point, delete from start to next user point (exclusive)
+      startSequence = 1;
+      endSequence = nextUserPoint!.sequence - 1; // We know nextUserPoint exists here
+    } else if (!nextUserPoint) {
+      // This is the last user point, delete from previous user point (exclusive) to end
+      startSequence = previousUserPoint.sequence + 1;
+      endSequence = Math.max(...allCoordinates.map(c => c.sequence));
+    } else {
+      // There are user points before and after, delete the segment between them
+      startSequence = previousUserPoint.sequence + 1;
+      endSequence = nextUserPoint.sequence - 1;
+    }
+
+    // Delete all coordinates in the determined range
+    await this.RouteCoordinatesRepository
+      .createQueryBuilder()
+      .delete()
+      .from(RouteCoordinates)
+      .where('route_id = :routeId AND sequence >= :startSequence AND sequence <= :endSequence', {
+        routeId,
+        startSequence,
+        endSequence
+      })
+      .execute();
+
+    await this.resequenceCoordinates(routeId);
+
+    await this.updateRouteCenterPoint(routeId);
+  }
+
+  private async resequenceCoordinates(routeId: string): Promise<void> {
+    const remainingCoordinates = await this.RouteCoordinatesRepository.find({
+      where: { route: { route_id: routeId } },
+      order: { sequence: 'ASC' }
+    });
+
+    for (let i = 0; i < remainingCoordinates.length; i++) {
+      await this.RouteCoordinatesRepository.update(
+        remainingCoordinates[i].route_coordinates_id,
+        { sequence: i + 1 }
+      );
+    }
+  }
+
+
+
 }
