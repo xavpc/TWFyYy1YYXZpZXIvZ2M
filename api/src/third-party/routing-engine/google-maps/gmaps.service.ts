@@ -25,7 +25,7 @@ export class GmapsRoutingService {
       const waypointsStr = waypoints
         .map(wp => `${wp[0]},${wp[1]}`)
         .join('|');
-      url += `&waypoints=${waypointsStr}`;
+      url += `&waypoints=optimize:true|${waypointsStr}`;
     }
 
     try {
