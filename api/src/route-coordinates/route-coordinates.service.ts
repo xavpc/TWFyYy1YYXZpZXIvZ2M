@@ -240,20 +240,20 @@ export class RouteCoordinatesService {
       endSequence = nextUserPoint.sequence - 1;
     }
 
-    // Delete the coordinates in the range
+    // Delete the coordinates in the range - Fixed the WHERE clause
     await this.RouteCoordinatesRepository
       .createQueryBuilder()
       .delete()
       .from(RouteCoordinates)
-      .where('route_id = :routeId AND sequence >= :startSequence AND sequence <= :endSequence', {
+      .where('route.route_id = :routeId AND sequence >= :startSequence AND sequence <= :endSequence', {
         routeId,
         startSequence,
         endSequence
       })
       .execute();
 
-    // Resequence the remaining coordinates
-    await this.resequenceCoordinates(routeId);
+    // Don't resequence here - do it only once at the end
+    // await this.resequenceCoordinates(routeId);
 
     // Regenerate routes between all consecutive user points
     await this.regenerateRoutes(routeId);
@@ -289,17 +289,15 @@ export class RouteCoordinatesService {
           [endPoint.latitude, endPoint.longitude]
         );
 
-        // Create coordinate entities for generated points
-        const generatedCoordinates: Partial<RouteCoordinates>[] = [];
+        // ✅ Fixed: Create coordinate objects with proper typing
+        const generatedCoordinates: Array<{ latitude: number; longitude: number }> = [];
         
         // Skip the first and last points as they should be the user points
         for (let j = 1; j < routeData.coordinates.length - 1; j++) {
           const coord = routeData.coordinates[j];
           generatedCoordinates.push({
-            latitude: coord.lat,
-            longitude: coord.lng,
-            is_user_point: false,
-            route: startPoint.route
+            latitude: coord.lat,  // ✅ Map from 'lat' to 'latitude'
+            longitude: coord.lng  // ✅ Map from 'lng' to 'longitude'
           });
         }
 
@@ -321,14 +319,14 @@ export class RouteCoordinatesService {
   private async insertGeneratedCoordinates(
     routeId: string, 
     afterSequence: number, 
-    coordinates: Partial<RouteCoordinates>[]
+    coordinates: Array<{ latitude: number; longitude: number }>
   ): Promise<void> {
-    // Shift existing coordinates to make space
+    // Shift existing coordinates to make space - Fixed WHERE clause
     await this.RouteCoordinatesRepository
       .createQueryBuilder()
       .update(RouteCoordinates)
       .set({ sequence: () => `sequence + ${coordinates.length}` })
-      .where('route_id = :routeId AND sequence > :afterSequence', {
+      .where('route.route_id = :routeId AND sequence > :afterSequence', {
         routeId,
         afterSequence
       })
@@ -343,16 +341,20 @@ export class RouteCoordinatesService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    // Insert the new coordinates
-    const entities = coordinates.map((coord, index) => {
-      const entity = this.RouteCoordinatesRepository.create();
-      entity.latitude = coord.latitude!;
-      entity.longitude = coord.longitude!;
-      entity.sequence = afterSequence + index + 1;
-      entity.is_user_point = false;
-      entity.route = route;
-      return entity;
-    });
+    // Create and save entities
+    const entities: RouteCoordinates[] = [];
+    
+    for (let i = 0; i < coordinates.length; i++) {
+      const coord = coordinates[i];
+      const entity = this.RouteCoordinatesRepository.create({
+        latitude: coord.latitude,
+        longitude: coord.longitude,
+        sequence: afterSequence + i + 1,
+        is_user_point: false,
+        route: route
+      });
+      entities.push(entity);
+    }
 
     await this.RouteCoordinatesRepository.save(entities);
   }

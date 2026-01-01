@@ -8,7 +8,7 @@ import { GmapsModule } from "../third-party/routing-engine/google-maps/gmaps.mod
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([RouteCoordinates, Route]), // Only entities here
+        TypeOrmModule.forFeature([RouteCoordinates, Route]), 
         GmapsModule 
     ],
     controllers: [RouteCoordinatesController],
