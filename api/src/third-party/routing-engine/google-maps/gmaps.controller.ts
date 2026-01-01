@@ -1,76 +1,43 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { GmapsService } from './gmaps.service';
+import { GmapsRoutingService } from './gmaps.service';
 
 @Controller('gmaps-routing')
-export class GmapsController {
-  constructor(private readonly gmapsService: GmapsService) {}
+export class CarRoutingController {
+  constructor(private readonly gmapsRoutingService: GmapsRoutingService) {}
 
-  @Get('snap-path')
-  async getSnappedPath(@Query('coordinates') coordinates: string) {
-    try {
-      const coordPairs = coordinates.split('|').map(pair => {
-        const coords = pair.split(',').map(Number);
-        if (coords.length !== 2 || coords.some(isNaN)) {
-          throw new Error('Invalid coordinate format');
-        }
-        return [coords[0], coords[1]] as [number, number];
-      });
-      
-      return await this.gmapsService.getSnappedPath(coordPairs);
-    } catch (error) {
-      console.error('Snap path error:', error);
-      throw error;
-    }
-  }
-  
-  @Get('route')
-  async getRoute(
-    @Query('start') start: string,
-    @Query('end') end: string
+  @Get()
+  async getCarRoute(
+    @Query('origin') origin: string,
+    @Query('destination') destination: string,
+    @Query('waypoints') waypoints?: string,
   ) {
     try {
-      const startCoords = start.split(',').map(Number);
-      const endCoords = end.split(',').map(Number);
+      const originCoords = origin.split(',').map(Number);
+      const destCoords = destination.split(',').map(Number);
 
-      if (startCoords.length !== 2 || endCoords.length !== 2 ||
-          startCoords.some(isNaN) || endCoords.some(isNaN)) {
+      if (originCoords.length !== 2 || destCoords.length !== 2 ||
+          originCoords.some(isNaN) || destCoords.some(isNaN)) {
         throw new Error('Invalid coordinates format');
       }
 
-      return await this.gmapsService.getRoute(
-        [startCoords[0], startCoords[1]],
-        [endCoords[0], endCoords[1]]
-      );
-    } catch (error) {
-      console.error('Route error:', error);
-      throw error;
-    }
-  }
-
-  @Get('nearest')
-  async getNearestRoad(
-    @Query('coordinate') coordinate: string,
-    @Query('number') number?: string
-  ) {
-    try {
-      const coords = coordinate.split(',').map(Number);
-      
-      if (coords.length !== 2 || coords.some(isNaN)) {
-        throw new Error('Invalid coordinate format');
-      }
-      
-      const numberOfResults = number ? parseInt(number, 10) : 1;
-      
-      if (isNaN(numberOfResults) || numberOfResults < 1) {
-        throw new Error('Number of results must be a positive integer');
+      let waypointCoords: [number, number][] = [];
+      if (waypoints) {
+        waypointCoords = waypoints.split('|').map(wp => {
+          const coords = wp.split(',').map(Number);
+          if (coords.length !== 2 || coords.some(isNaN)) {
+            throw new Error('Invalid waypoint format');
+          }
+          return [coords[0], coords[1]] as [number, number];
+        });
       }
 
-      return await this.gmapsService.getNearestRoad(
-        [coords[0], coords[1]],
-        numberOfResults
+      return await this.gmapsRoutingService.getRoute(
+        [originCoords[0], originCoords[1]],
+        [destCoords[0], destCoords[1]],
+        waypointCoords
       );
     } catch (error) {
-      console.error('Nearest road error:', error);
+      console.error('Car routing error:', error);
       throw error;
     }
   }
