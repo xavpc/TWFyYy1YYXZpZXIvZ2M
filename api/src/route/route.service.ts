@@ -71,8 +71,8 @@ export class RouteService {
       search,
       page = 1,
       limit = 10,
-      sort_by = 'route_name',
-      sort_order = 'updated_at',
+      sort_by = 'updated_at',
+      sort_order = 'DESC',
     } = filterDto;
 
     const skip = (page - 1) * limit;
