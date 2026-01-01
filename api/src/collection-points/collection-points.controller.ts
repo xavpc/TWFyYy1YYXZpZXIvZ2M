@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, Query } from '@nestjs/common';
 import { CollectionPointsService } from './collection-points.service';
 import { CreateCollectionPointsDto } from './dto/create-collection-points.dto';
 import { UpdateCollectionPointsDto } from './dto/update-collection-points.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { CollectionPointResponse, CollectionPointListResponse, CollectionPointsErrorResponse } from './dto/response.dto';
 
 @ApiTags('Collection Points')
@@ -186,10 +186,10 @@ async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]
     };
   }
 
-  @Delete('route/:routeId/sequence/:sequence')
+  @Delete('by-sequence')
   @ApiOperation({ summary: 'Delete a collection point by route ID and sequence' })
-  @ApiParam({ name: 'routeId', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
-  @ApiParam({ name: 'sequence', description: 'Collection point sequence number', example: '1' })
+  @ApiQuery({ name: 'route_id', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiQuery({ name: 'sequence', description: 'Sequence number', example: '1' })
   @ApiResponse({
     status: 200,
     description: 'Collection point deleted successfully',
@@ -206,8 +206,8 @@ async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]
     type: CollectionPointsErrorResponse,
   })
   async removeBySequence(
-    @Param('routeId') routeId: string, 
-    @Param('sequence') sequence: string
+    @Query('route_id') routeId: string,
+    @Query('sequence') sequence: string
   ) {
     await this.collectionPointsService.removeBySequence(routeId, parseInt(sequence, 10));
     return {
@@ -216,6 +216,7 @@ async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]
     };
   }
 
+  
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a collection point' })
   @ApiParam({ name: 'id', description: 'Collection point ID', example: '123e4567-e89b-12d3-a456-426614174000' })
