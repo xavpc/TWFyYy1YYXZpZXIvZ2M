@@ -22,6 +22,7 @@ import { DeviceSessionModule } from './device-session/device-session.module';
 import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReportsModule } from './reports/reports.module';
+import { GmapsModule } from './third-party/routing-engine/google-maps/gmaps.module';
 
 
 
@@ -52,6 +53,7 @@ import { ReportsModule } from './reports/reports.module';
     DeviceSessionModule,
     ScheduledTasksModule,
     ReportsModule,
+    GmapsModule,
     
   ],
   controllers: [AppController],
