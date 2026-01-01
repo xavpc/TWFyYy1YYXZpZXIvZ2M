@@ -1,5 +1,5 @@
 import { Employee } from '../employee/employee.entity';
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany, Check } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany, Check, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { DeviceStatus } from './enums/device-status.enum';
 import { DeviceLocation } from '../device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -30,7 +30,6 @@ export class Device {
     example: 'Tablet X12',
   })
   device_name: string;
-
 
 
   @OneToMany(() => DeviceRoute, deviceRoute => deviceRoute.device)
@@ -65,4 +64,19 @@ export class Device {
     example: DeviceStatus.ACTIVE,
   })
   status: DeviceStatus;
+
+
+  @CreateDateColumn()
+  @ApiProperty({
+    description: 'Date and time when the device was created',
+    example: '2024-01-15T10:30:00Z',
+  })
+  created_at: Date;
+  
+  @UpdateDateColumn()
+  @ApiProperty({
+    description: 'Date and time when the device was last updated',
+    example: '2024-01-20T14:45:00Z',
+  })
+  updated_at: Date;
 }
