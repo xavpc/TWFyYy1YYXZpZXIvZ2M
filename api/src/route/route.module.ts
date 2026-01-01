@@ -4,9 +4,10 @@ import { RouteController } from "./route.controller";
 import { RouteService } from "./route.service";
 import { Route } from "./route.entity";
 import { CollectionPoints } from "../collection-points/collection-points.entity";
+import { DeviceRoute } from "../device-route/device-route.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Route, CollectionPoints])],
+    imports: [TypeOrmModule.forFeature([Route, CollectionPoints, DeviceRoute])],
     controllers: [RouteController],
     providers: [RouteService]
 })

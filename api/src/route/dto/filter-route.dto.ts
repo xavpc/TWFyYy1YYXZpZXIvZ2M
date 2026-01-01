@@ -63,18 +63,5 @@ export class FilterRouteDto {
   @IsIn(['ASC', 'DESC'])
   sort_order?: 'ASC' | 'DESC' = 'ASC';
 
-  @ApiPropertyOptional({
-    description: 'Include related entities (images, device routes) in response',
-    example: true,
-    default: true
-  })
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return Boolean(value);
-  })
-  @IsBoolean()
-  include_relations?: boolean = true;
+
 }

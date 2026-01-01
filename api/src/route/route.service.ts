@@ -7,6 +7,7 @@ import { UpdateRouteDto } from './dto/update-route.dto';
 import { FilterRouteDto } from './dto/filter-route.dto';
 import { Logger } from '@nestjs/common';
 import { CollectionPoints } from '../collection-points/collection-points.entity';
+import { DeviceRoute } from '../device-route/device-route.entity';
 
 @Injectable()
 export class RouteService {
@@ -17,6 +18,8 @@ export class RouteService {
     private routeRepository: Repository<Route>,
     @InjectRepository(CollectionPoints)
     private collectionPointsRepository: Repository<CollectionPoints>,
+    @InjectRepository(DeviceRoute)
+    private deviceRoutesRepository: Repository<DeviceRoute>,
   ) {}
 
   async create(createRouteDto: CreateRouteDto): Promise<Route> {
@@ -46,10 +49,16 @@ export class RouteService {
           const collectionPointsCount = await this.collectionPointsRepository.count({
             where: { route: { route_id: route.route_id } }
           });
+
+          const devicesCount = await this.deviceRoutesRepository.count({
+            where: { route: { route_id: route.route_id } }
+          });
           
           return {
             ...route,
-            collection_points_count: collectionPointsCount
+            collection_points_count: collectionPointsCount,
+            devices_count: devicesCount
+
           };
         })
       );
@@ -64,13 +73,11 @@ export class RouteService {
       limit = 10,
       sort_by = 'route_name',
       sort_order = 'ASC',
-      include_relations = true
     } = filterDto;
 
     const skip = (page - 1) * limit;
     let where: FindOptionsWhere<Route> | FindOptionsWhere<Route>[] = {};
     
-    const relations = include_relations ? ['images', 'deviceRoutes', 'deviceRoutes.device'] : [];
 
     // Handle global search
     if (search) {
@@ -109,13 +116,11 @@ export class RouteService {
     // Get total count
     const total = await this.routeRepository.count({ 
       where,
-      relations: include_relations ? ['deviceRoutes', 'deviceRoutes.device', 'deviceRoutes.device.employee'] : []
     });
 
     // Get paginated data with sorting
     const data = await this.routeRepository.find({
       where,
-      relations,
       skip,
       take: limit,
       order: {
@@ -129,10 +134,16 @@ export class RouteService {
         const collectionPointsCount = await this.collectionPointsRepository.count({
           where: { route: { route_id: route.route_id } }
         });
+
+        const devicesCount = await this.deviceRoutesRepository.count({
+          where: { route: { route_id: route.route_id } }
+        });
         
         return {
           ...route,
-          collection_points_count: collectionPointsCount
+          collection_points_count: collectionPointsCount,
+          devices_count: devicesCount
+
         };
       })
     );
