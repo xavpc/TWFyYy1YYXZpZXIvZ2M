@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { GmapsService } from './gmaps.service';
-import { GmapsController } from './gmaps.controller';
+import { GmapsRoutingService } from './gmaps.service';
+import { GmapsRoutingController } from './gmaps.controller';
 
 @Module({
-  controllers: [GmapsController],
-  providers: [GmapsService],
+  controllers: [GmapsRoutingController],
+  providers: [GmapsRoutingService],
 })
 export class GmapsModule {}
