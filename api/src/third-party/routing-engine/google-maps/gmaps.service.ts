@@ -56,27 +56,32 @@ export class GmapsRoutingService {
 
     try {
       const response = await axios.get(url);
-
       if (response.data.status !== 'OK') {
         throw new Error(`Google Maps API error: ${response.data.status}`);
       }
 
-      const steps = response.data.routes[0].legs[0].steps;
+      const overview = response.data.routes[0].overview_polyline.points;
+      const decodedPoints = decodePolyline(overview);
 
-      const allPoints = steps.flatMap((step: any) =>
-        decodePolyline(step.polyline.points)
-      );
+      const path = decodedPoints.map(p => `${p[0]},${p[1]}`).join('|');
 
-      return { coordinates: allPoints };
+      const snapUrl = `https://roads.googleapis.com/v1/snapToRoads?path=${path}&interpolate=true&key=${this.GOOGLE_MAPS_API_KEY}`;
+      const snapResponse = await axios.get(snapUrl);
+
+      const snappedPoints = snapResponse.data.snappedPoints.map((point: any) => ({
+        lat: point.location.latitude,
+        lng: point.location.longitude
+      }));
+
+      return { coordinates: snappedPoints };
 
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error('Google Maps API Error:', {
+        console.error('API Error:', {
           message: error.message,
           response: error.response?.data,
-          url,
         });
-        throw new Error(`Google Maps request failed: ${error.message}`);
+        throw new Error(`API request failed: ${error.message}`);
       }
       throw error;
     }
