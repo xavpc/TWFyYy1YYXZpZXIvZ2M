@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { RouteCoordinates } from './route-coordinates.entity';
 import { CreateRouteCoordinatesDto } from './dto/create-routeCoordinates.dto';
 import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
@@ -195,183 +195,107 @@ export class RouteCoordinatesService {
     return { affected: result.affected ?? 0 };
   }
 
-  async removeUserPointWithGeneratedPoints(id: string): Promise<void> {
-    const userPoint = await this.findOne(id);
-    
-    if (!userPoint.is_user_point) {
-      throw new Error('This operation can only be performed on user points');
-    }
-
-    const routeId = userPoint.route.route_id;
-    const userPointSequence = userPoint.sequence;
-
-    const allCoordinates = await this.RouteCoordinatesRepository.find({
-      where: { route: { route_id: routeId } },
-      order: { sequence: 'ASC' }
-    });
-
-    // Find the previous and next user points
-    const previousUserPoint = allCoordinates
-      .filter(coord => coord.is_user_point && coord.sequence < userPointSequence)
-      .pop();
-
-    const nextUserPoint = allCoordinates
-      .find(coord => coord.is_user_point && coord.sequence > userPointSequence);
-
-    // Determine the range of sequences to delete
-    let startSequence: number;
-    let endSequence: number;
-
-    if (!previousUserPoint && !nextUserPoint) {
-      // This is the only user point, delete everything
-      startSequence = 1;
-      endSequence = Math.max(...allCoordinates.map(c => c.sequence));
-    } else if (!previousUserPoint) {
-      // This is the first user point, delete from start to next user point (exclusive)
-      startSequence = 1;
-      endSequence = nextUserPoint!.sequence - 1;
-    } else if (!nextUserPoint) {
-      // This is the last user point, delete from previous user point (exclusive) to end
-      startSequence = previousUserPoint.sequence + 1;
-      endSequence = Math.max(...allCoordinates.map(c => c.sequence));
-    } else {
-      // There are user points before and after, delete the segment between them
-      startSequence = previousUserPoint.sequence + 1;
-      endSequence = nextUserPoint.sequence - 1;
-    }
-
-    // Delete the coordinates in the range - Fixed the WHERE clause
-    await this.RouteCoordinatesRepository
-      .createQueryBuilder()
-      .delete()
-      .from(RouteCoordinates)
-      .where('route.route_id = :routeId AND sequence >= :startSequence AND sequence <= :endSequence', {
-        routeId,
-        startSequence,
-        endSequence
-      })
-      .execute();
-
-    // Don't resequence here - do it only once at the end
-    // await this.resequenceCoordinates(routeId);
-
-    // Regenerate routes between all consecutive user points
-    await this.regenerateRoutes(routeId);
-
-    // Update the route center point
-    await this.updateRouteCenterPoint(routeId);
+async removeUserPointWithGeneratedPoints(id: string): Promise<void> {
+  const userPoint = await this.findOne(id);
+  
+  if (!userPoint.is_user_point) {
+    throw new Error('This operation can only be performed on user points');
   }
 
-  private async regenerateRoutes(routeId: string): Promise<void> {
-    // Get all remaining user points after deletion and resequencing
-    const userPoints = await this.RouteCoordinatesRepository.find({
-      where: { 
-        route: { route_id: routeId },
-        is_user_point: true 
-      },
-      order: { sequence: 'ASC' }
+  const routeId = userPoint.route.route_id;
+
+  // 1. Get all user points EXCEPT the one being deleted
+  const remainingUserPoints = await this.RouteCoordinatesRepository.find({
+    where: { 
+      route: { route_id: routeId },
+      is_user_point: true,
+      route_coordinates_id: Not(id) // Exclude the one being deleted
+    },
+    order: { sequence: 'ASC' }
+  });
+
+  // 2. Delete ALL coordinates for this route (clean slate)
+  await this.RouteCoordinatesRepository
+    .createQueryBuilder()
+    .delete()
+    .from(RouteCoordinates)
+    .where('route.route_id = :routeId', { routeId })
+    .execute();
+
+  // 3. If no user points remain, we're done
+  if (remainingUserPoints.length === 0) {
+    await this.RouteRepository.update(routeId, {
+      center_latitude: 0,
+      center_longitude: 0
     });
+    return;
+  }
 
-    if (userPoints.length < 2) {
-      // No need to generate routes if less than 2 user points
-      return;
-    }
+  // 4. Rebuild everything from scratch
+  await this.rebuildRouteFromUserPoints(routeId, remainingUserPoints);
 
-    // Process each pair of consecutive user points
-    for (let i = 0; i < userPoints.length - 1; i++) {
-      const startPoint = userPoints[i];
-      const endPoint = userPoints[i + 1];
+  // 5. Update center point
+  await this.updateRouteCenterPoint(routeId);
+}
+
+private async rebuildRouteFromUserPoints(routeId: string, userPoints: RouteCoordinates[]): Promise<void> {
+  const route = await this.RouteRepository.findOne({
+    where: { route_id: routeId }
+  });
+
+  if (!route) {
+    throw new NotFoundException(`Route with ID ${routeId} not found`);
+  }
+
+  let currentSequence = 1;
+  const allCoordinatesToSave: RouteCoordinates[] = [];
+
+  for (let i = 0; i < userPoints.length; i++) {
+    const userPoint = userPoints[i];
+
+    // Add the user point
+    const userCoordinate = this.RouteCoordinatesRepository.create({
+      latitude: userPoint.latitude,
+      longitude: userPoint.longitude,
+      sequence: currentSequence++,
+      is_user_point: true,
+      route: route
+    });
+    allCoordinatesToSave.push(userCoordinate);
+
+    // If there's a next user point, generate route between them
+    if (i < userPoints.length - 1) {
+      const nextUserPoint = userPoints[i + 1];
 
       try {
-        // Get route from Google Maps
         const routeData = await this.gmapsRoutingService.getRoute(
-          [startPoint.latitude, startPoint.longitude],
-          [endPoint.latitude, endPoint.longitude]
+          [userPoint.latitude, userPoint.longitude],
+          [nextUserPoint.latitude, nextUserPoint.longitude]
         );
 
-        // ✅ Fixed: Create coordinate objects with proper typing
-        const generatedCoordinates: Array<{ latitude: number; longitude: number }> = [];
-        
-        // Skip the first and last points as they should be the user points
+        // Add generated points (skip first and last as they're user points)
         for (let j = 1; j < routeData.coordinates.length - 1; j++) {
           const coord = routeData.coordinates[j];
-          generatedCoordinates.push({
-            latitude: coord.lat,  // ✅ Map from 'lat' to 'latitude'
-            longitude: coord.lng  // ✅ Map from 'lng' to 'longitude'
+          const generatedCoordinate = this.RouteCoordinatesRepository.create({
+            latitude: coord.lat,
+            longitude: coord.lng,
+            sequence: currentSequence++,
+            is_user_point: false,
+            route: route
           });
+          allCoordinatesToSave.push(generatedCoordinate);
         }
-
-        if (generatedCoordinates.length > 0) {
-          // Insert generated points between the user points
-          await this.insertGeneratedCoordinates(routeId, startPoint.sequence, generatedCoordinates);
-        }
-
       } catch (error) {
-        console.error(`Failed to generate route between user points ${startPoint.sequence} and ${endPoint.sequence}:`, error);
-        // Continue with other segments even if one fails
+        console.error(`Failed to generate route between user points:`, error);
+        // Continue without generated points for this segment
       }
     }
-
-    // Final resequencing after all insertions
-    await this.resequenceCoordinates(routeId);
   }
 
-  private async insertGeneratedCoordinates(
-    routeId: string, 
-    afterSequence: number, 
-    coordinates: Array<{ latitude: number; longitude: number }>
-  ): Promise<void> {
-    // Shift existing coordinates to make space - Fixed WHERE clause
-    await this.RouteCoordinatesRepository
-      .createQueryBuilder()
-      .update(RouteCoordinates)
-      .set({ sequence: () => `sequence + ${coordinates.length}` })
-      .where('route.route_id = :routeId AND sequence > :afterSequence', {
-        routeId,
-        afterSequence
-      })
-      .execute();
+  // Save all coordinates in one batch
+  await this.RouteCoordinatesRepository.save(allCoordinatesToSave);
+}
 
-    // Get the route entity
-    const route = await this.RouteRepository.findOne({
-      where: { route_id: routeId }
-    });
-
-    if (!route) {
-      throw new NotFoundException(`Route with ID ${routeId} not found`);
-    }
-
-    // Create and save entities
-    const entities: RouteCoordinates[] = [];
-    
-    for (let i = 0; i < coordinates.length; i++) {
-      const coord = coordinates[i];
-      const entity = this.RouteCoordinatesRepository.create({
-        latitude: coord.latitude,
-        longitude: coord.longitude,
-        sequence: afterSequence + i + 1,
-        is_user_point: false,
-        route: route
-      });
-      entities.push(entity);
-    }
-
-    await this.RouteCoordinatesRepository.save(entities);
-  }
-
-  private async resequenceCoordinates(routeId: string): Promise<void> {
-    const remainingCoordinates = await this.RouteCoordinatesRepository.find({
-      where: { route: { route_id: routeId } },
-      order: { sequence: 'ASC' }
-    });
-
-    for (let i = 0; i < remainingCoordinates.length; i++) {
-      await this.RouteCoordinatesRepository.update(
-        remainingCoordinates[i].route_coordinates_id,
-        { sequence: i + 1 }
-      );
-    }
-  }
 
 
 
