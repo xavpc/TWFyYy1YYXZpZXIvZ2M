@@ -179,6 +179,20 @@ async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]
     }
   }
 
+  async removeBySequence(route_id: string, sequence: number): Promise<void> {
+    const result = await this.collectionPointsRepository.delete({
+      route: {route_id}, 
+      sequence,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `Collection Point with route_id ${route_id} and sequence ${sequence} not found`,
+      );
+    }
+  }
+
+
   findByRoute(routeId: string): Promise<CollectionPoints[]> {
     return this.collectionPointsRepository.find({
       where: { route: { route_id: routeId } },
@@ -196,6 +210,7 @@ async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]
     }
     return collectionPoint;
   }
+  
 
 
     async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {

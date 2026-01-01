@@ -186,6 +186,36 @@ async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]
     };
   }
 
+  @Delete('route/:routeId/sequence/:sequence')
+  @ApiOperation({ summary: 'Delete a collection point by route ID and sequence' })
+  @ApiParam({ name: 'routeId', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({ name: 'sequence', description: 'Collection point sequence number', example: '1' })
+  @ApiResponse({
+    status: 200,
+    description: 'Collection point deleted successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Collection point deleted successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Collection point not found',
+    type: CollectionPointsErrorResponse,
+  })
+  async removeBySequence(
+    @Param('routeId') routeId: string, 
+    @Param('sequence') sequence: string
+  ) {
+    await this.collectionPointsService.removeBySequence(routeId, parseInt(sequence, 10));
+    return {
+      success: true,
+      message: 'Collection point deleted successfully',
+    };
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a collection point' })
   @ApiParam({ name: 'id', description: 'Collection point ID', example: '123e4567-e89b-12d3-a456-426614174000' })
