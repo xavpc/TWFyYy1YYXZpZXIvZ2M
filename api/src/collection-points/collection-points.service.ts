@@ -180,16 +180,21 @@ async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]
   }
 
   async removeBySequence(route_id: string, sequence: number): Promise<void> {
-    const result = await this.collectionPointsRepository.delete({
-      route: {route_id}, 
-      sequence,
+    const collectionPoint = await this.collectionPointsRepository.findOne({
+      where: { 
+        route: { route_id }, 
+        sequence 
+      },
+      relations: ['route']
     });
 
-    if (result.affected === 0) {
+    if (!collectionPoint) {
       throw new NotFoundException(
         `Collection Point with route_id ${route_id} and sequence ${sequence} not found`,
       );
     }
+
+    await this.collectionPointsRepository.remove(collectionPoint);
   }
 
 
