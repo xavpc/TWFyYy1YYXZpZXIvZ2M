@@ -96,6 +96,7 @@ export class RouteCoordinatesService {
         latitude: dto.latitude,
         longitude: dto.longitude,
         sequence: dto.sequence,
+        is_user_point: dto.is_user_point,
         route: route
       });
     });
