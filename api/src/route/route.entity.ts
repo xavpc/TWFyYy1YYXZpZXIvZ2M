@@ -68,6 +68,4 @@ export class Route {
     default: 138.2529
   })
   center_longitude: number;
-
-
 }

@@ -4,9 +4,10 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColum
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceRouteDay } from "./enums/device-route-day.enum";
 import { DeviceSession } from "../device-session/device-session.entity";
+//TODO: wrap all the migration stuff on a transaction so to easily rollback when ut fails
 
 @Entity()
-@Unique(['route', 'day_assigned', 'device'])
+@Unique(['route', 'day_assigned'])
 export class DeviceRoute {
   @ApiProperty({
     description: 'Unique identifier for the device route',

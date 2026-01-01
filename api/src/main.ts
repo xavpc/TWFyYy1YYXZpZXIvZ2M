@@ -33,7 +33,6 @@ async function bootstrap() {
       })
     );
 
-  app.useGlobalInterceptors(new LoggingInterceptor());
   app.enableCors({
     origin: [
       'http://localhost:3000',

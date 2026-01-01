@@ -32,6 +32,40 @@ export class CollectionPointsController {
     };
   }
 
+  @Post('batch')
+  @ApiOperation({ summary: 'Create multiple collection points in batch' })
+  @ApiBody({ 
+    type: [CreateCollectionPointsDto], 
+    description: 'Array of collection points data to create' 
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Collection points created successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Collection points batch created successfully',
+        data: [], 
+        total: 0  
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid input data',
+    type: CollectionPointsErrorResponse,
+  })
+  async createBatch(@Body() createCollectionPointsDto: CreateCollectionPointsDto[]) {
+    const newCollectionPoints = await this.collectionPointsService.createBatch(createCollectionPointsDto);
+    return {
+      success: true,
+      message: 'Collection points batch created successfully',
+      data: newCollectionPoints.map(col => new CollectionPointResponse(col)),
+      total: newCollectionPoints.length
+    };
+  }
+
+
   @Get()
   @ApiOperation({ summary: 'Get all collection points' })
   @ApiResponse({

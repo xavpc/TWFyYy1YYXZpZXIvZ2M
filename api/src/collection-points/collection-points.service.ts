@@ -46,6 +46,40 @@ export class CollectionPointsService {
     return this.collectionPointsRepository.save(collectionPoint);
   }
 
+
+  async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]> {
+    if (!dtos.length) {
+      return [];
+    }
+    
+    const routeId = dtos[0].route_id;
+    if (!dtos.every(dto => dto.route_id === routeId)) {
+      throw new Error('All collection points in batch must belong to the same route');
+    }
+  
+    const route = await this.routeRepository.findOne({
+      where: { route_id: routeId }
+    });
+    
+    if (!route) {
+      throw new NotFoundException(`Route with ID ${routeId} not found`);
+    }
+  
+    const entities = dtos.map(dto => {
+      return this.collectionPointsRepository.create({
+        collection_point_name: dto.collection_point_name,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        sequence: dto.sequence,
+        route: route
+      });
+    });
+  
+    const savedCollectionPoints = await this.collectionPointsRepository.save(entities);
+    
+    return savedCollectionPoints;
+  }
+
   findAll(): Promise<CollectionPoints[]> {
     return this.collectionPointsRepository.find({
       relations: ['route']

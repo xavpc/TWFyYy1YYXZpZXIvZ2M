@@ -12,7 +12,6 @@ import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.mo
 import { DeviceRouteModule } from './device-route/device-route.module';
 import { CollectionPointsModule } from './collection-points/collection-points.module';
 import { CollectedPointsModule } from './collected-points/collected-points.module';
-import { LoggingMiddleware } from './Logging.middleware';
 import { ImageModule } from './image/image.module';
 import { ComplaintsModule } from './complaints/complaints.module';
 import { OsrmModule } from './third-party/routing-engine/osrm/osrm.module';
@@ -63,8 +62,5 @@ import { GmapsModule } from './third-party/routing-engine/google-maps/gmaps.modu
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggingMiddleware)
-      .forRoutes('*');
   }
 }
