@@ -5,6 +5,7 @@ import { RouteCoordinates } from './route-coordinates.entity';
 import { CreateRouteCoordinatesDto } from './dto/create-routeCoordinates.dto';
 import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
 import { Route } from '../route/route.entity';
+import { GmapsRoutingService } from 'src/third-party/routing-engine/google-maps/gmaps.service';
 
 @Injectable()
 export class RouteCoordinatesService {
@@ -13,6 +14,7 @@ export class RouteCoordinatesService {
     private RouteCoordinatesRepository: Repository<RouteCoordinates>,
     @InjectRepository(Route)
     private RouteRepository: Repository<Route>,
+    private gmapsRoutingService: GmapsRoutingService
   ) {}
 
   private calculateCenterPoint(coordinates: RouteCoordinates[]): { latitude: number; longitude: number } {
@@ -211,7 +213,7 @@ export class RouteCoordinatesService {
     // Find the previous and next user points
     const previousUserPoint = allCoordinates
       .filter(coord => coord.is_user_point && coord.sequence < userPointSequence)
-      .pop(); // Get the last one (closest to current)
+      .pop();
 
     const nextUserPoint = allCoordinates
       .find(coord => coord.is_user_point && coord.sequence > userPointSequence);
@@ -227,7 +229,7 @@ export class RouteCoordinatesService {
     } else if (!previousUserPoint) {
       // This is the first user point, delete from start to next user point (exclusive)
       startSequence = 1;
-      endSequence = nextUserPoint!.sequence - 1; // We know nextUserPoint exists here
+      endSequence = nextUserPoint!.sequence - 1;
     } else if (!nextUserPoint) {
       // This is the last user point, delete from previous user point (exclusive) to end
       startSequence = previousUserPoint.sequence + 1;
@@ -238,7 +240,7 @@ export class RouteCoordinatesService {
       endSequence = nextUserPoint.sequence - 1;
     }
 
-    // Delete all coordinates in the determined range
+    // Delete the coordinates in the range
     await this.RouteCoordinatesRepository
       .createQueryBuilder()
       .delete()
@@ -250,9 +252,109 @@ export class RouteCoordinatesService {
       })
       .execute();
 
+    // Resequence the remaining coordinates
     await this.resequenceCoordinates(routeId);
 
+    // Regenerate routes between all consecutive user points
+    await this.regenerateRoutes(routeId);
+
+    // Update the route center point
     await this.updateRouteCenterPoint(routeId);
+  }
+
+  private async regenerateRoutes(routeId: string): Promise<void> {
+    // Get all remaining user points after deletion and resequencing
+    const userPoints = await this.RouteCoordinatesRepository.find({
+      where: { 
+        route: { route_id: routeId },
+        is_user_point: true 
+      },
+      order: { sequence: 'ASC' }
+    });
+
+    if (userPoints.length < 2) {
+      // No need to generate routes if less than 2 user points
+      return;
+    }
+
+    // Process each pair of consecutive user points
+    for (let i = 0; i < userPoints.length - 1; i++) {
+      const startPoint = userPoints[i];
+      const endPoint = userPoints[i + 1];
+
+      try {
+        // Get route from Google Maps
+        const routeData = await this.gmapsRoutingService.getRoute(
+          [startPoint.latitude, startPoint.longitude],
+          [endPoint.latitude, endPoint.longitude]
+        );
+
+        // Create coordinate entities for generated points
+        const generatedCoordinates: Partial<RouteCoordinates>[] = [];
+        
+        // Skip the first and last points as they should be the user points
+        for (let j = 1; j < routeData.coordinates.length - 1; j++) {
+          const coord = routeData.coordinates[j];
+          generatedCoordinates.push({
+            latitude: coord.lat,
+            longitude: coord.lng,
+            is_user_point: false,
+            route: startPoint.route
+          });
+        }
+
+        if (generatedCoordinates.length > 0) {
+          // Insert generated points between the user points
+          await this.insertGeneratedCoordinates(routeId, startPoint.sequence, generatedCoordinates);
+        }
+
+      } catch (error) {
+        console.error(`Failed to generate route between user points ${startPoint.sequence} and ${endPoint.sequence}:`, error);
+        // Continue with other segments even if one fails
+      }
+    }
+
+    // Final resequencing after all insertions
+    await this.resequenceCoordinates(routeId);
+  }
+
+  private async insertGeneratedCoordinates(
+    routeId: string, 
+    afterSequence: number, 
+    coordinates: Partial<RouteCoordinates>[]
+  ): Promise<void> {
+    // Shift existing coordinates to make space
+    await this.RouteCoordinatesRepository
+      .createQueryBuilder()
+      .update(RouteCoordinates)
+      .set({ sequence: () => `sequence + ${coordinates.length}` })
+      .where('route_id = :routeId AND sequence > :afterSequence', {
+        routeId,
+        afterSequence
+      })
+      .execute();
+
+    // Get the route entity
+    const route = await this.RouteRepository.findOne({
+      where: { route_id: routeId }
+    });
+
+    if (!route) {
+      throw new NotFoundException(`Route with ID ${routeId} not found`);
+    }
+
+    // Insert the new coordinates
+    const entities = coordinates.map((coord, index) => {
+      const entity = this.RouteCoordinatesRepository.create();
+      entity.latitude = coord.latitude!;
+      entity.longitude = coord.longitude!;
+      entity.sequence = afterSequence + index + 1;
+      entity.is_user_point = false;
+      entity.route = route;
+      return entity;
+    });
+
+    await this.RouteCoordinatesRepository.save(entities);
   }
 
   private async resequenceCoordinates(routeId: string): Promise<void> {
