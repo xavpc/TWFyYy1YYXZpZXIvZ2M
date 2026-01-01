@@ -3,7 +3,7 @@ import axios from 'axios';
 
 @Injectable()
 export class OsrmService {
-  private OSRM_URL = 'https://17fc-2405-8d40-4cc1-c7e0-86e4-8e63-459a-f171.ngrok-free.app';
+  private OSRM_URL = 'https://router.project-osrm.org';
 
   async getRoute(start: [number, number], end: [number, number]) {
     const startCoord = `${start[1]},${start[0]}`;
