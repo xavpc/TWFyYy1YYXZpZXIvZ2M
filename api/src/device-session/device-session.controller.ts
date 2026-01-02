@@ -104,6 +104,27 @@ export class DeviceSessionController {
     }
   }
 
+
+  @Get('route/:routeId')
+  @ApiOperation({ summary: 'Get all device sessions for a specific route' })
+  @ApiParam({ name: 'routeId', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiResponse({
+    status: 200,
+    description: 'Device sessions retrieved successfully',
+    type: DeviceSessionListResponse,
+  })
+  async findByRoute(@Param('routeId') routeId: string) {
+    const sessions = await this.deviceSessionService.findByRoute(routeId);
+    return {
+      success: true,
+      message: 'Collection points retrieved successfully for the route',
+      data: sessions,
+      total: sessions.length,
+    };
+  }
+
+
+
   @Put(':session_id')
   @ApiOperation({ summary: 'Update a device session' })
   @ApiParam({ name: 'session_id', description: 'Session ID to update' })
