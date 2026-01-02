@@ -100,4 +100,45 @@ export class DeviceRouteService {
       relations: ['route','device']
     });
   }
+
+    async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
+      const route = await this.routeRepository.findOne({
+        where: { route_id: routeId }
+      });
+      
+      if (!route) {
+        throw new NotFoundException(`Route with ID ${routeId} not found`);
+      }
+    
+      const result = await this.deviceRouteRepository
+        .createQueryBuilder()
+        .delete()
+        .from(DeviceRoute)
+        .where('route.route_id = :routeId', { routeId })
+        .execute();
+      
+      return { affected: result.affected ?? 0 };
+    }
+
+
+    async removeAllByDeviceId(deviceId: string): Promise<{ affected: number }> {
+      const device = await this.deviceRepository.findOne({
+        where: { device_id: deviceId }
+      });
+      
+      if (!device) {
+        throw new NotFoundException(`Device with ID ${deviceId} not found`);
+      }
+    
+      const result = await this.deviceRouteRepository
+        .createQueryBuilder()
+        .delete()
+        .from(DeviceRoute)
+        .where('device.device_id = :deviceId', { deviceId })
+        .execute();
+      
+      return { affected: result.affected ?? 0 };
+    }
+
+    
 }
