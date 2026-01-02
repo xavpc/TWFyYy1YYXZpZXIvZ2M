@@ -35,7 +35,8 @@ async function bootstrap() {
       'http://localhost:5173',
       'https://gcweb-psi.vercel.app',
       'https://gc-web-one.vercel.app',
-      'https://gcweb-six.vercel.app'
+      'https://gcweb-six.vercel.app',
+      'https://gcweb-fake.vercel.app',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

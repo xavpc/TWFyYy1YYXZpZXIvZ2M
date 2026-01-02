@@ -7,6 +7,7 @@ import { DeviceSessionController } from "./device-session.controller";
 @Module({
     imports: [TypeOrmModule.forFeature([DeviceSession, DeviceLocation])],
     controllers: [DeviceSessionController],
-    providers: [DeviceSessionService]
+    providers: [DeviceSessionService],
+    exports:[DeviceSessionService]
 })
 export class DeviceSessionModule {}
