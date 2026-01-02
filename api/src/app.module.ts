@@ -19,6 +19,8 @@ import { OsrmModule } from './third-party/routing-engine/osrm/osrm.module';
 import { AuthModule } from './auth/security/auth.module';
 import { UserModule } from './auth/user/user.module';
 import { DeviceSessionModule } from './device-session/device-session.module';
+import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 
@@ -27,6 +29,7 @@ import { DeviceSessionModule } from './device-session/device-session.module';
     ConfigModule.forRoot({
       envFilePath: process.env.NODE_ENV === 'production' ? '.env.online' : '.env',
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
@@ -46,10 +49,13 @@ import { DeviceSessionModule } from './device-session/device-session.module';
     AuthModule,
     UserModule,
     DeviceSessionModule,
+    ScheduledTasksModule
     
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
