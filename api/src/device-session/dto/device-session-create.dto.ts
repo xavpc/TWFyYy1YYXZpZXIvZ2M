@@ -9,12 +9,12 @@ export class CreateDeviceSessionDto {
   start?: Date;
 
   @ApiProperty({
-    description: 'The UUID of the associated route',
+    description: 'The UUID of the associated device route',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsNotEmpty()
   @IsUUID()
-  route_id: string;
+  device_route_id: string;
 
 
 }

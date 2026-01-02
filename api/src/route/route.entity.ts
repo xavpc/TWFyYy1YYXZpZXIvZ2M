@@ -70,10 +70,4 @@ export class Route {
   center_longitude: number;
 
 
-  @ApiProperty({
-    description: 'List of device locations recorded on this route',
-    type: [DeviceLocation]
-  })
-  @OneToMany(() => DeviceSession, (deviceSession) => deviceSession.route)
-  device_sessions: DeviceSession[];
 }
