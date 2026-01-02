@@ -31,6 +31,7 @@ export class ComplaintsService {
 
     const complaint = this.complaintsRepository.create({
       ...createComplaintDto,
+      complaint_timestamp: new Date(createComplaintDto.complaint_timestamp), // Convert string to Date
       image,
       device,
     });

@@ -57,7 +57,7 @@ export class DeviceRouteListResponse {
   }
 }
 
-export class ErrorResponse {
+export class DeviceRouteErrorResponse {
   @ApiProperty({
     description: 'Error code',
     example: 'NOT_FOUND',

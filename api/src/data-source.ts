@@ -13,12 +13,14 @@ import { join } from 'path';
 import { CollectedPoints } from './collected-points/collected-points.entity';
 import { Image } from './image/image.entity';
 import { Complaints } from './complaints/complaints.entity';
-import { User } from './auth/user/user.entity';
+import { Users } from './auth/user/user.entity';
 
-// Load the appropriate .env file based on NODE_ENV
+//warning: dont remove this ples or error in migrations
 config({
   path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
 });
+///
+
 
 const configService = new ConfigService();
 
@@ -35,7 +37,7 @@ export default new DataSource({
     CollectedPoints,
     Image,
     Complaints,
-    User
+    Users
   
   ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
