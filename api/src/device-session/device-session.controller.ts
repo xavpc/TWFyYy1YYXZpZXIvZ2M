@@ -87,38 +87,42 @@
     }
 
     @Get('filter/by-route-and-date')
-    @ApiOperation({ summary: 'Find sessions by route ID and date' })
+    @ApiOperation({ summary: 'Find sessions by route ID, date, and optionally by device ID' })
     @ApiQuery({ name: 'routeId', description: 'Route ID', required: true })
     @ApiQuery({ name: 'date', description: 'Date to search for sessions (ISO format)', required: true })
+    @ApiQuery({ name: 'deviceId', description: 'Optional device ID to filter by', required: false })
     @ApiResponse({ status: 200, description: 'List of sessions matching filters', type: DeviceSessionListResponse })
     async findSessionsByRouteAndDate(
       @Query('routeId') routeId: string,
       @Query('date') dateString: string,
+      @Query('deviceId') deviceId?: string,
     ): Promise<DeviceSessionListResponse> {
       const date = new Date(dateString);
-      const sessions = await this.deviceSessionService.findSessionsByRouteAndDate(routeId, date);
+      const sessions = await this.deviceSessionService.findSessionsByRouteAndDate(routeId, date, deviceId);
       
       return {
         success: true,
-        message: 'Device sessions for specified route and date retrieved successfully',
+        message: 'Device sessions for specified filters retrieved successfully',
         data: sessions,
         total: sessions.length
       };
     }
 
     @Get('filter/by-date')
-    @ApiOperation({ summary: 'Find sessions for a specific date' })
+    @ApiOperation({ summary: 'Find sessions for a specific date and optionally by device ID' })
     @ApiQuery({ name: 'date', description: 'Date to search for sessions (ISO format)' })
-    @ApiResponse({ status: 200, description: 'List of sessions for the specified date', type: DeviceSessionListResponse })
+    @ApiQuery({ name: 'deviceId', description: 'Optional device ID to filter by', required: false })
+    @ApiResponse({ status: 200, description: 'List of sessions for the specified filters', type: DeviceSessionListResponse })
     async findSessionsByDate(
       @Query('date') dateString: string,
+      @Query('deviceId') deviceId?: string,
     ): Promise<DeviceSessionListResponse> {
       const date = new Date(dateString);
-      const sessions = await this.deviceSessionService.findSessionsByDate(date);
+      const sessions = await this.deviceSessionService.findSessionsByDate(date, deviceId);
       
       return {
         success: true,
-        message: 'Device sessions for specified date retrieved successfully',
+        message: 'Device sessions for specified filters retrieved successfully',
         data: sessions,
         total: sessions.length
       };
@@ -146,18 +150,22 @@
 
 
     @Get('route/:routeId')
-    @ApiOperation({ summary: 'Get all device sessions for a specific route' })
+    @ApiOperation({ summary: 'Get all device sessions for a specific route and optionally by device ID' })
     @ApiParam({ name: 'routeId', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+    @ApiQuery({ name: 'deviceId', description: 'Optional device ID to filter by', required: false })
     @ApiResponse({
       status: 200,
       description: 'Device sessions retrieved successfully',
       type: DeviceSessionListResponse,
     })
-    async findByRoute(@Param('routeId') routeId: string) {
-      const sessions = await this.deviceSessionService.findByRoute(routeId);
+    async findByRoute(
+      @Param('routeId') routeId: string,
+      @Query('deviceId') deviceId?: string
+    ) {
+      const sessions = await this.deviceSessionService.findByRoute(routeId, deviceId);
       return {
         success: true,
-        message: 'Collection points retrieved successfully for the route',
+        message: 'Sessions retrieved successfully for the filters',
         data: sessions,
         total: sessions.length,
       };

@@ -127,7 +127,8 @@ export class DeviceSessionService {
   }
 
   async findSessionsByDate(
-    date: Date
+    date: Date,
+    deviceId?: string
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -135,22 +136,36 @@ export class DeviceSessionService {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
     
-    return await this.deviceSessionRepository
+    const query = this.deviceSessionRepository
       .createQueryBuilder('session')
-      .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay })
-      .getMany();
+      .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
+    
+    if (deviceId) {
+      query.innerJoin('session.device_locations', 'device_locations')
+           .andWhere('device_locations.device_id = :deviceId', { deviceId });
+    }
+    
+    return await query.getMany();
   }
 
-  findByRoute(routeId: string): Promise<DeviceSession[]> {
-    return this.deviceSessionRepository.find({
-      where: { route: { route_id: routeId } },
-      relations: ['route']
-    });
+  findByRoute(routeId: string, deviceId?: string): Promise<DeviceSession[]> {
+    const query = this.deviceSessionRepository.createQueryBuilder('session')
+      .leftJoinAndSelect('session.route', 'route')
+      .where('route.route_id = :routeId', { routeId });
+    
+    if (deviceId) {
+      query.innerJoin('session.device_locations', 'device_locations')
+           .andWhere('device_locations.device_id = :deviceId', { deviceId });
+    }
+    
+    return query.getMany();
   }
+  
 
   async findSessionsByRouteAndDate(
     routeId: string,
-    date: Date
+    date: Date,
+    deviceId?: string
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -158,11 +173,17 @@ export class DeviceSessionService {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
     
-    return await this.deviceSessionRepository
+    const query = this.deviceSessionRepository
       .createQueryBuilder('session')
       .leftJoinAndSelect('session.route', 'route')
       .where('route.route_id = :routeId', { routeId })
-      .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay })
-      .getMany();
+      .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
+    
+    if (deviceId) {
+      query.innerJoin('session.device_locations', 'device_locations')
+           .andWhere('device_locations.device_id = :deviceId', { deviceId });
+    }
+    
+    return await query.getMany();
   }
 }
