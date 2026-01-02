@@ -121,10 +121,34 @@ export class CollectedPointsService {
     });
   }
 
-  findByCollectionPoint(collectionPointId: string): Promise<CollectedPoints[]> {
-    return this.collectedPointsRepository.find({
-      where: { collection_point: { collection_point_id: collectionPointId } },
-      relations: ['device', 'collection_point', 'session']
+  async isCollectionAlreadyCollected(
+    collectionPointId: string,
+    sessionId: string
+  ): Promise<boolean> {
+    const collectionPoint = await this.collectionPointsRepository.findOne({
+      where: { collection_point_id: collectionPointId },
     });
+  
+    if (!collectionPoint) {
+      throw new NotFoundException(`Collection Point with ID ${collectionPointId} not found.`);
+    }
+  
+    const session = await this.deviceSessionRepository.findOne({
+      where: { session_id: sessionId },
+    });
+  
+    if (!session) {
+      throw new NotFoundException(`Session with ID ${sessionId} not found.`);
+    }
+  
+    const collectedPoint = await this.collectedPointsRepository.findOne({
+      where: {
+        collection_point: { collection_point_id: collectionPointId },
+        session: { session_id: sessionId },
+      },
+    });
+  
+    return !!collectedPoint;
   }
+  
 }
