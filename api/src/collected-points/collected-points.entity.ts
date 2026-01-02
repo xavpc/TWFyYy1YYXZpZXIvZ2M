@@ -19,7 +19,7 @@ export class CollectedPoints {
     description: 'The associated collection point',
     type: () => CollectionPoints
   })
-  @ManyToOne(() => CollectionPoints, (collection_point) => collection_point.collected_points)
+  @ManyToOne(() => CollectionPoints, (collection_point) => collection_point.collected_points, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'collection_point_id' })
   collection_point: CollectionPoints;
 
@@ -27,7 +27,7 @@ export class CollectedPoints {
     description: 'The device that collected the point',
     type: () => Device
   })
-  @ManyToOne(() => Device, (device) => device.collected_points)
+  @ManyToOne(() => Device, (device) => device.collected_points, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'device_id' })
   device: Device;
 
@@ -50,7 +50,7 @@ export class CollectedPoints {
     description: 'The associated session',
     type: () => CollectionPoints
   })
-  @ManyToOne(() => DeviceSession, (session) => session.collected_points)
+  @ManyToOne(() => DeviceSession, (session) => session.collected_points, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'session_id' })
   session: DeviceSession;
 }

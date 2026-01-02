@@ -50,7 +50,7 @@ export class DeviceSession {
     description: 'Associated Route of this session',
     type: Route
   })
-  @ManyToOne(() => Route, (route) => route.device_sessions)
+  @ManyToOne(() => Route, (route) => route.device_sessions, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'route_id' })
   route: Route;
 
