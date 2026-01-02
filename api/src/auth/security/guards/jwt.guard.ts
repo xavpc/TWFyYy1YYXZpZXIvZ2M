@@ -47,7 +47,7 @@ export class JwtAuthGuardv2 extends AuthGuard('jwt') {
       }, 
       {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '2s'
+        expiresIn: '15m'
       }
     );
     
@@ -55,7 +55,7 @@ export class JwtAuthGuardv2 extends AuthGuard('jwt') {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 2000
+      maxAge: 15 * 60 * 1000 
     });
     
     console.log(`token generated`);

@@ -83,7 +83,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '2s'
+        expiresIn: '15m'
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -99,7 +99,7 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 2000
+      maxAge: 15 * 60 * 1000 
     });
 
     res.cookie('refresh_token', tokens.refreshToken, {
