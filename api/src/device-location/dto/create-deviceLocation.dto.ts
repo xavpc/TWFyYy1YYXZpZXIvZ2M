@@ -41,4 +41,13 @@ export class CreateDeviceLocationDto {
   @IsNotEmpty()
   @IsDateString()
   current_location_timestamp: string; 
+
+
+  @ApiProperty({
+    description: 'The UUID of the device session associated with this location.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsNotEmpty()
+  @IsUUID()
+  session_id: string;
 }

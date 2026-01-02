@@ -5,6 +5,7 @@ import { DeviceLocation } from './device-location.entity';
 import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
 import { Device } from '../device/device.entity';
+import { DeviceSession } from 'src/device-session/device-session.entity';
 
 @Injectable()
 export class DeviceLocationService {
@@ -13,6 +14,8 @@ export class DeviceLocationService {
     private deviceLocationRepository: Repository<DeviceLocation>,
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
+    @InjectRepository(DeviceSession)
+    private deviceSessionRepository: Repository<DeviceSession>,
   ) {}
 
   async create(createDeviceLocationDto: CreateDeviceLocationDto): Promise<DeviceLocation> {
@@ -30,6 +33,20 @@ export class DeviceLocationService {
       }
       
       deviceLocation.device = device;
+    }
+
+    if (createDeviceLocationDto.session_id) {
+      const session = await this.deviceSessionRepository.findOne({
+        where: { session_id: createDeviceLocationDto.session_id }
+      });
+      
+      if (!session) {
+        throw new NotFoundException(
+          `session with ID ${createDeviceLocationDto.session_id} not found`
+        );
+      }
+      
+      deviceLocation.session = session;
     }
 
     return this.deviceLocationRepository.save(deviceLocation);
