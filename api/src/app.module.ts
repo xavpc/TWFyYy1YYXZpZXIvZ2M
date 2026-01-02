@@ -18,6 +18,7 @@ import { ComplaintsModule } from './complaints/complaints.module';
 import { OsrmModule } from './third-party/routing-engine/osrm/osrm.module';
 import { AuthModule } from './auth/security/auth.module';
 import { UserModule } from './auth/user/user.module';
+import { DeviceSessionModule } from './device-session/device-session.module';
 
 
 
@@ -43,7 +44,8 @@ import { UserModule } from './auth/user/user.module';
     ComplaintsModule,
     OsrmModule,
     AuthModule,
-    UserModule
+    UserModule,
+    DeviceSessionModule,
     
   ],
   controllers: [AppController],
