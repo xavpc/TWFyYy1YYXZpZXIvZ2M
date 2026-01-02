@@ -1,16 +1,27 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { DeviceSession } from '../device-session.entity';
 
-export class DeviceSessionResponse {
+export class BaseSessionResponse {
   @ApiProperty({ example: true })
   success: boolean;
-
+  
   @ApiProperty({ example: 'Device session request successful' })
   message: string;
+}
 
+// Single session response
+export class DeviceSessionResponse extends BaseSessionResponse {
   @ApiProperty({ type: DeviceSession })
   data: DeviceSession;
 }
+
+// Multiple sessions response
+export class DeviceSessionsArrayResponse extends BaseSessionResponse {
+  @ApiProperty({ type: [DeviceSession] })
+  data: DeviceSession[];
+}
+
+
 
 export class DeviceSessionListResponse {
   @ApiProperty({ example: true })

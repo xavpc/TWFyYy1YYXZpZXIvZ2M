@@ -36,13 +36,15 @@ export class DeviceSessionService {
 
   async findAll(): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository.find({
-      relations: ['device_route']
+      relations: ['device_route', 'device_route.device', 'device_route.route']
     });
   }
+
+  
   async findOne(session_id: string): Promise<DeviceSession> {
     const session = await this.deviceSessionRepository.findOne({ 
       where: { session_id },
-      relations: ['device_locations'] 
+      relations: ['device_route', 'device_route.device', 'device_route.route']
     });
     
     if (!session) {
@@ -56,6 +58,8 @@ export class DeviceSessionService {
     return await this.deviceSessionRepository
       .createQueryBuilder('session')
       .innerJoinAndSelect('session.device_route', 'device_route')
+      .leftJoinAndSelect('device_route.device', 'device_route_device')
+      .leftJoinAndSelect('device_route.route', 'device_route_route')
       .innerJoinAndSelect(
         'session.device_locations', 
         'device_locations'
@@ -141,6 +145,8 @@ export class DeviceSessionService {
     const query = this.deviceSessionRepository
       .createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
+      .leftJoinAndSelect('device_route.device', 'device_route_device')
+      .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
     if (deviceId) {
@@ -154,6 +160,8 @@ export class DeviceSessionService {
   findByDeviceRoute(deviceRouteId: string, deviceId?: string): Promise<DeviceSession[]> {
     const query = this.deviceSessionRepository.createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
+      .leftJoinAndSelect('device_route.device', 'device_route_device')
+      .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId });
     
     if (deviceId) {
@@ -179,6 +187,8 @@ export class DeviceSessionService {
     const query = this.deviceSessionRepository
       .createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
+      .leftJoinAndSelect('device_route.device', 'device_route_device')
+      .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId })
       .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
@@ -189,4 +199,10 @@ export class DeviceSessionService {
     
     return await query.getMany();
   }
+
+  async removeAll(): Promise<DeviceSession[]> {
+    const sessions = await this.deviceSessionRepository.find();
+    return await this.deviceSessionRepository.remove(sessions);
+  }
+
 }

@@ -4,7 +4,7 @@
   import { DeviceSession } from './device-session.entity';
   import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
   import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
-  import { DeviceSessionResponse, DeviceSessionListResponse, DeviceSessionErrorResponse } from './dto/response.dto';
+  import { DeviceSessionResponse, DeviceSessionListResponse, DeviceSessionErrorResponse, DeviceSessionsArrayResponse } from './dto/response.dto';
 
   @ApiTags('device-sessions')
   @Controller('device-sessions')
@@ -252,5 +252,22 @@
       }
     }
 
+
+    //dont use this TwT
+    @Delete()
+    @ApiResponse({ status: 200, description: 'All sessions removed successfully', type: DeviceSessionsArrayResponse })
+    async removeAll(): Promise<DeviceSessionsArrayResponse> {
+      try {
+        const sessions = await this.deviceSessionService.removeAll();
+        return {
+          success: true,
+          message: 'All device sessions removed successfully',
+          data: sessions
+        };
+      } catch (error) {
+        throw error;
+      }
+    }
+    
 
   }
