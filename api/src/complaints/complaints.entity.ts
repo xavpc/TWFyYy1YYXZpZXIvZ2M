@@ -23,7 +23,7 @@ export class Complaints {
   @Column({ nullable: false, unique: true })
   title: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({ nullable: false})
   description: string;
 
   @Column('decimal', { precision: 8, scale: 6 })

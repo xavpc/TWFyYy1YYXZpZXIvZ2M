@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CollectionPoints } from './collection-points.entity';
@@ -16,6 +16,17 @@ export class CollectionPointsService {
   ) {}
 
   async create(CreateCollectionPointsDto: CreateCollectionPointsDto): Promise<CollectionPoints> {
+
+    const existingPoint = await this.collectionPointsRepository.findOne({
+      where: { collection_point_name: CreateCollectionPointsDto.collection_point_name }
+    });
+    
+    if (existingPoint) {
+      throw new ConflictException(
+        `Collection point with name '${CreateCollectionPointsDto.collection_point_name}' already exists`
+      );
+    }
+    
     const collectionPoint = this.collectionPointsRepository.create(CreateCollectionPointsDto);
     
     if (CreateCollectionPointsDto.route_id) {

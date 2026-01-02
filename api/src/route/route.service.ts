@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Route } from './route.entity';
@@ -12,12 +12,22 @@ export class RouteService {
     private routeRepository: Repository<Route>,
   ) {}
 
-  create(createRouteDto: CreateRouteDto): Promise<Route> {
+  async create(createRouteDto: CreateRouteDto): Promise<Route> {
+
+    const existingRouteName = await this.routeRepository.findOne({
+      where: { route_name: createRouteDto.route_name }
+    });
+    
+    if (existingRouteName) {
+      throw new ConflictException(
+        `route name: '${createRouteDto.route_name}' already exists`
+      );
+    }
     const route = this.routeRepository.create(createRouteDto);
     return this.routeRepository.save(route);
   }
 
-  findAll(): Promise<Route[]> {
+  async findAll(): Promise<Route[]> {
     return this.routeRepository.find();
   }
 
