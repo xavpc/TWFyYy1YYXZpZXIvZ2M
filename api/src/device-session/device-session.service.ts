@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { DeviceSession } from './device-session.entity';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
-import { UpdateDeviceSessionDto } from './dto/device-sessoin-update.dto';
+import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
 
 @Injectable()
 export class DeviceSessionService {
@@ -11,7 +11,6 @@ export class DeviceSessionService {
     @InjectRepository(DeviceSession)
     private deviceSessionRepository: Repository<DeviceSession>,
   ) {}
-
 
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
     const deviceSession = this.deviceSessionRepository.create({
@@ -38,13 +37,32 @@ export class DeviceSessionService {
     return session;
   }
 
+  async findByDeviceId(device_id: string): Promise<DeviceSession[]> {
+    return await this.deviceSessionRepository
+      .createQueryBuilder('session')
+      .leftJoinAndSelect('session.device_locations', 'device_locations')
+      .where('device_locations.device_id = :device_id', { device_id })
+      .distinct(true)
+      .getMany();
+  }
+
+  async findActiveSessionByDeviceId(device_id: string): Promise<DeviceSession | null> {
+    const session = await this.deviceSessionRepository
+      .createQueryBuilder('session')
+      .leftJoinAndSelect('session.device_locations', 'device_locations')
+      .where('device_locations.device_id = :device_id', { device_id })
+      .andWhere('session.end IS NULL')
+      .getOne();
+    
+    return session;
+  }
+
   async update(
     session_id: string, 
     updateDeviceSessionDto: UpdateDeviceSessionDto
   ): Promise<DeviceSession> {
     const session = await this.findOne(session_id);
     
-
     const updatedSession = await this.deviceSessionRepository.save({
       ...session,
       ...updateDeviceSessionDto,
@@ -52,7 +70,6 @@ export class DeviceSessionService {
     
     return updatedSession;
   }
-
 
   async endSession(session_id: string): Promise<DeviceSession> {
     const session = await this.findOne(session_id);
@@ -65,19 +82,27 @@ export class DeviceSessionService {
     return await this.deviceSessionRepository.save(session);
   }
 
+  async endActiveSessionByDeviceId(device_id: string): Promise<DeviceSession | null> {
+    const activeSession = await this.findActiveSessionByDeviceId(device_id);
+    
+    if (!activeSession) {
+      return null;
+    }
+    
+    activeSession.end = new Date();
+    return await this.deviceSessionRepository.save(activeSession);
+  }
 
   async remove(session_id: string): Promise<DeviceSession> {
     const session = await this.findOne(session_id);
     return await this.deviceSessionRepository.remove(session);
   }
 
-
   async findActiveSessions(): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository.find({
       where: { end: IsNull() },
     });
   }
-
 
   async findSessionsByDateRange(
     startDate: Date, 
