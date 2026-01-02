@@ -4,6 +4,8 @@ import { RouteCoordinates } from '../route-coordinates/route-coordinates.entity'
 import { DeviceRoute } from '../device-route/device-route.entity';
 import { CollectionPoints } from '../collection-points/collection-points.entity';
 import { Image } from '../image/image.entity';
+import { DeviceLocation } from '../device-location/device-location.entity';
+import { DeviceSession } from '../device-session/device-session.entity';
 
 @Entity()
 export class Route {
@@ -66,4 +68,12 @@ export class Route {
     default: 138.2529
   })
   center_longitude: number;
+
+
+  @ApiProperty({
+    description: 'List of device locations recorded on this route',
+    type: [DeviceLocation]
+  })
+  @OneToMany(() => DeviceSession, (deviceSession) => deviceSession.route)
+  device_sessions: DeviceSession[];
 }

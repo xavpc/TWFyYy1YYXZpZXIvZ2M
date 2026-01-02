@@ -1,7 +1,8 @@
 import { DeviceLocation } from "../device-location/device-location.entity";
-import { Column, Entity, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { CollectedPoints } from "../collected-points/collected-points.entity";
+import { Route } from "../route/route.entity";
 
 @Entity()
 export class DeviceSession {
@@ -44,4 +45,13 @@ export class DeviceSession {
   })
   @OneToMany(() => CollectedPoints, (collectedPoints) => collectedPoints.session)
   collected_points: CollectedPoints[];
+
+  @ApiProperty({
+    description: 'Associated Route of this session',
+    type: Route
+  })
+  @ManyToOne(() => Route, (route) => route.device_sessions)
+  @JoinColumn({ name: 'route_id' })
+  route: Route;
+
 }
