@@ -147,4 +147,22 @@ export class DeviceSessionService {
       relations: ['route']
     });
   }
+
+  async findSessionsByRouteAndDate(
+    routeId: string,
+    date: Date
+  ): Promise<DeviceSession[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return await this.deviceSessionRepository
+      .createQueryBuilder('session')
+      .leftJoinAndSelect('session.route', 'route')
+      .where('route.route_id = :routeId', { routeId })
+      .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay })
+      .getMany();
+  }
 }
