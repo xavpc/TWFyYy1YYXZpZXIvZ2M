@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
 import { createDatabaseIfNeeded } from './create-db'; 
 import * as cookieParser from 'cookie-parser';
@@ -26,6 +26,12 @@ async function bootstrap() {
       });
 
     app.use(cookieParser());
+    app.useGlobalInterceptors(
+      new LoggingInterceptor(),
+      new ClassSerializerInterceptor(app.get(Reflector), {
+        enableImplicitConversion: false,
+      })
+    );
 
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.enableCors({
