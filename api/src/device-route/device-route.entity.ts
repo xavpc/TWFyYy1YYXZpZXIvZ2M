@@ -31,7 +31,8 @@ export class DeviceRoute {
 
   @Column({
     type: 'enum',
-    enum: DeviceRouteDay
+    enum: DeviceRouteDay,
+    nullable: true 
   })
   @ApiProperty({
     description: 'Routes will be asigned on a specific day for a device',
