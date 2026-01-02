@@ -94,6 +94,25 @@ export class CollectedPointsController {
     };
   }
 
+  @Get('session/:sessionId')
+  @ApiTags('FOR MOBILE USE')
+  @ApiOperation({ summary: 'Get all collected points for a specific device session' })
+  @ApiParam({ name: 'sessionId', description: 'Session ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiResponse({
+    status: 200,
+    description: 'Collected points retrieved successfully',
+    type: CollectedPointListResponse,
+  })
+  async findBySession(@Param('sessionId') sessionId: string) {
+    const collectedPointss = await this.collectedPointsService.findBySession(sessionId);
+    return {
+      success: true,
+      message: 'Collected points retrieved successfully for the session',
+      data: collectedPointss,
+      total: collectedPointss.length,
+    };
+  }
+
   @Get('collection-point/:collectionPointId')
   @ApiOperation({
     summary: 'Check if a collection point has been collected(temporary)',

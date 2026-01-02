@@ -1,9 +1,11 @@
 import { CollectionPoints } from "../collection-points/collection-points.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { Device } from "../device/device.entity";
 import { ApiProperty } from '@nestjs/swagger';
+import { DeviceSession } from "../device-session/device-session.entity";
 
 @Entity()
+@Unique(['collection_point', 'session'])
 export class CollectedPoints {
   @ApiProperty({
     description: 'Unique identifier for the collected point',
@@ -42,4 +44,13 @@ export class CollectedPoints {
   })
   @Column('timestamp')
   collected_timestamp: Date;
+
+
+  @ApiProperty({
+    description: 'The associated session',
+    type: () => CollectionPoints
+  })
+  @ManyToOne(() => DeviceSession, (session) => session.collected_points)
+  @JoinColumn({ name: 'session_id' })
+  session: DeviceSession;
 }
