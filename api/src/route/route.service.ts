@@ -8,6 +8,7 @@ import { FilterRouteDto } from './dto/filter-route.dto';
 import { Logger } from '@nestjs/common';
 import { CollectionPoints } from '../collection-points/collection-points.entity';
 import { DeviceRoute } from '../device-route/device-route.entity';
+import { RouteCoordinates } from '../route-coordinates/route-coordinates.entity';
 
 @Injectable()
 export class RouteService {
@@ -20,6 +21,8 @@ export class RouteService {
     private collectionPointsRepository: Repository<CollectionPoints>,
     @InjectRepository(DeviceRoute)
     private deviceRoutesRepository: Repository<DeviceRoute>,
+    @InjectRepository(RouteCoordinates)
+    private routeCoordinatesRepositoty: Repository<RouteCoordinates>,
   ) {}
 
   async create(createRouteDto: CreateRouteDto): Promise<Route> {
@@ -53,12 +56,16 @@ export class RouteService {
           const devicesCount = await this.deviceRoutesRepository.count({
             where: { route: { route_id: route.route_id } }
           });
+
+          const coordinatesCount = await this.routeCoordinatesRepositoty.count({
+            where: { route: { route_id: route.route_id } }
+          });
           
           return {
             ...route,
             collection_points_count: collectionPointsCount,
-            devices_count: devicesCount
-
+            devices_count: devicesCount,
+            has_coordinates: !!coordinatesCount
           };
         })
       );
