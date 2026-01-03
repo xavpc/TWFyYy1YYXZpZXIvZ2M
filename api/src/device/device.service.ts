@@ -56,7 +56,7 @@ export class DeviceService {
       search,
       page = 1,
       limit = 10,
-      sort_by = 'created_at',
+      sort_by = 'updated_at',
       sort_order = 'ASC'
     } = filterDto;
 
@@ -208,7 +208,7 @@ export class DeviceService {
       where,
       relations: ['employee'],
       order: {
-        created_at: 'ASC',
+        updated_at: 'ASC',
       },
     });
 
@@ -234,7 +234,7 @@ export class DeviceService {
       where,
       relations: ['employee'],
       order: {
-        created_at: 'ASC',
+        updated_at: 'ASC',
       },
     });
 
@@ -275,7 +275,7 @@ export class DeviceService {
       where,
       relations: ['employee'],
       order: {
-        created_at: 'ASC',
+        updated_at: 'ASC',
       },
     });
   }
@@ -315,7 +315,7 @@ export class DeviceService {
       where,
       relations: ['employee'],
       order: {
-        created_at: 'ASC',
+        updated_at: 'ASC',
       },
     });
 

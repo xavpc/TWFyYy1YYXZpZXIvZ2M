@@ -42,7 +42,7 @@ export class EmployeeService {
       search,
       page = 1,
       limit = 10,
-      sort_by = 'created_at',
+      sort_by = 'updated_at',
       sort_order = 'DESC'
     } = filterDto;
 
@@ -177,7 +177,7 @@ export class EmployeeService {
     const results = await this.employeeRepository.find({
       where,
       order: {
-        created_at: 'DESC',
+        updated_at: 'DESC',
       },
     });
 
@@ -206,7 +206,7 @@ export class EmployeeService {
     const results = await this.employeeRepository.find({
       where,
       order: {
-        created_at: 'DESC',
+        updated_at: 'DESC',
       },
     });
 
@@ -246,7 +246,7 @@ export class EmployeeService {
     return this.employeeRepository.find({
       where,
       order: {
-        created_at: 'DESC',
+        updated_at: 'DESC',
       },
     });
 }
