@@ -1,0 +1,26 @@
+# Git and version control
+.git
+.gitignore
+
+# Node.js
+node_modules
+npm-debug.log
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Environment files (should never be in the image)
+.env
+.env.*
+!/.env.online # We negate this if it's meant to be copied, but it's better to use Docker's env variables
+
+# IDE and OS files
+.vscode
+.idea
+*.suo
+*.user
+Thumbs.db
+
+# Misc
+README.md
