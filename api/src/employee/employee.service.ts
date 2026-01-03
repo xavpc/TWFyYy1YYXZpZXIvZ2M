@@ -5,6 +5,7 @@ import { Employee } from './employee.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { Logger } from '@nestjs/common';
+import { FilterEmployeeDto } from './dto/filter-employee.dto';
 @Injectable()
 export class EmployeeService {
   // private readonly logger = new Logger(EmployeeService.name);
@@ -21,8 +22,109 @@ export class EmployeeService {
     return this.employeeRepository.save(employee);
   }
 
-  findAll(): Promise<Employee[]> {
-    return this.employeeRepository.find();
+  async findAll(filterDto?: FilterEmployeeDto): Promise<{ data: Employee[], total: number }> {
+    if (!filterDto) {
+      const data = await this.employeeRepository.find({
+        order: { first_name: 'ASC' }
+      });
+      return { data, total: data.length };
+    }
+
+    const {
+      first_name,
+      middle_name,
+      last_name,
+      email,
+      address,
+      contact_number,
+      age,
+      status,
+      search,
+      page = 1,
+      limit = 10,
+      sort_by = 'created_at',
+      sort_order = 'DESC'
+    } = filterDto;
+
+    const skip = (page - 1) * limit;
+    let where: FindOptionsWhere<Employee> | FindOptionsWhere<Employee>[] = {};
+
+    // Handle global search
+    if (search) {
+      // Create base search conditions
+      const searchConditions: FindOptionsWhere<Employee>[] = [
+        { first_name: ILike(`%${search}%`) },
+        { middle_name: ILike(`%${search}%`) },
+        { last_name: ILike(`%${search}%`) },
+        { email: ILike(`%${search}%`) },
+        { address: ILike(`%${search}%`) },
+        { contact_number: ILike(`%${search}%`) },
+        { employee_id: ILike(`%${search}%`) }
+      ];
+
+      // Apply additional filters to each search condition
+      const additionalFilters: Partial<FindOptionsWhere<Employee>> = {};
+      
+      if (first_name) additionalFilters.first_name = ILike(`%${first_name}%`);
+      if (middle_name) additionalFilters.middle_name = ILike(`%${middle_name}%`);
+      if (last_name) additionalFilters.last_name = ILike(`%${last_name}%`);
+      if (email) additionalFilters.email = ILike(`%${email}%`);
+      if (address) additionalFilters.address = ILike(`%${address}%`);
+      if (contact_number) additionalFilters.contact_number = ILike(`%${contact_number}%`);
+      if (age !== undefined) additionalFilters.age = age;
+      if (status) additionalFilters.status = status;
+
+      // Combine search conditions with additional filters
+      where = searchConditions.map(condition => ({
+        ...condition,
+        ...additionalFilters
+      }));
+    } else {
+      // Handle individual field filters when no global search
+      const whereCondition: FindOptionsWhere<Employee> = {};
+
+      if (first_name) {
+        whereCondition.first_name = ILike(`%${first_name}%`);
+      }
+      if (middle_name) {
+        whereCondition.middle_name = ILike(`%${middle_name}%`);
+      }
+      if (last_name) {
+        whereCondition.last_name = ILike(`%${last_name}%`);
+      }
+      if (email) {
+        whereCondition.email = ILike(`%${email}%`);
+      }
+      if (address) {
+        whereCondition.address = ILike(`%${address}%`);
+      }
+      if (contact_number) {
+        whereCondition.contact_number = ILike(`%${contact_number}%`);
+      }
+      if (age !== undefined) {
+        whereCondition.age = age;
+      }
+      if (status) {
+        whereCondition.status = status;
+      }
+
+      where = whereCondition;
+    }
+
+    // Get total count
+    const total = await this.employeeRepository.count({ where });
+
+    // Get paginated data with sorting
+    const data = await this.employeeRepository.find({
+      where,
+      skip,
+      take: limit,
+      order: {
+        [sort_by]: sort_order,
+      },
+    });
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<Employee> {
@@ -75,7 +177,7 @@ export class EmployeeService {
     const results = await this.employeeRepository.find({
       where,
       order: {
-        first_name: 'ASC',
+        created_at: 'DESC',
       },
     });
 
@@ -104,7 +206,7 @@ export class EmployeeService {
     const results = await this.employeeRepository.find({
       where,
       order: {
-        first_name: 'ASC',
+        created_at: 'DESC',
       },
     });
 
@@ -144,7 +246,7 @@ export class EmployeeService {
     return this.employeeRepository.find({
       where,
       order: {
-        first_name: 'ASC',
+        created_at: 'DESC',
       },
     });
 }

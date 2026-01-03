@@ -5,6 +5,7 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmployeeResponse, EmployeeListResponse, EmployeeErrorResponse } from './dto/response.dto';
 import { Employee } from './employee.entity';
+import { FilterEmployeeDto } from './dto/filter-employee.dto';
 
 @ApiTags('Employees')
 @Controller('employees')
@@ -34,22 +35,116 @@ export class EmployeeController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all employees' })
+  @ApiOperation({ 
+    summary: 'Get all employees with filtering, pagination, and sorting',
+    description: 'Retrieve employees with optional filtering by name, email, status, etc. Supports pagination and sorting.'
+  })
+  @ApiQuery({ 
+    name: 'first_name', 
+    required: false, 
+    description: 'Filter by first name (partial match)',
+    example: 'John'
+  })
+  @ApiQuery({ 
+    name: 'middle_name', 
+    required: false, 
+    description: 'Filter by middle name (partial match)',
+    example: 'Michael'
+  })
+  @ApiQuery({ 
+    name: 'last_name', 
+    required: false, 
+    description: 'Filter by last name (partial match)',
+    example: 'Smith'
+  })
+  @ApiQuery({ 
+    name: 'email', 
+    required: false, 
+    description: 'Filter by email (partial match)',
+    example: 'john@example.com'
+  })
+  @ApiQuery({ 
+    name: 'address', 
+    required: false, 
+    description: 'Filter by address (partial match)',
+    example: 'Tokyo'
+  })
+  @ApiQuery({ 
+    name: 'contact_number', 
+    required: false, 
+    description: 'Filter by contact number (partial match)',
+    example: '090-1234'
+  })
+  @ApiQuery({ 
+    name: 'age', 
+    required: false, 
+    description: 'Filter by exact age',
+    type: Number,
+    example: 30
+  })
+  @ApiQuery({ 
+    name: 'status', 
+    required: false, 
+    description: 'Filter by employee status',
+    enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED']
+  })
+  @ApiQuery({ 
+    name: 'search', 
+    required: false, 
+    description: 'Global search across all text fields',
+    example: 'john'
+  })
+  @ApiQuery({ 
+    name: 'page', 
+    required: false, 
+    description: 'Page number for pagination',
+    type: Number,
+    example: 1
+  })
+  @ApiQuery({ 
+    name: 'limit', 
+    required: false, 
+    description: 'Number of items per page',
+    type: Number,
+    example: 10
+  })
+  @ApiQuery({ 
+    name: 'sort_by', 
+    required: false, 
+    description: 'Field to sort by',
+    example: 'first_name'
+  })
+  @ApiQuery({ 
+    name: 'sort_order', 
+    required: false, 
+    description: 'Sort order',
+    enum: ['ASC', 'DESC'],
+    example: 'ASC'
+  })
   @ApiResponse({
     status: 200,
     description: 'Employees retrieved successfully',
     type: EmployeeListResponse,
   })
-  async findAll() {
-    const employees = await this.employeeService.findAll();
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid query parameters'
+  })
+  async findAll(@Query() filterDto: FilterEmployeeDto) {
+    const result = await this.employeeService.findAll(filterDto);
+    
+    const totalPages = filterDto?.limit ? Math.ceil(result.total / filterDto.limit) : 1;
+    
     return {
       success: true,
       message: 'Employees retrieved successfully',
-      data: employees,
-      total: employees.length,
+      data: result.data,
+      total: result.total,
+      page: filterDto?.page || 1,
+      limit: filterDto?.limit || result.data.length,
+      totalPages,
     };
   }
-
 
   @Get('search/:field/:value')
   @ApiOperation({ summary: 'Search employees by specific field' })

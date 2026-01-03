@@ -33,7 +33,6 @@ async function bootstrap() {
       })
     );
 
-  app.useGlobalInterceptors(new LoggingInterceptor());
   app.enableCors({
     origin: [
       'http://localhost:3000',
@@ -46,6 +45,7 @@ async function bootstrap() {
       'https://gcweb-ten.vercel.app',
       'https://gcweb-fake.vercel.app',
       'https://gc-web1.netlify.app',
+      'http://gc.questsrv.com:3000',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
