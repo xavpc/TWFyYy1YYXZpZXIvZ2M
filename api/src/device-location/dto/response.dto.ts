@@ -55,7 +55,19 @@ export class DeviceLocationResponse {
     this.session_id = deviceLocation.session.session_id
   }
 }
-
+export class DeviceLocationBatchResponse {
+  @ApiProperty({ example: true })
+  success: boolean;
+  
+  @ApiProperty({ example: 'Device locations created successfully' })
+  message: string;
+  
+  @ApiProperty({ 
+    type: [DeviceLocationResponse], 
+    description: 'Array of created device locations' 
+  })
+  data: DeviceLocationResponse[];
+}
 
 export class DeviceLocationListResponse {
   @ApiProperty({

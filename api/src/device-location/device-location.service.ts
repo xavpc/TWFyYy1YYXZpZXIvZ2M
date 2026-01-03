@@ -95,4 +95,46 @@ export class DeviceLocationService {
       relations: ['device', 'session']
     });
   }
+
+  async createBatch(createDeviceLocationDtos: CreateDeviceLocationDto[]): Promise<DeviceLocation[]> {
+    const createdLocations: DeviceLocation[] = [];
+    
+    for (const dto of createDeviceLocationDtos) {
+      const deviceLocation = this.deviceLocationRepository.create(dto);
+      
+      if (dto.device_id) {
+        const device = await this.deviceRepository.findOne({
+          where: { device_id: dto.device_id }
+        });
+        
+        if (!device) {
+          throw new NotFoundException(
+            `Device with ID ${dto.device_id} not found`
+          );
+        }
+        
+        deviceLocation.device = device;
+      }
+  
+      if (dto.session_id) {
+        const session = await this.deviceSessionRepository.findOne({
+          where: { session_id: dto.session_id }
+        });
+        
+        if (!session) {
+          throw new NotFoundException(
+            `Session with ID ${dto.session_id} not found`
+          );
+        }
+        
+        deviceLocation.session = session;
+      }
+      
+      const savedLocation = await this.deviceLocationRepository.save(deviceLocation);
+      createdLocations.push(savedLocation);
+    }
+    
+    return createdLocations;
+  }
+  
 }

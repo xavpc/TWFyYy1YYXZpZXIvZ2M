@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { DeviceLocationService } from './device-location.service';
 import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
-import { DeviceLocationResponse, DeviceLocationListResponse, DeviceLocationErrorResponse } from './dto/response.dto';
+import { DeviceLocationResponse, DeviceLocationListResponse, DeviceLocationErrorResponse, DeviceLocationBatchResponse } from './dto/response.dto';
 
 @ApiTags('Device Locations')
 @Controller('device-locations')
@@ -157,6 +157,32 @@ export class DeviceLocationController {
     return {
       success: true,
       message: 'Device location deleted successfully',
+    };
+  }
+
+  @Post('batch')
+  @ApiTags('FOR MOBILE USE')
+  @ApiOperation({ summary: 'Create multiple device locations in batch' })
+  @ApiBody({ 
+    type: [CreateDeviceLocationDto], 
+    description: 'Array of device location data to create' 
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Device locations created successfully',
+    type: DeviceLocationBatchResponse,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid input data',
+    type: DeviceLocationErrorResponse,
+  })
+  async createBatch(@Body() createDeviceLocationDtos: CreateDeviceLocationDto[]) {
+    const newDeviceLocations = await this.deviceLocationService.createBatch(createDeviceLocationDtos);
+    return {
+      success: true,
+      message: 'Device locations created successfully',
+      data: newDeviceLocations,
     };
   }
 }
