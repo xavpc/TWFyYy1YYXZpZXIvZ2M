@@ -17,16 +17,6 @@ export class CollectionPointsService {
 
   async create(CreateCollectionPointsDto: CreateCollectionPointsDto): Promise<CollectionPoints> {
 
-    const existingPoint = await this.collectionPointsRepository.findOne({
-      where: { collection_point_name: CreateCollectionPointsDto.collection_point_name }
-    });
-    
-    if (existingPoint) {
-      throw new ConflictException(
-        `Collection point with name '${CreateCollectionPointsDto.collection_point_name}' already exists`
-      );
-    }
-    
     const collectionPoint = this.collectionPointsRepository.create(CreateCollectionPointsDto);
     
     if (CreateCollectionPointsDto.route_id) {
@@ -47,38 +37,102 @@ export class CollectionPointsService {
   }
 
 
-  async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]> {
-    if (!dtos.length) {
-      return [];
-    }
-    
-    const routeId = dtos[0].route_id;
-    if (!dtos.every(dto => dto.route_id === routeId)) {
-      throw new Error('All collection points in batch must belong to the same route');
-    }
-  
-    const route = await this.routeRepository.findOne({
-      where: { route_id: routeId }
-    });
-    
-    if (!route) {
-      throw new NotFoundException(`Route with ID ${routeId} not found`);
-    }
-  
-    const entities = dtos.map(dto => {
-      return this.collectionPointsRepository.create({
-        collection_point_name: dto.collection_point_name,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        sequence: dto.sequence,
-        route: route
-      });
-    });
-  
-    const savedCollectionPoints = await this.collectionPointsRepository.save(entities);
-    
-    return savedCollectionPoints;
+// SERVICE METHOD - Updated createBatch method
+async createBatch(dtos: CreateCollectionPointsDto[]): Promise<CollectionPoints[]> {
+  if (!dtos.length) {
+    return [];
   }
+
+  // Check for duplicate sequences within the batch
+  const sequences = dtos.map(dto => dto.sequence);
+  const duplicateSequences = sequences.filter((sequence, index) => sequences.indexOf(sequence) !== index);
+  if (duplicateSequences.length > 0) {
+    throw new ConflictException(
+      `Duplicate sequences found in batch: ${[...new Set(duplicateSequences)].join(', ')}`
+    );
+  }
+
+  // Validate that all collection points belong to the same route (if route_id is provided)
+  const routeIds = [...new Set(dtos.map(dto => dto.route_id).filter(Boolean))];
+  if (routeIds.length > 1) {
+    throw new ConflictException('All collection points in batch must belong to the same route');
+  }
+
+  let route: Route | null = null;
+  if (routeIds.length === 1) {
+    route = await this.routeRepository.findOne({
+      where: { route_id: routeIds[0] }
+    });
+
+    if (!route) {
+      throw new NotFoundException(`Route with ID ${routeIds[0]} not found`);
+    }
+  }
+
+  // If we have a route, validate sequence ordering
+  if (route) {
+    // Get existing collection points for this route, ordered by sequence
+    const existingCollectionPoints = await this.collectionPointsRepository.find({
+      where: { route: { route_id: route.route_id } },
+      order: { sequence: 'ASC' }
+    });
+
+    const existingSequences = existingCollectionPoints.map(cp => cp.sequence);
+    const newSequences = sequences.sort((a, b) => a - b);
+
+    // Check for duplicate sequences with existing data
+    const conflictingSequences = newSequences.filter(seq => existingSequences.includes(seq));
+    if (conflictingSequences.length > 0) {
+      throw new ConflictException(
+        `Sequences ${conflictingSequences.join(', ')} already exist in route ${route.route_id}`
+      );
+    }
+
+    // Validate sequence ordering
+    const allSequences = [...existingSequences, ...newSequences].sort((a, b) => a - b);
+    
+    // Check if sequences are consecutive starting from 1
+    for (let i = 0; i < allSequences.length; i++) {
+      if (allSequences[i] !== i + 1) {
+        throw new ConflictException(
+          `Invalid sequence order. Expected sequence ${i + 1} but found ${allSequences[i]}. ` +
+          `Sequences must be consecutive starting from 1. Current sequences would be: ${allSequences.join(', ')}`
+        );
+      }
+    }
+  } else {
+    // If no route specified, just validate that the new sequences are consecutive starting from 1
+    const sortedSequences = sequences.sort((a, b) => a - b);
+    for (let i = 0; i < sortedSequences.length; i++) {
+      if (sortedSequences[i] !== i + 1) {
+        throw new ConflictException(
+          `Invalid sequence order. Sequences must be consecutive starting from 1. Found: ${sortedSequences.join(', ')}`
+        );
+      }
+    }
+  }
+
+  // Create entities
+  const entities = dtos.map(dto => {
+    const entity = this.collectionPointsRepository.create({
+      collection_point_name: dto.collection_point_name,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      sequence: dto.sequence,
+    });
+
+    if (route) {
+      entity.route = route;
+    }
+
+    return entity;
+  });
+
+  // Save all entities
+  const savedCollectionPoints = await this.collectionPointsRepository.save(entities);
+
+  return savedCollectionPoints;
+}
 
   findAll(): Promise<CollectionPoints[]> {
     return this.collectionPointsRepository.find({
