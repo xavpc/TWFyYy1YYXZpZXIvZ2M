@@ -6,7 +6,8 @@ import { ReportsController } from './reports.controller';
 import { DeviceSession } from '../device-session/device-session.entity';
 import { AutoReportGenerationService } from 'src/scheduled-tasks/auto-report-generation.service';
 import { AutoSessionEndService } from 'src/scheduled-tasks/auto-end-session.service';
-import { DeviceSessionModule } from '../device-session/device-session.module'; // Import the module
+import { DeviceSessionModule } from '../device-session/device-session.module'; 
+import { ReportPdfService } from './report-pdf.service';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { DeviceSessionModule } from '../device-session/device-session.module'; /
     DeviceSessionModule, 
   ],
   providers: [
-    ReportsService, 
+    ReportsService,
+    ReportPdfService,
     AutoReportGenerationService, 
     AutoSessionEndService,
   ],

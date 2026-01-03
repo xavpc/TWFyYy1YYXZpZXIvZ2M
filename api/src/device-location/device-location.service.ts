@@ -6,6 +6,8 @@ import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
 import { Device } from '../device/device.entity';
 import { DeviceSession } from 'src/device-session/device-session.entity';
+import { DeviceLocationGateway } from 'src/sockets/device-location.gateway';
+import { LocationObjectType } from 'src/sockets/types/location-data.type';
 
 @Injectable()
 export class DeviceLocationService {
@@ -16,22 +18,23 @@ export class DeviceLocationService {
     private deviceRepository: Repository<Device>,
     @InjectRepository(DeviceSession)
     private deviceSessionRepository: Repository<DeviceSession>,
-  ) {}
+    private readonly gateway: DeviceLocationGateway
+  ) { }
 
   async create(createDeviceLocationDto: CreateDeviceLocationDto): Promise<DeviceLocation> {
     const deviceLocation = this.deviceLocationRepository.create(createDeviceLocationDto);
-    
+
     if (createDeviceLocationDto.device_id) {
       const device = await this.deviceRepository.findOne({
         where: { device_id: createDeviceLocationDto.device_id }
       });
-      
+
       if (!device) {
         throw new NotFoundException(
           `Device with ID ${createDeviceLocationDto.device_id} not found`
         );
       }
-      
+
       deviceLocation.device = device;
     }
 
@@ -39,17 +42,26 @@ export class DeviceLocationService {
       const session = await this.deviceSessionRepository.findOne({
         where: { session_id: createDeviceLocationDto.session_id }
       });
-      
+
       if (!session) {
         throw new NotFoundException(
           `session with ID ${createDeviceLocationDto.session_id} not found`
         );
       }
-      
+
       deviceLocation.session = session;
     }
 
-    return this.deviceLocationRepository.save(deviceLocation);
+    const saved = await this.deviceLocationRepository.save(deviceLocation);
+
+    this.gateway.sendLocationUpdate({
+      session_id: saved.session?.session_id,
+      latitude: String(saved.latitude),
+      longitude: String(saved.longitude),
+      current_location_timestamp: String(saved.current_location_timestamp),
+    });
+
+    return saved;
   }
 
   findAll(): Promise<DeviceLocation[]> {
@@ -98,43 +110,52 @@ export class DeviceLocationService {
 
   async createBatch(createDeviceLocationDtos: CreateDeviceLocationDto[]): Promise<DeviceLocation[]> {
     const createdLocations: DeviceLocation[] = [];
-    
+    const batchSocketLocations: LocationObjectType[] = []
     for (const dto of createDeviceLocationDtos) {
       const deviceLocation = this.deviceLocationRepository.create(dto);
-      
+
       if (dto.device_id) {
         const device = await this.deviceRepository.findOne({
           where: { device_id: dto.device_id }
         });
-        
+
         if (!device) {
           throw new NotFoundException(
             `Device with ID ${dto.device_id} not found`
           );
         }
-        
+
         deviceLocation.device = device;
       }
-  
+
       if (dto.session_id) {
         const session = await this.deviceSessionRepository.findOne({
           where: { session_id: dto.session_id }
         });
-        
+
         if (!session) {
           throw new NotFoundException(
             `Session with ID ${dto.session_id} not found`
           );
         }
-        
+
         deviceLocation.session = session;
       }
-      
+
       const savedLocation = await this.deviceLocationRepository.save(deviceLocation);
       createdLocations.push(savedLocation);
+      batchSocketLocations.push({
+        session_id: savedLocation.session.session_id,
+        latitude: String(savedLocation.latitude),
+        longitude: String(savedLocation.longitude),
+        current_location_timestamp: String(savedLocation.current_location_timestamp)
+
+      })
     }
-    
+
+    this.gateway.sendBatchLocationUpdate(batchSocketLocations);
+
     return createdLocations;
   }
-  
+
 }

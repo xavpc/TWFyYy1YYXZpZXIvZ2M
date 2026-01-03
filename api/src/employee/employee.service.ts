@@ -112,7 +112,7 @@ export class EmployeeService {
     }
 
     // Get total count
-    const total = await this.employeeRepository.count({ where });
+    const total = await this.employeeRepository.count();
 
     // Get paginated data with sorting
     const data = await this.employeeRepository.find({

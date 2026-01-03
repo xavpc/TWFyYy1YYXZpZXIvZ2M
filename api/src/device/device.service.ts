@@ -11,28 +11,28 @@ import { Logger } from '@nestjs/common';
 @Injectable()
 export class DeviceService {
   // private readonly logger = new Logger(DeviceService.name);
-  
+
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
-  ) {}
+  ) { }
 
   async create(createDeviceDto: CreateDeviceDto): Promise<Device> {
     const device = this.deviceRepository.create(createDeviceDto);
-    
+
     if (createDeviceDto.employee_id) {
       const employee = await this.employeeRepository.findOne({
         where: { employee_id: createDeviceDto.employee_id }
       });
-      
+
       if (!employee) {
         throw new NotFoundException(
           `Employee with ID ${createDeviceDto.employee_id} not found`
         );
       }
-      
+
       device.employee = employee;
     }
 
@@ -79,12 +79,12 @@ export class DeviceService {
       // Combine search conditions with additional filters
       where = searchConditions.map(condition => {
         const combinedCondition = { ...condition };
-        
+
         // Apply non-employee filters
         if (device_name) combinedCondition.device_name = ILike(`%${device_name}%`);
         if (vehicle_plate_num) combinedCondition.vehicle_plate_num = ILike(`%${vehicle_plate_num}%`);
         if (status) combinedCondition.status = status;
-        
+
         // Handle employee filter specially
         if (employee_id) {
           if (combinedCondition.employee && typeof combinedCondition.employee === 'object') {
@@ -98,7 +98,7 @@ export class DeviceService {
             combinedCondition.employee = { employee_id };
           }
         }
-        
+
         return combinedCondition;
       });
     } else {
@@ -122,12 +122,8 @@ export class DeviceService {
     }
 
     // Get total count
-    const total = await this.deviceRepository.count({ 
-      where,
-      relations: ['employee']
-    });
+    const total = await this.deviceRepository.count();
 
-    // Get paginated data with sorting
     const data = await this.deviceRepository.find({
       where,
       relations: ['employee'],
@@ -154,22 +150,22 @@ export class DeviceService {
 
   async update(id: string, updateDeviceDto: UpdateDeviceDto): Promise<Device> {
     const device = await this.findOne(id);
-    
+
     // Handle employee assignment update
     if (updateDeviceDto.employee_id) {
       const employee = await this.employeeRepository.findOne({
         where: { employee_id: updateDeviceDto.employee_id }
       });
-      
+
       if (!employee) {
         throw new NotFoundException(
           `Employee with ID ${updateDeviceDto.employee_id} not found`
         );
       }
-      
+
       device.employee = employee;
     }
-    
+
     Object.assign(device, updateDeviceDto);
     return this.deviceRepository.save(device);
   }
@@ -239,7 +235,7 @@ export class DeviceService {
     });
 
     if (results.length === 0) {
-      throw new NotFoundException(`No devices found matching '${searchTerm}'`);
+      return []
     }
 
     return results;
@@ -252,7 +248,7 @@ export class DeviceService {
       'device_id',
       'status'
     ];
-    
+
     const where: FindOptionsWhere<Device> = {};
 
     // this.logger.debug('Original criteria:', criteria);
@@ -280,7 +276,7 @@ export class DeviceService {
     });
   }
 
-  async searchByEmployeeInfo(criteria: { 
+  async searchByEmployeeInfo(criteria: {
     employee_name?: string;
     employee_email?: string;
     employee_id?: string;

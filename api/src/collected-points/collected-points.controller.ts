@@ -50,6 +50,9 @@ export class CollectedPointsController {
     };
   }
 
+
+
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a collected point by ID' })
   @ApiParam({ name: 'id', description: 'Collected point ID', example: '123e4567-e89b-12d3-a456-426614174000' })

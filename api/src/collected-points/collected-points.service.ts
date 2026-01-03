@@ -7,6 +7,7 @@ import { UpdateCollectedPointsDto } from './dto/update-collected-points.dto';
 import { Device } from '../device/device.entity';
 import { CollectionPoints } from 'src/collection-points/collection-points.entity';
 import { DeviceSession } from '../device-session/device-session.entity';
+import { DeviceLocationGateway } from 'src/sockets/device-location.gateway';
 
 @Injectable()
 export class CollectedPointsService {
@@ -19,6 +20,7 @@ export class CollectedPointsService {
     private collectionPointsRepository: Repository<CollectionPoints>,
     @InjectRepository(DeviceSession)
     private deviceSessionRepository: Repository<DeviceSession>,
+    private readonly gateway: DeviceLocationGateway
   ) {}
 
   async create(createCollectedPointsDto: CreateCollectedPointsDto): Promise<CollectedPoints> {
@@ -74,7 +76,21 @@ export class CollectedPointsService {
       session: device_session
     });
   
-    return this.collectedPointsRepository.save(CollectedPoints);
+    const saved = await  this.collectedPointsRepository.save(CollectedPoints);
+
+    this.gateway.sendCollectedUpdate({
+      session_id: saved.session?.session_id,
+      collected_point_id: saved.collected_point_id,
+      push_timestamp: saved.push_timestamp instanceof Date
+        ? saved.push_timestamp.getTime()
+        : Number(saved.push_timestamp),
+      collected_timestamp: saved.collected_timestamp instanceof Date
+        ? saved.collected_timestamp.toISOString()
+        : String(saved.collected_timestamp),
+      collection_point: saved.collection_point
+    });
+    
+    return saved;
   }
 
   findAll(): Promise<CollectedPoints[]> {
@@ -82,6 +98,7 @@ export class CollectedPointsService {
       relations: ['device', 'collection_point', 'session']
     });
   }
+
 
   async findOne(id: string): Promise<CollectedPoints> {
     const CollectedPoints = await this.collectedPointsRepository.findOne({
@@ -93,6 +110,7 @@ export class CollectedPointsService {
     }
     return CollectedPoints;
   }
+
 
   async update(id: string, updateCollectedPointsDto: UpdateCollectedPointsDto): Promise<CollectedPoints> {
     const CollectedPoints = await this.findOne(id);

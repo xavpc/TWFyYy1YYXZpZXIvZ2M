@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Device } from "../device/device.entity";
 import { DeviceSession } from "../device-session/device-session.entity";
 import { Route } from "../route/route.entity";
+import { Transform } from "class-transformer";
 
 @Entity()
 export class DeviceLocation {
@@ -47,6 +48,18 @@ export class DeviceLocation {
     example: '2025-01-01T12:00:00Z',
   })
   @Column('timestamp')
+  @Transform(({ value }) => {
+    if (value instanceof Date) {
+      // Preserve the original time components but format as ISO string with Z
+      return `${value.getFullYear()}-${
+        String(value.getMonth() + 1).padStart(2, '0')}-${
+        String(value.getDate()).padStart(2, '0')}T${
+        String(value.getHours()).padStart(2, '0')}:${
+        String(value.getMinutes()).padStart(2, '0')}:${
+        String(value.getSeconds()).padStart(2, '0')}.000Z`;
+    }
+    return value;
+  })
   current_location_timestamp: Date;
 
   @ManyToOne(() => DeviceSession, (session) => session.device_locations, { nullable: false, onDelete: 'CASCADE' })

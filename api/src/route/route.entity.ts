@@ -54,7 +54,7 @@ export class Route {
   @Column('decimal', { 
     precision: 8, 
     scale: 6, 
-    default: 36.2048 
+    default: 35.6763976
   })
   center_latitude: number;
 
@@ -65,7 +65,7 @@ export class Route {
   @Column('decimal', { 
     precision: 9, 
     scale: 6, 
-    default: 138.2529
+    default: 139.6993259
   })
   center_longitude: number;
 

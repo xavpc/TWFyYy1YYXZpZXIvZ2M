@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn, PrimaryGeneratedColumn, OneToOne
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceSession } from '../device-session/device-session.entity';
 
+//warming, fix later because reports should not be deleted even though a route is deleted,else use soft delete
 @Entity()
 export class Reports {
   @ApiProperty({

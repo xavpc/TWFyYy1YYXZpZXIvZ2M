@@ -121,9 +121,7 @@ export class RouteService {
     }
 
     // Get total count
-    const total = await this.routeRepository.count({ 
-      where,
-    });
+    const total = await this.routeRepository.count();
 
     // Get paginated data with sorting
     const data = await this.routeRepository.find({
