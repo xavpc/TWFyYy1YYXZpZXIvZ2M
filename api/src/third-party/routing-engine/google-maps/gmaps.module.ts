@@ -5,5 +5,6 @@ import { GmapsRoutingController } from './gmaps.controller';
 @Module({
   controllers: [GmapsRoutingController],
   providers: [GmapsRoutingService],
+  exports: [GmapsRoutingService]
 })
 export class GmapsModule {}

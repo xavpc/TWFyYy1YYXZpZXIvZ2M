@@ -222,4 +222,74 @@ export class RouteCoordinatesController {
       throw error;
     }
   }
+
+
+  @Delete('user-point/:id')
+  @ApiOperation({ 
+    summary: 'Delete user point and its associated generated points',
+    description: 'Deletes a user point along with all generated points that are part of the same route segment. This maintains route continuity by removing the entire segment associated with the user point.'
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Route coordinates ID of the user point to delete', 
+    example: '123e4567-e89b-12d3-a456-426614174000' 
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User point and associated generated points deleted successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'User point and associated generated points deleted successfully',
+        deletedCount: 8,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Route coordinates not found',
+    type: RouteCoordinatesErrorResponse,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Not a user point',
+    schema: {
+      example: {
+        success: false,
+        message: 'This operation can only be performed on user points',
+      },
+    },
+  })
+  async removeUserPointWithGeneratedPoints(@Param('id') id: string) {
+    try {
+      const userPoint = await this.routeCoordinatesService.findOne(id);
+      const routeId = userPoint.route.route_id;
+      
+      const coordinatesBeforeDeletion = await this.routeCoordinatesService.findByRoute(routeId);
+      const countBefore = coordinatesBeforeDeletion.length;
+      
+      await this.routeCoordinatesService.removeUserPointWithGeneratedPoints(id);
+      
+      const coordinatesAfterDeletion = await this.routeCoordinatesService.findByRoute(routeId);
+      const countAfter = coordinatesAfterDeletion.length;
+      const deletedCount = countBefore - countAfter;
+      
+      return {
+        success: true,
+        message: 'User point and associated generated points deleted successfully',
+        deletedCount: deletedCount,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error.message === 'This operation can only be performed on user points') {
+        return {
+          success: false,
+          message: error.message,
+        };
+      }
+      throw error;
+    }
+  }
 }
