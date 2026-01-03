@@ -1,6 +1,2 @@
-export enum UserRole {
-    ADMIN = 'admin',
-    GARBAGE_COLLECTOR = 'garbage_collector'
-  }
-
-  
+// Re-export Prisma-generated enum for backward compatibility
+export { UserRole } from '@prisma/client';

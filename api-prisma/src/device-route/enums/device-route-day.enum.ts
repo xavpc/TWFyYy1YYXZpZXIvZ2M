@@ -1,9 +1,2 @@
-export enum DeviceRouteDay {
-    SUNDAY = 'sunday',
-    MONDAY = 'monday',
-    TUESDAY = 'tuesday',
-    WEDNESDAY = 'wednesday',
-    THURSDAY = 'thursday',
-    FRIDAY = 'friday',
-    SATURDAY = 'saturday'
-  }
+// Re-export Prisma-generated enum for backward compatibility
+export { DeviceRouteDay } from '@prisma/client';

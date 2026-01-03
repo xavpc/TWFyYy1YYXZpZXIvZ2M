@@ -1,15 +1,10 @@
-import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { RouteController } from "./route.controller";
-import { RouteService } from "./route.service";
-import { Route } from "./route.entity";
-import { CollectionPoints } from "../collection-points/collection-points.entity";
-import { DeviceRoute } from "../device-route/device-route.entity";
-import { RouteCoordinates } from "../route-coordinates/route-coordinates.entity";
+import { Module } from '@nestjs/common';
+import { RouteController } from './route.controller';
+import { RouteService } from './route.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Route, CollectionPoints, DeviceRoute, RouteCoordinates])],
-    controllers: [RouteController],
-    providers: [RouteService]
+  controllers: [RouteController],
+  providers: [RouteService],
+  exports: [RouteService],
 })
 export class RouteModule {}

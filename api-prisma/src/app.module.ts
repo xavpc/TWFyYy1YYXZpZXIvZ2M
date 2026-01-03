@@ -22,6 +22,7 @@ import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReportsModule } from './reports/reports.module';
 import { GmapsModule } from './third-party/routing-engine/google-maps/gmaps.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 
 
@@ -53,7 +54,7 @@ import { GmapsModule } from './third-party/routing-engine/google-maps/gmaps.modu
     ScheduledTasksModule,
     ReportsModule,
     GmapsModule,
-    
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [
