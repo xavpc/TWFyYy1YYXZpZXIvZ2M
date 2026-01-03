@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { And, IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { DeviceSession } from './device-session.entity';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
 import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
 import { DeviceRoute } from '../device-route/device-route.entity';
+import { Reports } from '../reports/reports.entity';
 
 @Injectable()
 export class DeviceSessionService {
@@ -13,6 +14,8 @@ export class DeviceSessionService {
     private deviceSessionRepository: Repository<DeviceSession>,
     @InjectRepository(DeviceRoute)
     private deviceRouteRepository: Repository<DeviceRoute>,
+    @InjectRepository(Reports)
+    private reportRepository: Repository<Reports>,
   ) {}
 
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
@@ -54,8 +57,11 @@ export class DeviceSessionService {
     return session;
   }
 
-  async findByDeviceId(device_id: string): Promise<DeviceSession[]> {
-    return await this.deviceSessionRepository
+  async findByDeviceId(
+    device_id: string,
+    getActive: boolean = false
+  ): Promise<DeviceSession[]> {
+    const query = this.deviceSessionRepository
       .createQueryBuilder('session')
       .innerJoinAndSelect('session.device_route', 'device_route')
       .leftJoinAndSelect('device_route.device', 'device_route_device')
@@ -69,16 +75,27 @@ export class DeviceSessionService {
         'device',
         'device.device_id = :device_id',
         { device_id }
-      )
-      .distinct(true)
-      .getMany();
+      );
+    
+
+    if (getActive) {
+      query.andWhere('session.end IS NULL');
+    } else {
+      query.andWhere('session.end IS NOT NULL');
+    }
+    
+    query.distinct(true);
+    
+    return await query.getMany();
   }
 
   async findActiveSessionByDeviceId(device_id: string): Promise<DeviceSession | null> {
     const session = await this.deviceSessionRepository
       .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_locations', 'device_locations')
-      .where('device_locations.device_id = :device_id', { device_id })
+      .leftJoinAndSelect('session.device_route', 'device_route')
+      .leftJoinAndSelect('device_route.device', 'device_route_device')
+      .leftJoinAndSelect('device_route.route', 'device_route_route')
+      .where('device_route.device_id = :device_id', { device_id })
       .andWhere('session.end IS NULL')
       .getOne();
     
@@ -129,12 +146,14 @@ export class DeviceSessionService {
   async findActiveSessions(): Promise<DeviceSession[]> {
     return await this.deviceSessionRepository.find({
       where: { end: IsNull() },
+      relations: ['device_route', 'device_route.device', 'device_route.route']
     });
   }
 
   async findSessionsByDate(
     date: Date,
-    deviceId?: string
+    deviceId?: string,
+    getActive: boolean = false
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -149,6 +168,13 @@ export class DeviceSessionService {
       .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
+
+    if (getActive) {
+      query.andWhere('session.end IS NULL');
+    } else {
+      query.andWhere('session.end IS NOT NULL');
+    }
+    
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
            .andWhere('device_locations.device_id = :deviceId', { deviceId });
@@ -156,13 +182,24 @@ export class DeviceSessionService {
     
     return await query.getMany();
   }
+  
 
-  findByDeviceRoute(deviceRouteId: string, deviceId?: string): Promise<DeviceSession[]> {
+  findByDeviceRoute(
+    deviceRouteId: string, 
+    deviceId?: string, 
+    getActive: boolean = false
+  ): Promise<DeviceSession[]> {
     const query = this.deviceSessionRepository.createQueryBuilder('session')
       .leftJoinAndSelect('session.device_route', 'device_route')
       .leftJoinAndSelect('device_route.device', 'device_route_device')
       .leftJoinAndSelect('device_route.route', 'device_route_route')
       .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId });
+    
+    if (getActive) {
+      query.andWhere('session.end IS NULL');
+    } else {
+      query.andWhere('session.end IS NOT NULL');
+    }
     
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
@@ -172,11 +209,13 @@ export class DeviceSessionService {
     return query.getMany();
   }
   
+  
 
   async findSessionsByRouteAndDate(
     deviceRouteId: string,
     date: Date,
-    deviceId?: string
+    deviceId?: string,
+    getActive: boolean = false
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -192,6 +231,12 @@ export class DeviceSessionService {
       .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId })
       .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
     
+    if (getActive) {
+      query.andWhere('session.end IS NULL');
+    } else {
+      query.andWhere('session.end IS NOT NULL');
+    }
+    
     if (deviceId) {
       query.innerJoin('session.device_locations', 'device_locations')
            .andWhere('device_locations.device_id = :deviceId', { deviceId });
@@ -203,6 +248,38 @@ export class DeviceSessionService {
   async removeAll(): Promise<DeviceSession[]> {
     const sessions = await this.deviceSessionRepository.find();
     return await this.deviceSessionRepository.remove(sessions);
+  }
+
+
+  async findRecentlyEndedSessions(lookbackHours = 24): Promise<DeviceSession[]> {
+    const lookbackDate = new Date();
+    lookbackDate.setHours(lookbackDate.getHours() - lookbackHours);
+    
+    return this.deviceSessionRepository.find({
+      where: {
+        end: And(Not(IsNull()), MoreThanOrEqual(lookbackDate)), // Only recent completed sessions
+      },
+      relations: [
+        'device_route',
+        'device_route.route',
+        'device_route.device',
+        'device_route.device.employee'
+      ],
+      order: {
+        end: 'DESC', 
+      },
+    });
+  }
+  
+
+  async sessionHasReport(session_id: string): Promise<boolean> {
+    const reportCount = await this.reportRepository.count({
+      where: {
+        session: { session_id }
+      }
+    });
+    
+    return reportCount > 0;
   }
 
 }

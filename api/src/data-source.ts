@@ -15,6 +15,7 @@ import { Image } from './image/image.entity';
 import { Complaints } from './complaints/complaints.entity';
 import { Users } from './auth/user/user.entity';
 import { DeviceSession } from './device-session/device-session.entity';
+import { Reports } from './reports/reports.entity';
 
 //warning: dont remove this ples or error in migrations
 config({
@@ -40,7 +41,7 @@ export default new DataSource({
     Complaints,
     Users,
     DeviceSession,
-  
+    Reports
   ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   subscribers: [],

@@ -7,17 +7,17 @@ import { createDatabaseIfNeeded } from './create-db';
 import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
 
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      await createDatabaseIfNeeded();
-      console.log('Production environment: Database check completed. Starting the application...');
-    } catch (error) {
-      console.error('Failed to create database:', error);
-      process.exit(1);
-    }
-  } else {
-    console.log('Development environment: Skipping database creation check.');
-  }
+  // if (process.env.NODE_ENV !== 'production') {
+  //   try {
+  //     await createDatabaseIfNeeded();
+  //     console.log('Production environment: Database check completed. Starting the application...');
+  //   } catch (error) {
+  //     console.error('Failed to create database:', error);
+  //     process.exit(1);
+  //   }
+  // } else {
+  //   console.log('Development environment: Skipping database creation check.');
+  // }
 
 
     const app = await NestFactory.create(AppModule
@@ -43,7 +43,9 @@ async function bootstrap() {
       'https://gcweb-psi.vercel.app',
       'https://gc-web-one.vercel.app',
       'https://gcweb-six.vercel.app',
+      'https://gcweb-ten.vercel.app',
       'https://gcweb-fake.vercel.app',
+      'https://gc-web1.netlify.app',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

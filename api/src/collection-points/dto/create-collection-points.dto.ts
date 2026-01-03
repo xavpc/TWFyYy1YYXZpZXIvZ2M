@@ -2,6 +2,15 @@ import { IsString, IsNotEmpty, IsNumber, IsUUID, Min, Max } from 'class-validato
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCollectionPointsDto {
+
+  @ApiProperty({
+    description: 'A unique sequence number for the collection points, to know the precedence of points',
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  sequence: number;
+
   @ApiProperty({
     description: 'Name of the collection point',
     example: 'Downtown Collection Point',

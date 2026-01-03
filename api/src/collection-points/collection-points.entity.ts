@@ -13,6 +13,17 @@ export class CollectionPoints {
   collection_point_id: string;
 
   @ApiProperty({
+    description: 'sequence of the collection point',
+    example: 1
+  })
+  @Column({
+    type: 'int',
+    nullable: false
+  })
+  sequence: number;
+
+
+  @ApiProperty({
     description: 'The associated route',
     type: () => Route
   })

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, Query } from '@nestjs/common';
 import { DeviceRouteService } from './device-route.service';
 import { CreateDeviceRouteDto } from './dto/create-device-route.dto';
 import { UpdateDeviceRouteDto } from './dto/update-device-route.dto';
@@ -101,8 +101,11 @@ export class DeviceRouteController {
     description: 'Device routes retrieved successfully',
     type: DeviceRouteListResponse,
   })
-  async findByRoute(@Param('routeId') routeId: string) {
-    const deviceRoutes = await this.deviceRouteService.findByRoute(routeId);
+  async findByRoute(
+    @Param('routeId') routeId: string,
+    @Query('groupByDevice') groupByDevice?: boolean
+  ) {
+    const deviceRoutes = await this.deviceRouteService.findByRoute(routeId, groupByDevice);
     return {
       success: true,
       message: 'Device routes retrieved successfully for the route',

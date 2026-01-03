@@ -54,9 +54,14 @@
     @Get('device/:device_id')
     @ApiOperation({ summary: 'Find all sessions for a specific device' })
     @ApiParam({ name: 'device_id', description: 'Device ID to find sessions for' })
+    @ApiQuery({ name: 'getActive', description: 'Filter by active sessions only', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'List of sessions for the device', type: DeviceSessionListResponse })
-    async findByDeviceId(@Param('device_id') device_id: string): Promise<DeviceSessionListResponse> {
-      const sessions = await this.deviceSessionService.findByDeviceId(device_id);
+    async findByDeviceId(
+      @Param('device_id') device_id: string,
+      @Query('getActive') getActive?: string
+    ): Promise<DeviceSessionListResponse> {
+      const isActive = getActive === 'true';
+      const sessions = await this.deviceSessionService.findByDeviceId(device_id, isActive);
       return {
         success: true,
         message: `Device sessions for device ${device_id} retrieved successfully`,
@@ -91,14 +96,22 @@
     @ApiQuery({ name: 'deviceRouteId', description: 'Route ID', required: true })
     @ApiQuery({ name: 'date', description: 'Date to search for sessions (ISO format)', required: true })
     @ApiQuery({ name: 'deviceId', description: 'Optional device ID to filter by', required: false })
+    @ApiQuery({ name: 'getActive', description: 'Filter by active sessions only', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'List of sessions matching filters', type: DeviceSessionListResponse })
     async findSessionsByRouteAndDate(
       @Query('deviceRouteId') deviceRouteId: string,
       @Query('date') dateString: string,
       @Query('deviceId') deviceId?: string,
+      @Query('getActive') getActive?: string
     ): Promise<DeviceSessionListResponse> {
       const date = new Date(dateString);
-      const sessions = await this.deviceSessionService.findSessionsByRouteAndDate(deviceRouteId, date, deviceId);
+      const isActive = getActive === 'true';
+      const sessions = await this.deviceSessionService.findSessionsByRouteAndDate(
+        deviceRouteId, 
+        date, 
+        deviceId, 
+        isActive
+      );
       
       return {
         success: true,
@@ -112,13 +125,20 @@
     @ApiOperation({ summary: 'Find sessions for a specific date and optionally by device ID' })
     @ApiQuery({ name: 'date', description: 'Date to search for sessions (ISO format)' })
     @ApiQuery({ name: 'deviceId', description: 'Optional device ID to filter by', required: false })
+    @ApiQuery({ name: 'getActive', description: 'Filter by active sessions only', required: false, type: Boolean })
     @ApiResponse({ status: 200, description: 'List of sessions for the specified filters', type: DeviceSessionListResponse })
     async findSessionsByDate(
       @Query('date') dateString: string,
       @Query('deviceId') deviceId?: string,
+      @Query('getActive') getActive?: string
     ): Promise<DeviceSessionListResponse> {
       const date = new Date(dateString);
-      const sessions = await this.deviceSessionService.findSessionsByDate(date, deviceId);
+      const isActive = getActive === 'true';
+      const sessions = await this.deviceSessionService.findSessionsByDate(
+        date, 
+        deviceId, 
+        isActive
+      );
       
       return {
         success: true,
@@ -153,6 +173,7 @@
     @ApiOperation({ summary: 'Get all device sessions for a specific device route and optionally by device ID' })
     @ApiParam({ name: 'deviceRouteId', description: 'Route ID', example: '123e4567-e89b-12d3-a456-426614174000' })
     @ApiQuery({ name: 'deviceId', description: 'Optional device ID to filter by', required: false })
+    @ApiQuery({ name: 'getActive', description: 'Filter by active sessions only', required: false, type: Boolean })
     @ApiResponse({
       status: 200,
       description: 'Device sessions retrieved successfully',
@@ -160,9 +181,15 @@
     })
     async findByRoute(
       @Param('deviceRouteId') deviceRouteId: string,
-      @Query('deviceId') deviceId?: string
+      @Query('deviceId') deviceId?: string,
+      @Query('getActive') getActive?: string
     ) {
-      const sessions = await this.deviceSessionService.findByDeviceRoute(deviceRouteId, deviceId);
+      const isActive = getActive === 'true';
+      const sessions = await this.deviceSessionService.findByDeviceRoute(
+        deviceRouteId, 
+        deviceId, 
+        isActive
+      );
       return {
         success: true,
         message: 'Sessions retrieved successfully for the filters',
