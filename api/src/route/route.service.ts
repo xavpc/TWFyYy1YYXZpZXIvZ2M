@@ -146,10 +146,14 @@ export class RouteService {
           where: { route: { route_id: route.route_id } }
         });
         
+        const coordinatesCount = await this.routeCoordinatesRepositoty.count({
+          where: { route: { route_id: route.route_id } }
+        });
         return {
           ...route,
           collection_points_count: collectionPointsCount,
-          devices_count: devicesCount
+          devices_count: devicesCount,
+          has_coordinates: !!coordinatesCount
 
         };
       })
