@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { GmapsRoutingService } from './gmaps.service';
 
 @Controller('gmaps-routing')
-export class CarRoutingController {
+export class GmapsRoutingController {
   constructor(private readonly gmapsRoutingService: GmapsRoutingService) {}
 
   @Get()
