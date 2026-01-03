@@ -1,5 +1,5 @@
 import { Employee } from '../employee/employee.entity';
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany, Check } from 'typeorm';
 import { DeviceStatus } from './enums/device-status.enum';
 import { DeviceLocation } from '../device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -9,6 +9,7 @@ import { Complaints } from '../complaints/complaints.entity';
 
 
 @Entity()
+@Check('chk_device_id_nonempty', 'device_id <> ""')
 export class Device {
   @ApiProperty({
     description: 'Unique device ID (UUID)',
