@@ -5,162 +5,192 @@
 </p>
 
 <p align="center">
-  <strong>A Garbage Collection Backend built with NestJS - an efficient and scalable Node.js framework.</strong>
+  <strong>A Garbage Collection Backend built with NestJS and Prisma ORM.</strong>
 </p>
 
 ---
 
-## 📌 Table of Contents
-- [Quick Start 🚀](#quick-start-🚀)
+## Table of Contents
+- [Quick Start](#quick-start)
   - [Clone the Repository](#clone-the-repository)
   - [Install Dependencies](#install-dependencies)
   - [Configure Environment](#configure-environment)
-  - [Database Migration](#database-migration)
-- [Running the App 🔥](#running-the-app-🔥)
-- [Testing ⚡](#testing-⚡)
-- [Stay in Touch 📬](#stay-in-touch-📬)
-- [Important Note 📝](#important-note-📝)
+  - [Database Setup with Prisma](#database-setup-with-prisma)
+- [Running the App](#running-the-app)
+- [Prisma Commands](#prisma-commands)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Stay in Touch](#stay-in-touch)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### 📂 Clone the Repository
+### Clone the Repository
 
 ```bash
 git clone https://github.com/jnoval/gcbackend.git
 cd gcbackend
 ```
 
-### 📦 Install Dependencies
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### ⚙️ Configure Environment
+### Configure Environment
 
 Create a `.env` file in the root directory with the following content:
 
 ```env
-# Database host (default: localhost)
-DATABASE_HOST=localhost
+# Database connection URL for Prisma
+# Format: mysql://USER:PASSWORD@HOST:PORT/DATABASE
+DATABASE_URL="mysql://root:password@localhost:3306/gomicollection"
 
-# Database port (default: 3306 for MySQL/MariaDB)
-DATABASE_PORT=3306
+# Backend port
+BACKEND_PORT=3001
 
-# Database username
-DATABASE_USER=example_root
+# JWT Secret
+JWT_SECRET=your_jwt_secret_here
 
-# Database password (leave blank if not set)
-DATABASE_PASSWORD=
+# Cloudinary Configuration (for image uploads)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 
-# Name of the database
-DATABASE_NAME=example_gomicollection
+# Google Maps API Key (for routing)
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
 
-> **Note:** Update the database credentials according to your MySQL/MariaDB setup.
+For production, create a `.env.online` file with production values.
 
-### 📜 Database Migration
+> **Note:** Update the `DATABASE_URL` according to your MySQL setup.
 
-Before running the application, set up the database schema using migrations:
+### Database Setup with Prisma
 
-1. First, ensure your `package.json` includes these scripts:
-
-```json
-{
-  "scripts": {
-    "typeorm": "ts-node ./node_modules/typeorm/cli",
-    "migration:generate": "npm run typeorm migration:generate -- -d src/data-source.ts",
-    "migration:run": "npm run typeorm migration:run -- -d src/data-source.ts",
-    "migration:revert": "npm run typeorm migration:revert -- -d src/data-source.ts"
-  }
-}
-```
-
-2. Generate a new migration:
+1. **Generate Prisma Client:**
 
 ```bash
-# Generate a migration for your entity changes
-npm run migration:generate src/migrations/nameOfTheChanges
+npm run prisma:generate
 ```
 
-3. Run the migrations:
+2. **Run Database Migrations:**
 
 ```bash
-# Apply migrations to the database
-npm run migration:run
+# Development - creates migration and applies it
+npm run prisma:migrate
+
+# Production - applies pending migrations
+npm run prisma:migrate:prod
 ```
 
-4. If you need to revert a migration:
+3. **View Database with Prisma Studio (optional):**
 
 ```bash
-# Revert the last applied migration
-npm run migration:revert
+npm run prisma:studio
 ```
 
-> **Note:** Ensure your database is running and accessible before executing migrations.
-
----
-
-## 🔥 Running the App
-
-Use the following commands to run the application:
+4. **Seed the Database (optional):**
 
 ```bash
-# Run in development mode
-npm run start  # Starts the server
-
-# Run in watch mode
-npm run start:dev  # Automatically reloads when files change
-
-# Run in production mode
-npm run start:prod  # Optimized for production
+npm run prisma:seed
 ```
 
 ---
 
-## ⚡ Testing
+## Running the App
 
-You can run tests to ensure the application works correctly:
+```bash
+# Development mode (with hot reload)
+npm run start:dev
+
+# Production mode
+npm run start:prod
+
+# Standard mode
+npm run start
+```
+
+The API will be available at `http://localhost:3001` (or your configured port).
+
+API documentation is available at `http://localhost:3001/guide`.
+
+---
+
+## Prisma Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run prisma:generate` | Generate Prisma Client from schema |
+| `npm run prisma:migrate` | Create and apply migrations (dev) |
+| `npm run prisma:migrate:prod` | Apply pending migrations (prod) |
+| `npm run prisma:studio` | Open Prisma Studio GUI |
+| `npm run prisma:seed` | Run database seeding |
+
+### Manual Prisma Commands
+
+```bash
+# Pull database schema into Prisma
+npx prisma db pull
+
+# Push schema changes without migration
+npx prisma db push
+
+# Format schema file
+npx prisma format
+
+# Validate schema
+npx prisma validate
+```
+
+---
+
+## Testing
 
 ```bash
 # Run unit tests
 npm run test
 
-# Run end-to-end (e2e) tests
+# Run end-to-end tests
 npm run test:e2e
 
-# View test coverage report
+# View test coverage
 npm run test:cov
 ```
 
 ---
 
-## 📬 Stay in Touch
+## Project Structure
+
+```
+api-prisma/
+├── prisma/
+│   └── schema.prisma      # Database schema definition
+├── src/
+│   ├── common/
+│   │   └── filters/       # Exception filters (Prisma errors)
+│   ├── prisma/
+│   │   ├── prisma.module.ts
+│   │   └── prisma.service.ts
+│   ├── [feature-modules]/
+│   │   ├── dto/           # Data Transfer Objects
+│   │   ├── *.controller.ts
+│   │   ├── *.service.ts
+│   │   └── *.module.ts
+│   ├── app.module.ts
+│   └── main.ts
+├── .env                   # Environment variables (dev)
+├── .env.online            # Environment variables (prod)
+└── package.json
+```
+
+---
+
+## Stay in Touch
 
 - **Framework**: [NestJS](https://nestjs.com)
+- **ORM**: [Prisma](https://prisma.io)
+- **Database**: MySQL
 
 ---
-
-## 📝 Important Note
-
-### ⚠️ Correct Import Paths for Relationships
-When importing related entities in TypeORM, **avoid using `src` in the import path**.
-Instead, use relative paths (`..`).
-
-❌ **Incorrect:**
-```ts
-import { Employee } from "src/employee/employee.entity";
-```
-
-✅ **Correct:**
-```ts
-import { Employee } from "../employee/employee.entity";
-```
-
-Using `src/` can cause issues when running TypeORM commands, as it references the TypeScript structure instead of the compiled JavaScript output.
-
----
-
-
