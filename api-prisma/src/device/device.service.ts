@@ -1,49 +1,47 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { PrismaService } from '../prisma/prisma.service';
 import { Device } from './device.entity';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 import { FilterDeviceDto } from './dto/filter-device.dto';
-import { Employee } from 'src/employee/employee.entity';
-import { Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DeviceService {
-  // private readonly logger = new Logger(DeviceService.name);
-
-  constructor(
-    @InjectRepository(Device)
-    private deviceRepository: Repository<Device>,
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
-  ) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createDeviceDto: CreateDeviceDto): Promise<Device> {
-    const device = this.deviceRepository.create(createDeviceDto);
-
+    // Verify employee exists
     if (createDeviceDto.employee_id) {
-      const employee = await this.employeeRepository.findOne({
-        where: { employee_id: createDeviceDto.employee_id }
+      const employee = await this.prisma.employee.findUnique({
+        where: { employee_id: createDeviceDto.employee_id },
       });
 
       if (!employee) {
         throw new NotFoundException(
-          `Employee with ID ${createDeviceDto.employee_id} not found`
+          `Employee with ID ${createDeviceDto.employee_id} not found`,
         );
       }
-
-      device.employee = employee;
     }
 
-    return this.deviceRepository.save(device);
+    return this.prisma.device.create({
+      data: {
+        device_name: createDeviceDto.device_name,
+        vehicle_plate_num: createDeviceDto.vehicle_plate_num,
+        status: createDeviceDto.status,
+        employee: {
+          connect: { employee_id: createDeviceDto.employee_id },
+        },
+      },
+      include: { employee: true },
+    });
   }
 
-  async findAll(filterDto?: FilterDeviceDto): Promise<{ data: Device[], total: number }> {
+  async findAll(filterDto?: FilterDeviceDto): Promise<{ data: Device[]; total: number }> {
     if (!filterDto) {
-      const data = await this.deviceRepository.find({
-        relations: ['employee'],
-        order: { device_name: 'ASC' }
+      const data = await this.prisma.device.findMany({
+        include: { employee: true },
+        orderBy: { device_name: 'asc' },
       });
       return { data, total: data.length };
     }
@@ -57,80 +55,56 @@ export class DeviceService {
       page = 1,
       limit = 10,
       sort_by = 'updated_at',
-      sort_order = 'ASC'
+      sort_order = 'ASC',
     } = filterDto;
 
     const skip = (page - 1) * limit;
-    let where: FindOptionsWhere<Device> | FindOptionsWhere<Device>[] = {};
 
-    // Handle global search
+    // Build where clause
+    let where: Prisma.DeviceWhereInput = {};
+
     if (search) {
-      // Create base search conditions
-      const searchConditions: FindOptionsWhere<Device>[] = [
-        { device_name: ILike(`%${search}%`) },
-        { vehicle_plate_num: ILike(`%${search}%`) },
-        { device_id: ILike(`%${search}%`) },
-        { employee: { first_name: ILike(`%${search}%`) } },
-        { employee: { last_name: ILike(`%${search}%`) } },
-        { employee: { email: ILike(`%${search}%`) } },
-        { employee: { employee_id: ILike(`%${search}%`) } }
-      ];
+      // Global search across multiple fields
+      where = {
+        OR: [
+          { device_name: { contains: search } },
+          { vehicle_plate_num: { contains: search } },
+          { device_id: { contains: search } },
+          { employee: { first_name: { contains: search } } },
+          { employee: { last_name: { contains: search } } },
+          { employee: { email: { contains: search } } },
+          { employee: { employee_id: { contains: search } } },
+        ],
+      };
 
-      // Combine search conditions with additional filters
-      where = searchConditions.map(condition => {
-        const combinedCondition = { ...condition };
+      // Apply additional filters
+      const additionalFilters: Prisma.DeviceWhereInput = {};
+      if (device_name) additionalFilters.device_name = { contains: device_name };
+      if (vehicle_plate_num) additionalFilters.vehicle_plate_num = { contains: vehicle_plate_num };
+      if (status) additionalFilters.status = status;
+      if (employee_id) additionalFilters.employee_id = employee_id;
 
-        // Apply non-employee filters
-        if (device_name) combinedCondition.device_name = ILike(`%${device_name}%`);
-        if (vehicle_plate_num) combinedCondition.vehicle_plate_num = ILike(`%${vehicle_plate_num}%`);
-        if (status) combinedCondition.status = status;
-
-        // Handle employee filter specially
-        if (employee_id) {
-          if (combinedCondition.employee && typeof combinedCondition.employee === 'object') {
-            // If the condition already has employee criteria, merge with employee_id
-            combinedCondition.employee = {
-              ...(combinedCondition.employee as FindOptionsWhere<Employee>),
-              employee_id
-            };
-          } else {
-            // If no existing employee criteria, just set employee_id
-            combinedCondition.employee = { employee_id };
-          }
-        }
-
-        return combinedCondition;
-      });
+      if (Object.keys(additionalFilters).length > 0) {
+        where = { AND: [where, additionalFilters] };
+      }
     } else {
-      // Handle individual field filters when no global search
-      const whereCondition: FindOptionsWhere<Device> = {};
-
-      if (device_name) {
-        whereCondition.device_name = ILike(`%${device_name}%`);
-      }
-      if (vehicle_plate_num) {
-        whereCondition.vehicle_plate_num = ILike(`%${vehicle_plate_num}%`);
-      }
-      if (status) {
-        whereCondition.status = status;
-      }
-      if (employee_id) {
-        whereCondition.employee = { employee_id };
-      }
-
-      where = whereCondition;
+      // Individual field filters
+      if (device_name) where.device_name = { contains: device_name };
+      if (vehicle_plate_num) where.vehicle_plate_num = { contains: vehicle_plate_num };
+      if (status) where.status = status;
+      if (employee_id) where.employee_id = employee_id;
     }
 
     // Get total count
-    const total = await this.deviceRepository.count();
+    const total = await this.prisma.device.count();
 
-    const data = await this.deviceRepository.find({
+    const data = await this.prisma.device.findMany({
       where,
-      relations: ['employee'],
+      include: { employee: true },
       skip,
       take: limit,
-      order: {
-        [sort_by]: sort_order,
+      orderBy: {
+        [sort_by]: sort_order.toLowerCase() as 'asc' | 'desc',
       },
     });
 
@@ -138,74 +112,87 @@ export class DeviceService {
   }
 
   async findOne(id: string): Promise<Device> {
-    const device = await this.deviceRepository.findOne({
+    const device = await this.prisma.device.findUnique({
       where: { device_id: id },
-      relations: ['employee']
+      include: { employee: true },
     });
+
     if (!device) {
       throw new NotFoundException(`Device with ID ${id} not found`);
     }
+
     return device;
   }
 
   async update(id: string, updateDeviceDto: UpdateDeviceDto): Promise<Device> {
-    const device = await this.findOne(id);
+    // Check if device exists
+    await this.findOne(id);
 
     // Handle employee assignment update
     if (updateDeviceDto.employee_id) {
-      const employee = await this.employeeRepository.findOne({
-        where: { employee_id: updateDeviceDto.employee_id }
+      const employee = await this.prisma.employee.findUnique({
+        where: { employee_id: updateDeviceDto.employee_id },
       });
 
       if (!employee) {
         throw new NotFoundException(
-          `Employee with ID ${updateDeviceDto.employee_id} not found`
+          `Employee with ID ${updateDeviceDto.employee_id} not found`,
         );
       }
-
-      device.employee = employee;
     }
 
-    Object.assign(device, updateDeviceDto);
-    return this.deviceRepository.save(device);
-  }
+    const { employee_id, ...otherData } = updateDeviceDto;
 
-  async remove(id: string): Promise<void> {
-    const result = await this.deviceRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Device with ID ${id} not found`);
-    }
-  }
-
-  async findByEmployee(employeeId: string): Promise<Device[]> {
-    return this.deviceRepository.find({
-      where: { employee: { employee_id: employeeId } },
-      relations: ['employee']
+    return this.prisma.device.update({
+      where: { device_id: id },
+      data: {
+        ...otherData,
+        ...(employee_id && {
+          employee: { connect: { employee_id } },
+        }),
+      },
+      include: { employee: true },
     });
   }
 
-  async searchByField(field: keyof Omit<Device, 'employee' | 'device_locations' | 'collected_points' | 'deviceRoutes' | 'complaints'>, value: string): Promise<Device[]> {
-    const validSearchFields: (keyof Omit<Device, 'employee' | 'device_locations' | 'collected_points' | 'deviceRoutes' | 'complaints'>)[] = [
-      'device_name',
-      'vehicle_plate_num',
-      'device_id',
-      'status'
-    ];
+  async remove(id: string): Promise<void> {
+    // Check if device exists
+    await this.findOne(id);
+
+    await this.prisma.device.delete({
+      where: { device_id: id },
+    });
+  }
+
+  async findByEmployee(employeeId: string): Promise<Device[]> {
+    return this.prisma.device.findMany({
+      where: { employee_id: employeeId },
+      include: { employee: true },
+    });
+  }
+
+  async searchByField(
+    field: keyof Omit<Device, 'employee' | 'device_locations' | 'collected_points' | 'device_routes' | 'complaints'>,
+    value: string,
+  ): Promise<Device[]> {
+    const validSearchFields = ['device_name', 'vehicle_plate_num', 'device_id', 'status'];
 
     if (!validSearchFields.includes(field)) {
       throw new NotFoundException(`Field ${field} is not a valid searchable field`);
     }
 
-    const where: FindOptionsWhere<Device> = {
-      [field]: ILike(`%${value}%`)
-    };
+    let where: Prisma.DeviceWhereInput = {};
 
-    const results = await this.deviceRepository.find({
+    if (field === 'status') {
+      where = { [field]: value as any };
+    } else {
+      where = { [field]: { contains: value } };
+    }
+
+    const results = await this.prisma.device.findMany({
       where,
-      relations: ['employee'],
-      order: {
-        updated_at: 'ASC',
-      },
+      include: { employee: true },
+      orderBy: { updated_at: 'asc' },
     });
 
     if (results.length === 0) {
@@ -216,63 +203,46 @@ export class DeviceService {
   }
 
   async globalSearch(searchTerm: string): Promise<Device[]> {
-    const where: FindOptionsWhere<Device>[] = [
-      { device_name: ILike(`%${searchTerm}%`) },
-      { vehicle_plate_num: ILike(`%${searchTerm}%`) },
-      { device_id: ILike(`%${searchTerm}%`) },
-      { employee: { first_name: ILike(`%${searchTerm}%`) } },
-      { employee: { last_name: ILike(`%${searchTerm}%`) } },
-      { employee: { email: ILike(`%${searchTerm}%`) } },
-      { employee: { employee_id: ILike(`%${searchTerm}%`) } }
-    ];
-
-    const results = await this.deviceRepository.find({
-      where,
-      relations: ['employee'],
-      order: {
-        updated_at: 'ASC',
+    const results = await this.prisma.device.findMany({
+      where: {
+        OR: [
+          { device_name: { contains: searchTerm } },
+          { vehicle_plate_num: { contains: searchTerm } },
+          { device_id: { contains: searchTerm } },
+          { employee: { first_name: { contains: searchTerm } } },
+          { employee: { last_name: { contains: searchTerm } } },
+          { employee: { email: { contains: searchTerm } } },
+          { employee: { employee_id: { contains: searchTerm } } },
+        ],
       },
+      include: { employee: true },
+      orderBy: { updated_at: 'asc' },
     });
-
-    if (results.length === 0) {
-      return []
-    }
 
     return results;
   }
 
-  async advancedSearch(criteria: Partial<Record<keyof Omit<Device, 'employee' | 'device_locations' | 'collected_points' | 'deviceRoutes' | 'complaints'>, string>>): Promise<Device[]> {
-    const validSearchFields: (keyof Omit<Device, 'employee' | 'device_locations' | 'collected_points' | 'deviceRoutes' | 'complaints'>)[] = [
-      'device_name',
-      'vehicle_plate_num',
-      'device_id',
-      'status'
-    ];
+  async advancedSearch(
+    criteria: Partial<Record<string, string>>,
+  ): Promise<Device[]> {
+    const validSearchFields = ['device_name', 'vehicle_plate_num', 'device_id', 'status'];
 
-    const where: FindOptionsWhere<Device> = {};
-
-    // this.logger.debug('Original criteria:', criteria);
-    // this.logger.debug('Criteria type:', typeof criteria);
+    const where: Prisma.DeviceWhereInput = {};
 
     Object.entries(criteria).forEach(([field, value]) => {
-      if (validSearchFields.includes(field as keyof Omit<Device, 'employee' | 'device_locations' | 'collected_points' | 'deviceRoutes' | 'complaints'>)) {
+      if (validSearchFields.includes(field)) {
         if (field === 'status') {
-          where[field] = value as any; // Enum value
+          where[field] = value as any;
         } else {
-          where[field] = ILike(`%${value}%`);
+          where[field] = { contains: value };
         }
-        // this.logger.debug(`Added to where clause - ${field}: ${value}`);
       }
     });
 
-    // this.logger.debug('Final where clause:', where);
-
-    return this.deviceRepository.find({
+    return this.prisma.device.findMany({
       where,
-      relations: ['employee'],
-      order: {
-        updated_at: 'ASC',
-      },
+      include: { employee: true },
+      orderBy: { updated_at: 'asc' },
     });
   }
 
@@ -282,37 +252,31 @@ export class DeviceService {
     employee_id?: string;
   }): Promise<Device[]> {
     const { employee_name, employee_email, employee_id } = criteria;
-    let where: FindOptionsWhere<Device>[] = [];
+    const orConditions: Prisma.DeviceWhereInput[] = [];
 
     if (employee_name) {
-      where.push(
-        { employee: { first_name: ILike(`%${employee_name}%`) } },
-        { employee: { last_name: ILike(`%${employee_name}%`) } }
+      orConditions.push(
+        { employee: { first_name: { contains: employee_name } } },
+        { employee: { last_name: { contains: employee_name } } },
       );
     }
 
     if (employee_email) {
-      where.push(
-        { employee: { email: ILike(`%${employee_email}%`) } }
-      );
+      orConditions.push({ employee: { email: { contains: employee_email } } });
     }
 
     if (employee_id) {
-      where.push(
-        { employee: { employee_id: ILike(`%${employee_id}%`) } }
-      );
+      orConditions.push({ employee: { employee_id: { contains: employee_id } } });
     }
 
-    if (where.length === 0) {
+    if (orConditions.length === 0) {
       throw new NotFoundException('No search criteria provided');
     }
 
-    const results = await this.deviceRepository.find({
-      where,
-      relations: ['employee'],
-      order: {
-        updated_at: 'ASC',
-      },
+    const results = await this.prisma.device.findMany({
+      where: { OR: orConditions },
+      include: { employee: true },
+      orderBy: { updated_at: 'asc' },
     });
 
     if (results.length === 0) {
