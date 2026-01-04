@@ -247,6 +247,9 @@ model Complaints {
   image               Image    @relation(fields: [image_id], references: [image_id], onDelete: Cascade)
   device              Device   @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
 
+  @@index([device_id])
+  @@index([image_id])
+  @@index([complaint_timestamp])
   @@map("complaints")
 }
 
