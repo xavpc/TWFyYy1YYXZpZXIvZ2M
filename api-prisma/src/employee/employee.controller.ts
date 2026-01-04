@@ -4,7 +4,7 @@ import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmployeeResponse, EmployeeListResponse, EmployeeErrorResponse } from './dto/response.dto';
-import { Employee } from './employee.entity';
+import { Employee } from '@prisma/client';
 import { FilterEmployeeDto } from './dto/filter-employee.dto';
 
 @ApiTags('Employees')
