@@ -131,6 +131,18 @@ export class ReportsService {
     });
   }
 
+  /**
+   * Retrieves reports with advanced filtering, pagination, and sorting.
+   * Supports:
+   * - Global search across route_name, vehicle_plate_number, employee_name, remarks
+   * - Individual field filters that can be combined
+   * - Date range filtering on report_timestamp
+   * - Configurable pagination (limit=0 returns all records)
+   * - Dynamic sorting by any field
+   *
+   * @param filterDto - Filter, pagination, and sorting options
+   * @returns Object containing data array and total count for pagination
+   */
   async findAll(filterDto: FilterReportDto): Promise<{ data: Reports[], total: number }> {
     const {
       route_name,
