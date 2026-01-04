@@ -117,6 +117,9 @@ model DeviceSession {
   collected_points CollectedPoints[]
   reports          Reports?
 
+  @@index([device_route_id])
+  @@index([start])
+  @@index([end])
   @@map("device_session")
 }
 
