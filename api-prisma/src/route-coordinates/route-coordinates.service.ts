@@ -37,6 +37,12 @@ export class RouteCoordinatesService {
     };
   }
 
+  /**
+   * Updates the route's center point based on its current coordinates.
+   * Only updates if the route has at least 3 coordinates.
+   * @param routeId - The route ID to update
+   * @param tx - Optional transaction client for atomic operations
+   */
   private async updateRouteCenterPoint(routeId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx || this.prisma;
     const coordinates = await client.routeCoordinates.findMany({
