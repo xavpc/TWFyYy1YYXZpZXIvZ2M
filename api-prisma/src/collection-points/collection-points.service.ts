@@ -107,22 +107,24 @@ export class CollectionPointsService {
       }
     }
 
-    // Create entities
-    const savedCollectionPoints: CollectionPoints[] = [];
-    for (const dto of dtos) {
-      const entity = await this.prisma.collectionPoints.create({
-        data: {
-          collection_point_name: dto.collection_point_name,
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-          sequence: dto.sequence,
-          route_id: routeId || dto.route_id
-        }
-      });
-      savedCollectionPoints.push(entity);
-    }
+    // Create entities within transaction for atomicity
+    return this.prisma.$transaction(async (tx) => {
+      const savedCollectionPoints: CollectionPoints[] = [];
+      for (const dto of dtos) {
+        const entity = await tx.collectionPoints.create({
+          data: {
+            collection_point_name: dto.collection_point_name,
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            sequence: dto.sequence,
+            route_id: routeId || dto.route_id
+          }
+        });
+        savedCollectionPoints.push(entity);
+      }
 
-    return savedCollectionPoints;
+      return savedCollectionPoints;
+    });
   }
 
   findAll(): Promise<CollectionPoints[]> {
