@@ -308,6 +308,17 @@ export class RouteCoordinatesService {
     });
   }
 
+  /**
+   * Rebuilds a route from user-defined waypoints within a transaction.
+   * For each pair of consecutive user points, calls Google Maps API to
+   * generate the route path between them. The generated intermediate
+   * points are marked as non-user points.
+   *
+   * @param routeId - The route ID to rebuild
+   * @param userPoints - Array of user-defined waypoints in order
+   * @param tx - Prisma transaction client for atomic operations
+   * @throws NotFoundException if route doesn't exist
+   */
   private async rebuildRouteFromUserPointsWithTx(
     routeId: string,
     userPoints: RouteCoordinates[],
