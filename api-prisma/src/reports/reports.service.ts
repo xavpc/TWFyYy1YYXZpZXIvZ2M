@@ -1,8 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThanOrEqual, MoreThanOrEqual, Like, FindOptionsWhere, Not, IsNull } from 'typeorm';
-import { Reports } from './reports.entity';
-import { DeviceSession } from '../device-session/device-session.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Reports, Prisma } from '@prisma/client';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { FilterReportDto } from './dto/filter-report.dto';
@@ -11,19 +9,14 @@ import { format } from 'date-fns';
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    @InjectRepository(Reports)
-    private reportRepository: Repository<Reports>,
-    @InjectRepository(DeviceSession)
-    private sessionRepository: Repository<DeviceSession>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async exportToExcel(filterDto: FilterReportDto): Promise<Buffer> {
     // 1. Fetch ALL matching reports, ignoring pagination for the export.
-    const { data: reports } = await this.findAll({ 
-      ...filterDto, 
+    const { data: reports } = await this.findAll({
+      ...filterDto,
       // Override pagination to get all records for the export
-      page: 1, 
+      page: 1,
       limit: 0, // A value of 0 will signal to our modified findAll to fetch all
     });
 
@@ -44,7 +37,7 @@ export class ReportsService {
       { header: 'Session End Time', key: 'session_end_time_formatted', width: 25 },
       { header: 'Remarks', key: 'remarks', width: 50 },
     ];
-    
+
     // 3. Style the header row.
     const headerRow = worksheet.getRow(1);
     headerRow.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
@@ -76,159 +69,147 @@ export class ReportsService {
 
   async create(createReportDto: CreateReportDto): Promise<Reports> {
     const { session_id, remarks } = createReportDto;
-    
-    const session = await this.sessionRepository.findOne({
-      where: { 
+
+    const session = await this.prisma.deviceSession.findFirst({
+      where: {
         session_id,
-        end: Not(IsNull()),
+        end: { not: null },
       },
-      relations: [
-        'device_route', 
-        'device_route.route', 
-        'device_route.device', 
-        'device_route.device.employee'
-      ],
+      include: {
+        device_route: {
+          include: {
+            route: true,
+            device: {
+              include: { employee: true }
+            }
+          }
+        }
+      }
     });
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${session_id} not found or not completed`);
     }
 
-    const route_name = session.device_route.route.route_name; 
-    const vehicle_plate_number = session.device_route.device.vehicle_plate_num; 
-    
+    const route_name = session.device_route.route.route_name;
+    const vehicle_plate_number = session.device_route.device.vehicle_plate_num;
+
     const employee = session.device_route.device.employee;
-    const employee_name = employee.middle_name 
+    const employee_name = employee.middle_name
       ? `${employee.first_name} ${employee.middle_name} ${employee.last_name}`
       : `${employee.first_name} ${employee.last_name}`;
 
-    const newReport = this.reportRepository.create({
-      session,
-      route_name,
-      vehicle_plate_number,
-      employee_name,
-      report_timestamp: new Date(), 
-      remarks,
-      session_start_time: session.start,
-      session_end_time: session.end,
+    return this.prisma.reports.create({
+      data: {
+        session_id,
+        route_name,
+        vehicle_plate_number,
+        employee_name,
+        report_timestamp: new Date(),
+        remarks,
+        session_start_time: session.start,
+        session_end_time: session.end!,
+      }
     });
-
-    return this.reportRepository.save(newReport);
   }
 
   async findAll(filterDto: FilterReportDto): Promise<{ data: Reports[], total: number }> {
-    const { 
-      route_name, 
-      vehicle_plate_number, 
-      employee_name, 
-      start_date, 
-      end_date, 
+    const {
+      route_name,
+      vehicle_plate_number,
+      employee_name,
+      start_date,
+      end_date,
       remarks_search,
-      search, 
-      page = 1, 
+      search,
+      page = 1,
       limit = 10,
       sort_by = 'report_timestamp',
       sort_order = 'DESC'
     } = filterDto;
 
     const skip = (page - 1) * limit;
-    let where: FindOptionsWhere<Reports> | FindOptionsWhere<Reports>[] = {};
+    const where: Prisma.ReportsWhereInput = {};
 
     // Handle global search
     if (search) {
-      // Create base search conditions across all searchable fields
-      const searchConditions: FindOptionsWhere<Reports>[] = [
-        { route_name: Like(`%${search}%`) },
-        { vehicle_plate_number: Like(`%${search}%`) },
-        { employee_name: Like(`%${search}%`) },
-        { remarks: Like(`%${search}%`) }
+      where.OR = [
+        { route_name: { contains: search } },
+        { vehicle_plate_number: { contains: search } },
+        { employee_name: { contains: search } },
+        { remarks: { contains: search } }
       ];
 
-      // Apply additional individual filters to each search condition
-      const additionalFilters: Partial<FindOptionsWhere<Reports>> = {};
-      
-      if (route_name) additionalFilters.route_name = Like(`%${route_name}%`);
-      if (vehicle_plate_number) additionalFilters.vehicle_plate_number = Like(`%${vehicle_plate_number}%`);
-      if (employee_name) additionalFilters.employee_name = Like(`%${employee_name}%`);
-      if (remarks_search) additionalFilters.remarks = Like(`%${remarks_search}%`);
-
-      // Handle date range filters
-      if (start_date && end_date) {
-        const startDate = new Date(start_date);
-        const endDate = new Date(end_date);
-        endDate.setHours(23, 59, 59, 999);
-        additionalFilters.report_timestamp = Between(startDate, endDate);
-      } else if (start_date) {
-        additionalFilters.report_timestamp = MoreThanOrEqual(new Date(start_date));
-      } else if (end_date) {
-        const endDate = new Date(end_date);
-        endDate.setHours(23, 59, 59, 999);
-        additionalFilters.report_timestamp = LessThanOrEqual(endDate);
+      // Apply additional individual filters
+      if (route_name) {
+        where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { route_name: { contains: route_name } }];
       }
-
-      // Combine search conditions with additional filters
-      where = searchConditions.map(condition => ({
-        ...condition,
-        ...additionalFilters
-      }));
+      if (vehicle_plate_number) {
+        where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { vehicle_plate_number: { contains: vehicle_plate_number } }];
+      }
+      if (employee_name) {
+        where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { employee_name: { contains: employee_name } }];
+      }
+      if (remarks_search) {
+        where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { remarks: { contains: remarks_search } }];
+      }
     } else {
       // Handle individual field filters when no global search
-      const whereCondition: FindOptionsWhere<Reports> = {};
-
       if (route_name) {
-        whereCondition.route_name = Like(`%${route_name}%`);
+        where.route_name = { contains: route_name };
       }
-      
+
       if (vehicle_plate_number) {
-        whereCondition.vehicle_plate_number = Like(`%${vehicle_plate_number}%`);
+        where.vehicle_plate_number = { contains: vehicle_plate_number };
       }
-      
+
       if (employee_name) {
-        whereCondition.employee_name = Like(`%${employee_name}%`);
+        where.employee_name = { contains: employee_name };
       }
-      
+
       if (remarks_search) {
-        whereCondition.remarks = Like(`%${remarks_search}%`);
+        where.remarks = { contains: remarks_search };
       }
-
-      // Date range filters
-      if (start_date && end_date) {
-        const startDate = new Date(start_date);
-        const endDate = new Date(end_date);
-        endDate.setHours(23, 59, 59, 999);
-        
-        whereCondition.report_timestamp = Between(startDate, endDate);
-      } else if (start_date) {
-        whereCondition.report_timestamp = MoreThanOrEqual(new Date(start_date));
-      } else if (end_date) {
-        const endDate = new Date(end_date);
-        endDate.setHours(23, 59, 59, 999);
-        whereCondition.report_timestamp = LessThanOrEqual(endDate);
-      }
-
-      where = whereCondition;
     }
 
-    const total = await this.reportRepository.count();
+    // Date range filters
+    if (start_date && end_date) {
+      const startDate = new Date(start_date);
+      const endDate = new Date(end_date);
+      endDate.setHours(23, 59, 59, 999);
+      where.report_timestamp = { gte: startDate, lte: endDate };
+    } else if (start_date) {
+      where.report_timestamp = { gte: new Date(start_date) };
+    } else if (end_date) {
+      const endDate = new Date(end_date);
+      endDate.setHours(23, 59, 59, 999);
+      where.report_timestamp = { lte: endDate };
+    }
+
+    const total = await this.prisma.reports.count({ where });
 
     // Get paginated data with sorting
-    const data = await this.reportRepository.find({
+    const findManyOptions: Prisma.ReportsFindManyArgs = {
       where,
-      skip,
-      take: limit,
-      order: {
-        [sort_by]: sort_order,
-      },
-      relations: ['session'],
-    });
+      orderBy: { [sort_by]: sort_order.toLowerCase() as 'asc' | 'desc' },
+      include: { session: true },
+    };
+
+    // Only apply pagination if limit > 0
+    if (limit > 0) {
+      findManyOptions.skip = skip;
+      findManyOptions.take = limit;
+    }
+
+    const data = await this.prisma.reports.findMany(findManyOptions);
 
     return { data, total };
   }
 
-  async findOne(report_id: string): Promise<Reports> {
-    const report = await this.reportRepository.findOne({
+  async findOne(report_id: string): Promise<Reports & { session: any }> {
+    const report = await this.prisma.reports.findUnique({
       where: { report_id },
-      relations: ['session'],
+      include: { session: true },
     });
 
     if (!report) {
@@ -239,62 +220,57 @@ export class ReportsService {
   }
 
   async update(report_id: string, updateReportDto: UpdateReportDto): Promise<Reports> {
-    const report = await this.findOne(report_id);
-    
-    if (updateReportDto.remarks !== undefined) {
-      report.remarks = updateReportDto.remarks;
-    }
+    await this.findOne(report_id);
 
-    return this.reportRepository.save(report);
+    return this.prisma.reports.update({
+      where: { report_id },
+      data: {
+        remarks: updateReportDto.remarks
+      }
+    });
   }
 
   async remove(report_id: string): Promise<void> {
-    const report = await this.findOne(report_id);
-    await this.reportRepository.remove(report);
+    await this.findOne(report_id);
+
+    await this.prisma.reports.delete({
+      where: { report_id }
+    });
   }
 
   async getReportsByDateRange(startDate: Date, endDate: Date): Promise<Reports[]> {
-    return this.reportRepository.find({
+    return this.prisma.reports.findMany({
       where: {
-        report_timestamp: Between(startDate, endDate),
+        report_timestamp: { gte: startDate, lte: endDate },
       },
-      order: {
-        report_timestamp: 'DESC',
-      },
+      orderBy: { report_timestamp: 'desc' },
     });
   }
 
   async getReportsByRoute(routeName: string): Promise<Reports[]> {
-    return this.reportRepository.find({
+    return this.prisma.reports.findMany({
       where: {
-        route_name: Like(`%${routeName}%`),
+        route_name: { contains: routeName },
       },
-      order: {
-        report_timestamp: 'DESC',
-      },
+      orderBy: { report_timestamp: 'desc' },
     });
   }
 
   async getReportsByEmployee(employeeName: string): Promise<Reports[]> {
-    return this.reportRepository.find({
+    return this.prisma.reports.findMany({
       where: {
-        employee_name: Like(`%${employeeName}%`),
+        employee_name: { contains: employeeName },
       },
-      order: {
-        report_timestamp: 'DESC',
-      },
+      orderBy: { report_timestamp: 'desc' },
     });
   }
 
   async getReportsByVehicle(plateNumber: string): Promise<Reports[]> {
-    return this.reportRepository.find({
+    return this.prisma.reports.findMany({
       where: {
-        vehicle_plate_number: Like(`%${plateNumber}%`),
+        vehicle_plate_number: { contains: plateNumber },
       },
-      order: {
-        report_timestamp: 'DESC',
-      },
+      orderBy: { report_timestamp: 'desc' },
     });
   }
-
 }
