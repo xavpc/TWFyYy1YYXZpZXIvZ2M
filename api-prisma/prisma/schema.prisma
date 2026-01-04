@@ -213,6 +213,9 @@ model CollectedPoints {
   session             DeviceSession    @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
   @@unique([collection_point_id, session_id])
+  @@index([session_id])
+  @@index([device_id])
+  @@index([collected_timestamp])
   @@map("collected_points")
 }
 
