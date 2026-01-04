@@ -30,11 +30,6 @@ import { PrismaModule } from './prisma/prisma.module';
       envFilePath: process.env.NODE_ENV === 'production' ? '.env.online' : '.env',
     }),
     ScheduleModule.forRoot(),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
-      inject: [ConfigService],
-    }),
     EmployeeModule,
     DeviceModule,
     DeviceLocationModule,
