@@ -130,9 +130,7 @@ export class DeviceLocationService {
   }
 
   async createBatch(createDeviceLocationDtos: CreateDeviceLocationDto[]): Promise<DeviceLocation[]> {
-    const createdLocations: DeviceLocation[] = [];
-    const batchSocketLocations: LocationObjectType[] = [];
-
+    // Validate all DTOs first (outside transaction)
     for (const dto of createDeviceLocationDtos) {
       if (dto.device_id) {
         const device = await this.prisma.device.findUnique({
@@ -157,29 +155,40 @@ export class DeviceLocationService {
           );
         }
       }
-
-      const savedLocation = await this.prisma.deviceLocation.create({
-        data: {
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-          current_location_timestamp: dto.current_location_timestamp,
-          device_id: dto.device_id,
-          session_id: dto.session_id
-        },
-        include: {
-          device: true,
-          session: true
-        }
-      });
-
-      createdLocations.push(savedLocation);
-      batchSocketLocations.push({
-        session_id: savedLocation.session_id,
-        latitude: String(savedLocation.latitude),
-        longitude: String(savedLocation.longitude),
-        current_location_timestamp: String(savedLocation.current_location_timestamp)
-      });
     }
+
+    // Create all locations within transaction for atomicity
+    const createdLocations = await this.prisma.$transaction(async (tx) => {
+      const locations: DeviceLocation[] = [];
+
+      for (const dto of createDeviceLocationDtos) {
+        const savedLocation = await tx.deviceLocation.create({
+          data: {
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            current_location_timestamp: dto.current_location_timestamp,
+            device_id: dto.device_id,
+            session_id: dto.session_id
+          },
+          include: {
+            device: true,
+            session: true
+          }
+        });
+
+        locations.push(savedLocation);
+      }
+
+      return locations;
+    });
+
+    // Send socket notification only after successful transaction
+    const batchSocketLocations: LocationObjectType[] = createdLocations.map(loc => ({
+      session_id: loc.session_id,
+      latitude: String(loc.latitude),
+      longitude: String(loc.longitude),
+      current_location_timestamp: String(loc.current_location_timestamp)
+    }));
 
     this.gateway.sendBatchLocationUpdate(batchSocketLocations);
 
