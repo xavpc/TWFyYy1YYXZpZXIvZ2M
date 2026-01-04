@@ -1,0 +1,246 @@
+// Prisma Schema for Garbage Collection System
+// Migrated from TypeORM entities
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  admin
+  garbage_collector
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum EmployeeStatus {
+  active
+  inactive
+}
+
+enum DeviceStatus {
+  active
+  inactive
+}
+
+enum ImageStatus {
+  active
+  inactive
+}
+
+enum DeviceRouteDay {
+  sunday
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model Users {
+  user_id         String       @id @default(uuid()) @db.Char(36)
+  role            UserRole
+  username        String       @db.VarChar(255)
+  hashed_password String       @db.VarChar(255)
+  status          UserStatus   @default(active)
+  employee_id     String?      @unique @db.Char(36)
+  employee        Employee?    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction)
+
+  @@map("users")
+}
+
+model Employee {
+  employee_id    String         @id @default(uuid()) @db.Char(36)
+  first_name     String         @db.VarChar(255)
+  middle_name    String?        @db.VarChar(255)
+  last_name      String         @db.VarChar(255)
+  email          String         @db.VarChar(255)
+  contact_number String         @db.VarChar(255)
+  address        String         @db.VarChar(255)
+  age            Int
+  status         EmployeeStatus @default(active)
+  created_at     DateTime       @default(now()) @db.DateTime(6)
+  updated_at     DateTime       @updatedAt @db.DateTime(6)
+
+  user    Users?
+  devices Device[]
+
+  @@map("employee")
+}
+
+model Device {
+  device_id         String       @id @default(uuid()) @db.Char(36)
+  device_name       String       @db.VarChar(255)
+  vehicle_plate_num String       @db.VarChar(255)
+  status            DeviceStatus @default(active)
+  created_at        DateTime     @default(now()) @db.DateTime(6)
+  updated_at        DateTime     @updatedAt @db.DateTime(6)
+  employee_id       String       @db.Char(36)
+  employee          Employee     @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
+
+  device_locations DeviceLocation[]
+  device_routes    DeviceRoute[]
+  collected_points CollectedPoints[]
+  complaints       Complaints[]
+
+  @@map("device")
+}
+
+model DeviceSession {
+  session_id      String      @id @default(uuid()) @db.Char(36)
+  start           DateTime    @db.Timestamp(0)
+  end             DateTime?   @db.Timestamp(0)
+  device_route_id String      @db.Char(36)
+  device_route    DeviceRoute @relation(fields: [device_route_id], references: [device_route_id], onDelete: Cascade)
+
+  device_locations DeviceLocation[]
+  collected_points CollectedPoints[]
+  reports          Reports?
+
+  @@map("device_session")
+}
+
+model DeviceRoute {
+  device_route_id String         @id @default(uuid()) @db.Char(36)
+  day_assigned    DeviceRouteDay
+  device_id       String         @db.Char(36)
+  route_id        String         @db.Char(36)
+  device          Device         @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+  route           Route          @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
+
+  device_sessions DeviceSession[]
+
+  @@unique([route_id, day_assigned])
+  @@map("device_route")
+}
+
+model DeviceLocation {
+  device_location_id         String        @id @default(uuid()) @db.Char(36)
+  latitude                   Decimal       @db.Decimal(8, 6)
+  longitude                  Decimal       @db.Decimal(9, 6)
+  push_timestamp             DateTime      @default(now()) @db.DateTime(6)
+  current_location_timestamp DateTime      @db.Timestamp(0)
+  device_id                  String        @db.Char(36)
+  session_id                 String        @db.Char(36)
+  device                     Device        @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+  session                    DeviceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@map("device_location")
+}
+
+model Route {
+  route_id         String   @id @default(uuid()) @db.Char(36)
+  route_name       String   @unique @db.VarChar(255)
+  center_latitude  Decimal  @default(35.676398) @db.Decimal(8, 6)
+  center_longitude Decimal  @default(139.699326) @db.Decimal(9, 6)
+  created_at       DateTime @default(now()) @db.DateTime(6)
+  updated_at       DateTime @updatedAt @db.DateTime(6)
+
+  route_coordinates RouteCoordinates[]
+  collection_points CollectionPoints[]
+  images            Image[]
+  device_routes     DeviceRoute[]
+
+  @@map("route")
+}
+
+model RouteCoordinates {
+  route_coordinates_id String  @id @default(uuid()) @db.VarChar(36)
+  latitude             Decimal @db.Decimal(8, 6)
+  longitude            Decimal @db.Decimal(9, 6)
+  sequence             Int
+  is_user_point        Boolean @default(true)
+  route_id             String  @db.Char(36)
+  route                Route   @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
+
+  @@map("route_coordinates")
+}
+
+model CollectionPoints {
+  collection_point_id   String @id @default(uuid()) @db.Char(36)
+  sequence              Int
+  collection_point_name String @db.VarChar(255)
+  latitude              Decimal @db.Decimal(8, 6)
+  longitude             Decimal @db.Decimal(9, 6)
+  route_id              String  @db.Char(36)
+  route                 Route   @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
+
+  collected_points CollectedPoints[]
+
+  @@map("collection_points")
+}
+
+model CollectedPoints {
+  collected_point_id  String           @id @default(uuid()) @db.Char(36)
+  push_timestamp      DateTime         @default(now()) @db.DateTime(6)
+  collected_timestamp DateTime         @db.Timestamp(0)
+  collection_point_id String           @db.Char(36)
+  device_id           String           @db.Char(36)
+  session_id          String           @db.Char(36)
+  collection_point    CollectionPoints @relation(fields: [collection_point_id], references: [collection_point_id], onDelete: Cascade)
+  device              Device           @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+  session             DeviceSession    @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@unique([collection_point_id, session_id])
+  @@map("collected_points")
+}
+
+model Image {
+  image_id  String      @id @default(uuid()) @db.Char(36)
+  image_url String      @db.VarChar(255)
+  file_name String      @db.VarChar(255)
+  status    ImageStatus @default(active)
+  route_id  String      @db.Char(36)
+  route     Route       @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
+
+  complaints Complaints[]
+
+  @@map("image")
+}
+
+model Complaints {
+  complaint_id        String   @id @default(uuid()) @db.Char(36)
+  title               String   @unique @db.VarChar(255)
+  description         String   @db.VarChar(255)
+  latitude            Decimal  @db.Decimal(8, 6)
+  longitude           Decimal  @db.Decimal(9, 6)
+  push_timestamp      DateTime @default(now()) @db.DateTime(6)
+  complaint_timestamp DateTime @db.Timestamp(0)
+  image_id            String   @db.Char(36)
+  device_id           String   @db.Char(36)
+  image               Image    @relation(fields: [image_id], references: [image_id], onDelete: Cascade)
+  device              Device   @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+
+  @@map("complaints")
+}
+
+model Reports {
+  report_id            String        @id @default(uuid()) @db.VarChar(36)
+  route_name           String        @db.VarChar(255)
+  vehicle_plate_number String        @db.VarChar(50)
+  employee_name        String        @db.VarChar(255)
+  report_timestamp     DateTime      @default(now()) @db.Timestamp(0)
+  remarks              String?       @db.Text
+  session_start_time   DateTime      @db.Timestamp(0)
+  session_end_time     DateTime      @db.Timestamp(0)
+  session_id           String        @unique @db.Char(36)
+  session              DeviceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@map("reports")
+}
