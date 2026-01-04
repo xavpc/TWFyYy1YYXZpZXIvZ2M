@@ -19,7 +19,7 @@ steps:
     privileged: true
     volumes:
       - name: dockersock
-        path: /var/run/docker.sock&
+        path: /var/run/docker.sock
     commands:
       - docker build -t gcbackend .
 
