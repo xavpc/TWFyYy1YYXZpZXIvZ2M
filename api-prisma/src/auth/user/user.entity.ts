@@ -1,34 +1,14 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { UserStatus } from "./enums/user-status.enum";
-import { UserRole } from "./enums/user-role.enum";
-import { Employee } from "../../employee/employee.entity";
+// Prisma-based Users entity
+import { Users as PrismaUsers, UserRole, UserStatus, Prisma } from '@prisma/client';
 
-@Entity()
-export class Users {
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
-  user_id: string;
+export type Users = PrismaUsers;
+export { UserRole, UserStatus };
 
-  @Column({
-    type: 'enum', 
-    enum: UserRole
-  })
-  role: UserRole;
+export type CreateUserInput = Prisma.UsersCreateInput;
+export type UpdateUserInput = Prisma.UsersUpdateInput;
 
-
-  @OneToOne(() => Employee, employee => employee.user)
-  @JoinColumn({ name: 'employee_id' })
-  employee: Employee;
-
-  @Column({ nullable: false })
-  username: string;
-
-  @Column({ nullable: false })
-  hashed_password: string;
-
-  @Column({
-      type: 'enum', 
-      enum: UserStatus,
-      default: UserStatus.ACTIVE,
-  })
-  status: UserStatus;
-}
+export type UsersWithRelations = Prisma.UsersGetPayload<{
+  include: {
+    employee: true;
+  };
+}>;
