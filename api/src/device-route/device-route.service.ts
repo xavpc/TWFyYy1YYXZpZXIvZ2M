@@ -16,24 +16,24 @@ export class DeviceRouteService {
     private deviceRepository: Repository<Device>,
     @InjectRepository(Route)
     private routeRepository: Repository<Route>,
-  ) {}
+  ) { }
 
   async create(createDeviceRouteDto: CreateDeviceRouteDto): Promise<DeviceRoute> {
 
     const device = await this.deviceRepository.findOne({
       where: { device_id: createDeviceRouteDto.device_id }
     });
-    
+
     if (!device) {
       throw new NotFoundException(
         `Device with ID ${createDeviceRouteDto.device_id} not found`
       );
     }
-  
+
     const route = await this.routeRepository.findOne({
       where: { route_id: createDeviceRouteDto.route_id }
     });
-    
+
     if (!route) {
       throw new NotFoundException(
         `Route with ID ${createDeviceRouteDto.route_id} not found`
@@ -45,7 +45,7 @@ export class DeviceRouteService {
       route: route,
       day_assigned: createDeviceRouteDto.day_assigned
     });
-  
+
     try {
       return await this.deviceRouteRepository.save(deviceRoute);
     } catch (error) {
@@ -54,7 +54,7 @@ export class DeviceRouteService {
           `Route with ID ${createDeviceRouteDto.route_id} and device with ID ${createDeviceRouteDto.device_id} is already assigned on ${createDeviceRouteDto.day_assigned}`
         );
       }
-      throw error; 
+      throw error;
     }
   }
 
@@ -101,17 +101,17 @@ export class DeviceRouteService {
       where: { route: { route_id: routeId } },
       relations: ['route', 'device'],
       order: {
-        day_assigned: 'ASC' 
+        day_assigned: 'ASC'
       }
     });
     if (!groupByDevice) {
       return deviceRoutes;
     }
     const deviceMap = new Map();
-    
+
     deviceRoutes.forEach(deviceRoute => {
       const deviceId = deviceRoute.device.device_id;
-      
+
       if (!deviceMap.has(deviceId)) {
         deviceMap.set(deviceId, {
           ...deviceRoute,
@@ -122,51 +122,51 @@ export class DeviceRouteService {
         existing.day_assigned.push(deviceRoute.day_assigned);
       }
     });
-        
+
     return Array.from(deviceMap.values()).map(item => ({
       ...item,
       day_assigned: item.day_assigned.join(', ')
     }));
   }
 
-    async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
-      const route = await this.routeRepository.findOne({
-        where: { route_id: routeId }
-      });
-      
-      if (!route) {
-        throw new NotFoundException(`Route with ID ${routeId} not found`);
-      }
-    
-      const result = await this.deviceRouteRepository
-        .createQueryBuilder()
-        .delete()
-        .from(DeviceRoute)
-        .where('route.route_id = :routeId', { routeId })
-        .execute();
-      
-      return { affected: result.affected ?? 0 };
+  async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
+    const route = await this.routeRepository.findOne({
+      where: { route_id: routeId }
+    });
+
+    if (!route) {
+      throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
+    const result = await this.deviceRouteRepository
+      .createQueryBuilder()
+      .delete()
+      .from(DeviceRoute)
+      .where('route.route_id = :routeId', { routeId })
+      .execute();
 
-    async removeAllByDeviceId(deviceId: string): Promise<{ affected: number }> {
-      const device = await this.deviceRepository.findOne({
-        where: { device_id: deviceId }
-      });
-      
-      if (!device) {
-        throw new NotFoundException(`Device with ID ${deviceId} not found`);
-      }
-    
-      const result = await this.deviceRouteRepository
-        .createQueryBuilder()
-        .delete()
-        .from(DeviceRoute)
-        .where('device.device_id = :deviceId', { deviceId })
-        .execute();
-      
-      return { affected: result.affected ?? 0 };
+    return { affected: result.affected ?? 0 };
+  }
+
+
+  async removeAllByDeviceId(deviceId: string): Promise<{ affected: number }> {
+    const device = await this.deviceRepository.findOne({
+      where: { device_id: deviceId }
+    });
+
+    if (!device) {
+      throw new NotFoundException(`Device with ID ${deviceId} not found`);
     }
 
-    
+    const result = await this.deviceRouteRepository
+      .createQueryBuilder()
+      .delete()
+      .from(DeviceRoute)
+      .where('device.device_id = :deviceId', { deviceId })
+      .execute();
+
+    return { affected: result.affected ?? 0 };
+  }
+
+
 }

@@ -1,10 +1,12 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { config } from 'dotenv';
 import axios from 'axios';
+import { PlaceSearchResult, PlacesSearchResponse } from './types/places.type';
 
 config({
   path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
 });
+
 
 function decodePolyline(encoded: string): [number, number][] {
   let index = 0, lat = 0, lng = 0, coordinates: [number, number][] = [];
@@ -34,6 +36,8 @@ function decodePolyline(encoded: string): [number, number][] {
 
   return coordinates;
 }
+
+
 
 @Injectable()
 export class GmapsRoutingService {
@@ -92,6 +96,75 @@ export class GmapsRoutingService {
     } catch (error) {
       // Re-throw the error so the controller can handle it
       // No need to check for axios error here, we let the controller do the final handling
+      throw error;
+    }
+  }
+
+  async searchPlaces(
+    query: string,
+    location?: [number, number],
+    radius?: number,
+    type?: string
+  ): Promise<PlacesSearchResponse> {
+    if (!this.GOOGLE_MAPS_API_KEY) {
+      console.error('FATAL: GOOGLE_MAPS_API_KEY is not defined in environment variables.');
+      throw new InternalServerErrorException('Server configuration error: API key is missing.');
+    }
+
+    if (!query || query.trim().length === 0) {
+      throw new Error('Search query cannot be empty');
+    }
+
+    let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${this.GOOGLE_MAPS_API_KEY}`;
+
+    // Add location bias if provided
+    if (location && location.length === 2) {
+      url += `&location=${location[0]},${location[1]}`;
+
+      // Add radius if location is provided (default 50km)
+      const searchRadius = radius || 50000;
+      url += `&radius=${searchRadius}`;
+    }
+
+    // Add place type filter if provided
+    if (type) {
+      url += `&type=${type}`;
+    }
+
+    try {
+      const response = await axios.get(url);
+
+      if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
+        console.error(`Google Places API returned non-OK status: ${response.data.status}`, {
+          error_message: response.data.error_message,
+        });
+        const error = new Error(response.data.error_message || `Google Places API error: ${response.data.status}`);
+        error['gmaps_status'] = response.data.status;
+        throw error;
+      }
+
+      // Transform the response to match our interface
+      const results: PlaceSearchResult[] = (response.data.results || []).map(place => ({
+        place_id: place.place_id,
+        name: place.name,
+        formatted_address: place.formatted_address,
+        geometry: {
+          location: {
+            lat: place.geometry.location.lat,
+            lng: place.geometry.location.lng
+          }
+        },
+        types: place.types || [],
+        rating: place.rating,
+        photos: place.photos ? place.photos.map(photo => photo.photo_reference) : []
+      }));
+
+      return {
+        results,
+        status: response.data.status
+      };
+
+    } catch (error) {
       throw error;
     }
   }

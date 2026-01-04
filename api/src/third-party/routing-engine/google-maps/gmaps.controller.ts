@@ -83,4 +83,75 @@ export class GmapsRoutingController {
       }
     }
   }
+
+  @Get('places/search')
+  async searchPlaces(
+    @Query('query') query: string,
+    @Query('location') location?: string,
+    @Query('radius') radius?: string,
+    @Query('type') type?: string,
+  ) {
+    // --- Step 1: Handle User Input Errors ---
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Missing required parameter: query');
+    }
+
+    try {
+      let locationCoords: [number, number] | undefined;
+      let searchRadius: number | undefined;
+
+      // Parse location if provided
+      if (location) {
+        const coords = location.split(',').map(Number);
+        if (coords.length !== 2 || coords.some(isNaN)) {
+          throw new BadRequestException('Invalid location format. Expected "lat,lng".');
+        }
+        locationCoords = [coords[0], coords[1]];
+      }
+
+      // Parse radius if provided
+      if (radius) {
+        searchRadius = parseInt(radius);
+        if (isNaN(searchRadius) || searchRadius <= 0) {
+          throw new BadRequestException('Invalid radius. Must be a positive number.');
+        }
+      }
+
+      // --- Step 2: Call the Service ---
+      return await this.gmapsRoutingService.searchPlaces(
+        query.trim(),
+        locationCoords,
+        searchRadius,
+        type
+      );
+
+    } catch (error) {
+      // Log the original error for debugging purposes
+      console.error('Places search error in controller:', { message: error.message, stack: error.stack });
+
+      // --- Step 3: Map Google API Errors to HTTP Responses ---
+      const gmapsStatus = error.gmaps_status;
+
+      switch (gmapsStatus) {
+        case 'ZERO_RESULTS':
+          return { results: [], status: 'ZERO_RESULTS' }; // Return empty results instead of throwing
+
+        case 'INVALID_REQUEST':
+          throw new BadRequestException(error.message || 'The search request was malformed.');
+
+        case 'REQUEST_DENIED':
+          throw new ForbiddenException(error.message || 'Access to the places service was denied. Check API key and permissions.');
+
+        case 'OVER_QUERY_LIMIT':
+          throw new ServiceUnavailableException('The places service is temporarily unavailable due to high demand. Please try again later.');
+
+        case 'UNKNOWN_ERROR':
+          throw new ServiceUnavailableException('An unknown error occurred with the places service. Please try again.');
+
+        default:
+          // For any other errors (including network issues from axios), return a generic 500
+          throw new InternalServerErrorException('An unexpected error occurred while searching for places.');
+      }
+    }
+  }
 }
