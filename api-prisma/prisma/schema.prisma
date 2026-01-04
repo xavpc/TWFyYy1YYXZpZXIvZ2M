@@ -197,6 +197,7 @@ model CollectionPoints {
 
   collected_points CollectedPoints[]
 
+  @@index([route_id, sequence])
   @@map("collection_points")
 }
 
