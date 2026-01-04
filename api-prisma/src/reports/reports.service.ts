@@ -7,10 +7,20 @@ import { FilterReportDto } from './dto/filter-report.dto';
 import * as ExcelJS from 'exceljs';
 import { format } from 'date-fns';
 
+/**
+ * Service for managing collection session reports.
+ * Handles report generation, filtering, and Excel export functionality.
+ */
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Exports filtered reports to an Excel (.xlsx) file.
+   * Creates a formatted workbook with styled headers and data rows.
+   * @param filterDto - Filter criteria for selecting reports to export
+   * @returns Buffer containing the Excel file data
+   */
   async exportToExcel(filterDto: FilterReportDto): Promise<Buffer> {
     // 1. Fetch ALL matching reports, ignoring pagination for the export.
     const { data: reports } = await this.findAll({
