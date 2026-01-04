@@ -181,6 +181,8 @@ model RouteCoordinates {
   route_id             String  @db.Char(36)
   route                Route   @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
 
+  @@index([route_id, sequence])
+  @@index([route_id, is_user_point])
   @@map("route_coordinates")
 }
 
