@@ -229,6 +229,8 @@ model Image {
 
   complaints Complaints[]
 
+  @@index([route_id])
+  @@index([status])
   @@map("image")
 }
 
