@@ -54,13 +54,13 @@ enum DeviceRouteDay {
 // ============================================
 
 model Users {
-  user_id         String       @id @default(uuid()) @db.Char(36)
+  user_id         String     @id @default(uuid()) @db.Char(36)
   role            UserRole
-  username        String       @db.VarChar(255)
-  hashed_password String       @db.VarChar(255)
-  status          UserStatus   @default(active)
-  employee_id     String?      @unique @db.Char(36)
-  employee        Employee?    @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction)
+  username        String     @db.VarChar(255)
+  hashed_password String     @db.VarChar(255)
+  status          UserStatus @default(active)
+  employee_id     String?    @unique @db.Char(36)
+  employee        Employee?  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction)
 
   @@map("users")
 }
@@ -173,9 +173,9 @@ model RouteCoordinates {
 }
 
 model CollectionPoints {
-  collection_point_id   String @id @default(uuid()) @db.Char(36)
+  collection_point_id   String  @id @default(uuid()) @db.Char(36)
   sequence              Int
-  collection_point_name String @db.VarChar(255)
+  collection_point_name String  @db.VarChar(255)
   latitude              Decimal @db.Decimal(8, 6)
   longitude             Decimal @db.Decimal(9, 6)
   route_id              String  @db.Char(36)
