@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { RouteCoordinates } from '@prisma/client';
+import { RouteCoordinates, Prisma } from '@prisma/client';
 import { CreateRouteCoordinatesDto } from './dto/create-routeCoordinates.dto';
 import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
 import { GmapsRoutingService } from 'src/third-party/routing-engine/google-maps/gmaps.service';
@@ -26,8 +26,9 @@ export class RouteCoordinatesService {
     };
   }
 
-  private async updateRouteCenterPoint(routeId: string): Promise<void> {
-    const coordinates = await this.prisma.routeCoordinates.findMany({
+  private async updateRouteCenterPoint(routeId: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx || this.prisma;
+    const coordinates = await client.routeCoordinates.findMany({
       where: { route_id: routeId },
       orderBy: { sequence: 'asc' }
     });
@@ -35,7 +36,7 @@ export class RouteCoordinatesService {
     if (coordinates.length >= 3) {
       const centerPoint = this.calculateCenterPoint(coordinates);
 
-      await this.prisma.route.update({
+      await client.route.update({
         where: { route_id: routeId },
         data: {
           center_latitude: centerPoint.latitude,
@@ -93,23 +94,27 @@ export class RouteCoordinatesService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    const savedCoordinates: RouteCoordinates[] = [];
-    for (const dto of dtos) {
-      const coord = await this.prisma.routeCoordinates.create({
-        data: {
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-          sequence: dto.sequence,
-          is_user_point: dto.is_user_point ?? true,
-          route_id: routeId
-        }
-      });
-      savedCoordinates.push(coord);
-    }
+    // Use transaction for atomic batch creation
+    return this.prisma.$transaction(async (tx) => {
+      const savedCoordinates: RouteCoordinates[] = [];
 
-    await this.updateRouteCenterPoint(routeId);
+      for (const dto of dtos) {
+        const coord = await tx.routeCoordinates.create({
+          data: {
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            sequence: dto.sequence,
+            is_user_point: dto.is_user_point ?? true,
+            route_id: routeId
+          }
+        });
+        savedCoordinates.push(coord);
+      }
 
-    return savedCoordinates;
+      await this.updateRouteCenterPoint(routeId, tx);
+
+      return savedCoordinates;
+    });
   }
 
 
@@ -150,22 +155,25 @@ export class RouteCoordinatesService {
     const routeId = routeCoordinates.route.route_id;
     const currentSequence = routeCoordinates.sequence;
 
-    await this.prisma.routeCoordinates.delete({
-      where: { route_coordinates_id: id }
-    });
+    // Use transaction for atomic delete + sequence update + center update
+    await this.prisma.$transaction(async (tx) => {
+      await tx.routeCoordinates.delete({
+        where: { route_coordinates_id: id }
+      });
 
-    // Decrement sequence for all coordinates with higher sequence in same route
-    await this.prisma.routeCoordinates.updateMany({
-      where: {
-        route_id: routeId,
-        sequence: { gt: currentSequence }
-      },
-      data: {
-        sequence: { decrement: 1 }
-      }
-    });
+      // Decrement sequence for all coordinates with higher sequence in same route
+      await tx.routeCoordinates.updateMany({
+        where: {
+          route_id: routeId,
+          sequence: { gt: currentSequence }
+        },
+        data: {
+          sequence: { decrement: 1 }
+        }
+      });
 
-    await this.updateRouteCenterPoint(routeId);
+      await this.updateRouteCenterPoint(routeId, tx);
+    });
   }
 
   async findByRoute(routeId: string): Promise<RouteCoordinates[]> {
@@ -186,19 +194,22 @@ export class RouteCoordinatesService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    const result = await this.prisma.routeCoordinates.deleteMany({
-      where: { route_id: routeId }
-    });
+    // Use transaction for atomic delete + center update
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.routeCoordinates.deleteMany({
+        where: { route_id: routeId }
+      });
 
-    await this.prisma.route.update({
-      where: { route_id: routeId },
-      data: {
-        center_latitude: 35.6763976,
-        center_longitude: 139.6993259
-      }
-    });
+      await tx.route.update({
+        where: { route_id: routeId },
+        data: {
+          center_latitude: 35.6763976,
+          center_longitude: 139.6993259
+        }
+      });
 
-    return { affected: result.count };
+      return { affected: result.count };
+    });
   }
 
   async removeUserPointWithGeneratedPoints(id: string): Promise<void> {
@@ -220,32 +231,39 @@ export class RouteCoordinatesService {
       orderBy: { sequence: 'asc' }
     });
 
-    // 2. Delete ALL coordinates for this route (clean slate)
-    await this.prisma.routeCoordinates.deleteMany({
-      where: { route_id: routeId }
-    });
-
-    // 3. If no user points remain, we're done
-    if (remainingUserPoints.length === 0) {
-      await this.prisma.route.update({
-        where: { route_id: routeId },
-        data: {
-          center_latitude: 0,
-          center_longitude: 0
-        }
+    // Use transaction for atomic delete + rebuild + center update
+    await this.prisma.$transaction(async (tx) => {
+      // 2. Delete ALL coordinates for this route (clean slate)
+      await tx.routeCoordinates.deleteMany({
+        where: { route_id: routeId }
       });
-      return;
-    }
 
-    // 4. Rebuild everything from scratch
-    await this.rebuildRouteFromUserPoints(routeId, remainingUserPoints);
+      // 3. If no user points remain, update center and return
+      if (remainingUserPoints.length === 0) {
+        await tx.route.update({
+          where: { route_id: routeId },
+          data: {
+            center_latitude: 0,
+            center_longitude: 0
+          }
+        });
+        return;
+      }
 
-    // 5. Update center point
-    await this.updateRouteCenterPoint(routeId);
+      // 4. Rebuild everything from scratch within transaction
+      await this.rebuildRouteFromUserPointsWithTx(routeId, remainingUserPoints, tx);
+
+      // 5. Update center point
+      await this.updateRouteCenterPoint(routeId, tx);
+    });
   }
 
-  private async rebuildRouteFromUserPoints(routeId: string, userPoints: RouteCoordinates[]): Promise<void> {
-    const route = await this.prisma.route.findUnique({
+  private async rebuildRouteFromUserPointsWithTx(
+    routeId: string,
+    userPoints: RouteCoordinates[],
+    tx: Prisma.TransactionClient
+  ): Promise<void> {
+    const route = await tx.route.findUnique({
       where: { route_id: routeId }
     });
 
@@ -302,9 +320,9 @@ export class RouteCoordinatesService {
       }
     }
 
-    // Save all coordinates in batch
+    // Save all coordinates in batch within transaction
     for (const coord of allCoordinatesToSave) {
-      await this.prisma.routeCoordinates.create({
+      await tx.routeCoordinates.create({
         data: coord
       });
     }
