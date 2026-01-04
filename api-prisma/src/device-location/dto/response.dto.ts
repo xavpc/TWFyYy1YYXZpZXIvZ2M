@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DeviceLocation } from '../device-location.entity';
+import { DeviceLocation } from '@prisma/client';
 
 
 export class DeviceLocationResponse {
