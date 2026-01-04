@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { config } from 'dotenv';
 import axios from 'axios';
 
@@ -37,13 +37,19 @@ function decodePolyline(encoded: string): [number, number][] {
 
 @Injectable()
 export class GmapsRoutingService {
-  private GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GMAPS_API_KEY;
+  private GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY; // Use a more standard name
 
   async getRoute(
     origin: [number, number],
     destination: [number, number],
     waypoints?: [number, number][]
   ) {
+    if (!this.GOOGLE_MAPS_API_KEY) {
+      // Fail early if the key is not configured
+      console.error('FATAL: GOOGLE_MAPS_API_KEY is not defined in environment variables.');
+      throw new InternalServerErrorException('Server configuration error: API key is missing.');
+    }
+
     const originStr = `${origin[0]},${origin[1]}`;
     const destStr = `${destination[0]},${destination[1]}`;
 
@@ -56,8 +62,25 @@ export class GmapsRoutingService {
 
     try {
       const response = await axios.get(url);
+
+      // **MODIFIED: More detailed error checking**
       if (response.data.status !== 'OK') {
-        throw new Error(`Google Maps API error: ${response.data.status}`);
+        // Log the detailed error message from Google for debugging
+        console.error(`Google Maps API returned non-OK status: ${response.data.status}`, {
+          error_message: response.data.error_message,
+        });
+        // Throw an error that includes the status code from Google
+        const error = new Error(response.data.error_message || `Google Maps API error: ${response.data.status}`);
+        // Attach the status code to the error object for the controller to use
+        error['gmaps_status'] = response.data.status;
+        throw error;
+      }
+
+      if (!response.data.routes || response.data.routes.length === 0) {
+        // This case is usually covered by ZERO_RESULTS, but it's good practice to check
+        const error = new Error('No routes found between the specified locations.');
+        error['gmaps_status'] = 'ZERO_RESULTS';
+        throw error;
       }
 
       const encoded = response.data.routes[0].overview_polyline.points;
@@ -65,14 +88,10 @@ export class GmapsRoutingService {
       const coordinates = decodedPoints.map(([lat, lng]) => ({ lat, lng }));
 
       return { coordinates };
+
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('API Error:', {
-          message: error.message,
-          response: error.response?.data,
-        });
-        throw new Error(`API request failed: ${error.message}`);
-      }
+      // Re-throw the error so the controller can handle it
+      // No need to check for axios error here, we let the controller do the final handling
       throw error;
     }
   }
