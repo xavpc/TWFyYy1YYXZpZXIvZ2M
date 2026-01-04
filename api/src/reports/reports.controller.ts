@@ -21,10 +21,40 @@ export class ReportsController {
 
 
   @Get()
-  @ApiOperation({ summary: 'Get all reports with filtering options' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Returns all reports that match the filters' })
-  findAll(@Query() filterDto: FilterReportDto): Promise<{ data: Reports[], total: number }> {
-    return this.reportService.findAll(filterDto);
+  @ApiOperation({ summary: 'Get all reports with filtering, pagination and search' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reports retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Reports retrieved successfully' },
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Reports' }
+        },
+        total: { type: 'number', example: 150 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 10 },
+        totalPages: { type: 'number', example: 15 }
+      }
+    }
+  })
+  async findAll(@Query() filterDto: FilterReportDto) {
+    const result = await this.reportService.findAll(filterDto);
+    
+    const totalPages = filterDto?.limit ? Math.ceil(result.total / filterDto.limit) : 1;
+    
+    return {
+      success: true,
+      message: 'Reports retrieved successfully',
+      data: result.data,
+      total: result.total,
+      page: filterDto?.page || 1,
+      limit: filterDto?.limit || result.data.length,
+      totalPages,
+    };
   }
 
   @Post('generate')
