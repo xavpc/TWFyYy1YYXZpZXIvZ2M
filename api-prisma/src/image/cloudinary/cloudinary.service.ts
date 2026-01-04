@@ -1,15 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Image } from '../image.entity';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Image } from '@prisma/client';
 
 @Injectable()
 export class CloudinaryService {
   constructor(
-    @InjectRepository(Image)
-    private imageRepository: Repository<Image>,
+    private prisma: PrismaService,
     private configService: ConfigService,
   ) {
     cloudinary.config({
@@ -29,12 +27,13 @@ export class CloudinaryService {
         resource_type: 'auto',
       });
 
-      const image = new Image();
-      image.image_url = result.secure_url;
-      image.file_name = file.originalname;
-      image.route = { route_id: routeId } as any;
-
-      return this.imageRepository.save(image);
+      return this.prisma.image.create({
+        data: {
+          image_url: result.secure_url,
+          file_name: file.originalname,
+          route_id: routeId,
+        },
+      });
     } catch (error) {
       throw new Error(`Failed to upload image: ${error.message}`);
     }
