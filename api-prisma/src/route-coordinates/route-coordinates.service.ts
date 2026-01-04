@@ -175,12 +175,19 @@ export class RouteCoordinatesService {
     return updated;
   }
 
+  /**
+   * Removes a coordinate and resequences remaining coordinates.
+   * Uses a transaction to atomically:
+   * 1. Delete the coordinate
+   * 2. Decrement sequence numbers for all following coordinates
+   * 3. Update the route's center point
+   * @param id - The coordinate ID to remove
+   */
   async remove(id: string): Promise<void> {
     const routeCoordinates = await this.findOne(id);
     const routeId = routeCoordinates.route.route_id;
     const currentSequence = routeCoordinates.sequence;
 
-    // Use transaction for atomic delete + sequence update + center update
     await this.prisma.$transaction(async (tx) => {
       await tx.routeCoordinates.delete({
         where: { route_coordinates_id: id }
