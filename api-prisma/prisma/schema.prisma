@@ -150,6 +150,9 @@ model DeviceLocation {
   device                     Device        @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
   session                    DeviceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
+  @@index([session_id])
+  @@index([device_id])
+  @@index([current_location_timestamp])
   @@map("device_location")
 }
 
