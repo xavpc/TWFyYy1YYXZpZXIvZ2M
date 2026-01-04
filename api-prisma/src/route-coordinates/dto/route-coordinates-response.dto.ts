@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RouteCoordinates } from '../route-coordinates.entity';
-import { Route } from 'src/route/route.entity';
+import { RouteCoordinates, Route } from '@prisma/client';
 
 export class RouteCoordinatesResponse {
   @ApiProperty({
