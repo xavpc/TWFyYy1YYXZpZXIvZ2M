@@ -7,7 +7,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
   ForbiddenException,
-  ServiceUnavailableException
+  ServiceUnavailableException,
+  Post,
+  Body
 } from '@nestjs/common';
 import { GmapsRoutingService } from './gmaps.service';
 
@@ -152,6 +154,23 @@ export class GmapsRoutingController {
           // For any other errors (including network issues from axios), return a generic 500
           throw new InternalServerErrorException('An unexpected error occurred while searching for places.');
       }
+    }
+  }
+
+
+  @Post('snap-to-roads')
+  async snapToRoads(@Body() body: { coordinates: { lat: number; lng: number }[] }) {
+    try {
+      const result = await this.gmapsRoutingService.snapToRoads(body.coordinates);
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 }

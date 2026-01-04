@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { config } from 'dotenv';
 import axios from 'axios';
 import { PlaceSearchResult, PlacesSearchResponse } from './types/places.type';
+import { SnapToRoadsResponse } from './types/snap-to-road';
 
 config({
   path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
@@ -165,6 +166,47 @@ export class GmapsRoutingService {
       };
 
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async snapToRoads(coordinates: { lat: number; lng: number }[]): Promise<SnapToRoadsResponse> {
+    if (!this.GOOGLE_MAPS_API_KEY) {
+      console.error('FATAL: GOOGLE_MAPS_API_KEY is not defined in environment variables.');
+      throw new InternalServerErrorException('Server configuration error: API key is missing.');
+    }
+
+    if (!coordinates || coordinates.length === 0) {
+      throw new Error('Coordinates array cannot be empty');
+    }
+
+    // Convert coordinates to the format Google Roads API expects
+    const pathString = coordinates
+      .map(coord => `${coord.lat},${coord.lng}`)
+      .join('|');
+
+    const url = `https://roads.googleapis.com/v1/snapToRoads?path=${pathString}&interpolate=true&key=${this.GOOGLE_MAPS_API_KEY}`;
+
+    try {
+      const response = await axios.get(url);
+
+      if (response.status !== 200) {
+        console.error(`Google Roads API returned status: ${response.status}`, {
+          error: response.data,
+        });
+        throw new Error(`Google Roads API error: ${response.status}`);
+      }
+
+      // Transform the response to match our interface
+      const snappedPoints = (response.data.snappedPoints || []).map(point => ({
+        lat: point.location.latitude,
+        lng: point.location.longitude
+      }));
+
+      return { snappedPoints };
+
+    } catch (error) {
+      console.error('Error calling Google Roads API:', error.message);
       throw error;
     }
   }
