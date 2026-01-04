@@ -304,7 +304,6 @@ private generateHtml(data: ReportData): string {
 
             @media print {
               body { margin: 0; }
-              .section { page-break-inside: avoid; }
             }
           </style>
         </head>
