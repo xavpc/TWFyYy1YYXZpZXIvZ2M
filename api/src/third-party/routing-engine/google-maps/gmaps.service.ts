@@ -60,8 +60,10 @@ export class GmapsRoutingService {
         throw new Error(`Google Maps API error: ${response.data.status}`);
       }
 
-      const overview = response.data.routes[0].overview_polyline.points;
-      const decodedPoints = decodePolyline(overview);
+      const steps = response.data.routes[0].legs.flatMap(leg => leg.steps);
+      const decodedPoints = steps.flatMap(step =>
+        decodePolyline(step.polyline.points)
+      );
 
       const coordinates = decodedPoints.map(([lat, lng]) => ({ lat, lng }));
 
