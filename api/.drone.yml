@@ -1,0 +1,48 @@
+kind: pipeline
+type: docker
+name: default
+
+trigger:
+  branch:
+    - main
+
+steps:
+  - name: install and test
+    image: node:22.16.0-alpine
+    commands:
+      - npm ci
+      - npm run build
+      # - npm test
+
+  - name: build the local docker image
+    image: docker
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock&
+    commands:
+      - docker build -t gcbackend .
+
+  - name: deploy the container
+    image: docker
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker rm -f gcbackend-container || true
+      - |
+        docker run -d \
+          --network gcnetwork \
+          --name gcbackend-container \
+          -p 3001:3001 \
+          --env-file .env.online \
+          --memory="2g" \
+          --memory-swap="2g" \
+          --cpus="1.0" \
+          gcbackend
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
