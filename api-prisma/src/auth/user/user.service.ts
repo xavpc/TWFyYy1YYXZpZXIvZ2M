@@ -1,70 +1,72 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import { Users } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserStatus } from './enums/user-status.enum';
 import * as bcrypt from 'bcrypt';
-import { Employee } from 'src/employee/employee.entity';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectRepository(Users)
-    private userRepository: Repository<Users>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<Users> {
-    const existingUser = await this.userRepository.findOne({
-      where: { username: createUserDto.username }
+    const existingUser = await this.prisma.users.findFirst({
+      where: { username: createUserDto.username },
     });
-  
+
     if (existingUser) {
       throw new ConflictException('Username already exists');
     }
-  
+
     if (createUserDto.employee_id) {
-      const existingUserWithEmployee = await this.userRepository.findOne({
-        where: { 
-          employee: { employee_id: createUserDto.employee_id } 
-        },
-        relations: ['employee']
+      const existingUserWithEmployee = await this.prisma.users.findFirst({
+        where: { employee_id: createUserDto.employee_id },
       });
-  
+
       if (existingUserWithEmployee) {
         throw new ConflictException('Employee already has a user account');
       }
     }
-  
+
     const hashedPassword = await this.hashPassword(createUserDto.password);
-  
-    const newUser = this.userRepository.create({
-      username: createUserDto.username,
-      hashed_password: hashedPassword,
-      role: createUserDto.role,
-      status: UserStatus.ACTIVE
-    });
-  
-    if (createUserDto.employee_id) {
-      newUser.employee = { employee_id: createUserDto.employee_id } as Employee;
-    }
-  
-    return this.userRepository.save(newUser);
-  }
 
-  async findAll(): Promise<Users[]> {
-    return this.userRepository.find({
-      select: ['user_id', 'username', 'role', 'status'],
-      relations: ['employee']
+    return this.prisma.users.create({
+      data: {
+        username: createUserDto.username,
+        hashed_password: hashedPassword,
+        role: createUserDto.role,
+        status: UserStatus.active,
+        ...(createUserDto.employee_id && {
+          employee: { connect: { employee_id: createUserDto.employee_id } },
+        }),
+      },
+      include: { employee: true },
     });
   }
 
-  async findOne(id: string): Promise<Users> {
-    const user = await this.userRepository.findOne({
+  async findAll(): Promise<Partial<Users>[]> {
+    return this.prisma.users.findMany({
+      select: {
+        user_id: true,
+        username: true,
+        role: true,
+        status: true,
+        employee: true,
+      },
+    });
+  }
+
+  async findOne(id: string): Promise<Partial<Users>> {
+    const user = await this.prisma.users.findUnique({
       where: { user_id: id },
-      select: ['user_id', 'username', 'role', 'status'],
-      relations: ['employee']
+      select: {
+        user_id: true,
+        username: true,
+        role: true,
+        status: true,
+        employee: true,
+      },
     });
 
     if (!user) {
@@ -75,9 +77,9 @@ export class UserService {
   }
 
   async findByUsername(username: string): Promise<Users> {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.users.findFirst({
       where: { username },
-      relations: ['employee']
+      include: { employee: true },
     });
 
     if (!user) {
@@ -88,8 +90,8 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<Users> {
-    const user = await this.userRepository.findOne({
-      where: { user_id: id }
+    const user = await this.prisma.users.findUnique({
+      where: { user_id: id },
     });
 
     if (!user) {
@@ -97,8 +99,8 @@ export class UserService {
     }
 
     if (updateUserDto.username && updateUserDto.username !== user.username) {
-      const existingUser = await this.userRepository.findOne({
-        where: { username: updateUserDto.username }
+      const existingUser = await this.prisma.users.findFirst({
+        where: { username: updateUserDto.username },
       });
 
       if (existingUser) {
@@ -106,25 +108,36 @@ export class UserService {
       }
     }
 
-    if (updateUserDto.password) {
-      const hashedPassword = await this.hashPassword(updateUserDto.password);
-      user.hashed_password = hashedPassword;
-      delete updateUserDto.password;
+    const { password, ...otherData } = updateUserDto;
+    let hashedPassword: string | undefined;
+
+    if (password) {
+      hashedPassword = await this.hashPassword(password);
     }
 
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
+    return this.prisma.users.update({
+      where: { user_id: id },
+      data: {
+        ...otherData,
+        ...(hashedPassword && { hashed_password: hashedPassword }),
+      },
+      include: { employee: true },
+    });
   }
-
 
   async remove(id: string): Promise<void> {
-    const result = await this.userRepository.delete(id);
-    
-    if (result.affected === 0) {
+    const user = await this.prisma.users.findUnique({
+      where: { user_id: id },
+    });
+
+    if (!user) {
       throw new NotFoundException('Users not found');
     }
-  }
 
+    await this.prisma.users.delete({
+      where: { user_id: id },
+    });
+  }
 
   async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
