@@ -74,5 +74,10 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.BACKEND_PORT ?? 3001);
+
+  const server = app.getHttpServer();
+const address = server.address();
+
+console.log(`✅ Backend is listening on http://${address.address}:${address.port}`);
 }
 bootstrap();
