@@ -7,12 +7,12 @@ trigger:
     - main
 
 steps:
-  - name: install and test
-    image: node:22.16.0-alpine
-    commands:
-      - npm ci
-      - npm run build
-      # - npm test
+  # - name: install and test
+  #   image: node:22.16.0-alpine
+  #   commands:
+  #     - npm ci
+  #     - npm run build
+  #     # - npm test
 
   - name: build the local docker image
     image: docker
@@ -21,7 +21,7 @@ steps:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker build -t gcbackend .
+      - docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from gcbackend -t gcbackend .
 
   - name: deploy the container
     image: docker
