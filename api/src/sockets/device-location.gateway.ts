@@ -3,6 +3,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { LocationObjectType } from './types/location-data.type';
 
 @WebSocketGateway({
   cors: {
@@ -18,14 +19,14 @@ export class DeviceLocationGateway {
   @WebSocketServer()
   server: Server;
 
-  sendLocationUpdate(data: {
-    session_id?: string;
-    latitude: string;
-    longitude: string;
-    current_location_timestamp: string;
-  }) {
+  sendLocationUpdate(data: LocationObjectType) {
     console.log('📤 Emitting to clients:', data);
     this.server.emit('device-location-updated', data);
+  }
+
+  sendBatchLocationUpdate(data: LocationObjectType[]) {
+    console.log('📤 Emitting to clients:', data);
+    this.server.emit('batch-device-location-updated', data);
   }
 
   sendCollectedUpdate(data: {
