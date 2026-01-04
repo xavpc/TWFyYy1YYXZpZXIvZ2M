@@ -63,18 +63,9 @@ export class GmapsRoutingService {
       const overview = response.data.routes[0].overview_polyline.points;
       const decodedPoints = decodePolyline(overview);
 
-      const path = decodedPoints.map(p => `${p[0]},${p[1]}`).join('|');
+      const coordinates = decodedPoints.map(([lat, lng]) => ({ lat, lng }));
 
-      const snapUrl = `https://roads.googleapis.com/v1/snapToRoads?path=${path}&interpolate=true&key=${this.GOOGLE_MAPS_API_KEY}`;
-      const snapResponse = await axios.get(snapUrl);
-
-      const snappedPoints = snapResponse.data.snappedPoints.map((point: any) => ({
-        lat: point.location.latitude,
-        lng: point.location.longitude
-      }));
-
-      return { coordinates: snappedPoints };
-
+      return { coordinates };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('API Error:', {
