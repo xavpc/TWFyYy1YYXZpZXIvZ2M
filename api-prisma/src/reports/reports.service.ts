@@ -77,6 +77,14 @@ export class ReportsService {
   }
 
 
+  /**
+   * Creates a report for a completed collection session.
+   * Fetches related data (route, vehicle, employee) from the session
+   * and denormalizes it into the report for historical reference.
+   * @param createReportDto - Contains session_id and optional remarks
+   * @returns The created report
+   * @throws NotFoundException if session doesn't exist or isn't completed
+   */
   async create(createReportDto: CreateReportDto): Promise<Reports> {
     const { session_id, remarks } = createReportDto;
 
