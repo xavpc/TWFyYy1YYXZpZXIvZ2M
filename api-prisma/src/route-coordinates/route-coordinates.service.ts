@@ -251,6 +251,18 @@ export class RouteCoordinatesService {
     });
   }
 
+  /**
+   * Removes a user-defined waypoint and rebuilds the route.
+   * This complex operation:
+   * 1. Deletes ALL coordinates for the route (clean slate)
+   * 2. Keeps remaining user points and regenerates route segments between them
+   * 3. Uses Google Maps API to generate new route paths
+   * 4. Updates the route center point
+   *
+   * This ensures route continuity when a waypoint is removed.
+   * @param id - The user point coordinate ID to remove
+   * @throws Error if the coordinate is not a user point
+   */
   async removeUserPointWithGeneratedPoints(id: string): Promise<void> {
     const userPoint = await this.findOne(id);
 
@@ -260,7 +272,6 @@ export class RouteCoordinatesService {
 
     const routeId = userPoint.route.route_id;
 
-    // 1. Get all user points EXCEPT the one being deleted
     const remainingUserPoints = await this.prisma.routeCoordinates.findMany({
       where: {
         route_id: routeId,
