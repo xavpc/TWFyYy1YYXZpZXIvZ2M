@@ -179,7 +179,7 @@ export class RouteCoordinatesService {
     if (!route) {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
-  
+
     const result = await this.RouteCoordinatesRepository
       .createQueryBuilder()
       .delete()
@@ -188,8 +188,8 @@ export class RouteCoordinatesService {
       .execute();
     
     await this.RouteRepository.update(routeId, {
-      center_latitude: 0,
-      center_longitude: 0
+      center_latitude: 35.6763976,
+      center_longitude: 139.6993259
     });
     
     return { affected: result.affected ?? 0 };
