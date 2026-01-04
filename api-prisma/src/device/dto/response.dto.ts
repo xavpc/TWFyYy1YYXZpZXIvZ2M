@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Device } from '../device.entity';
+import { Device } from '@prisma/client';
 
 export class DeviceResponse {
   @ApiProperty({ example: true })
