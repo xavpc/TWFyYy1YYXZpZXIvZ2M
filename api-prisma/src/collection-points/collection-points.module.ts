@@ -1,12 +1,10 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
 import { CollectionPointsService } from "./collection-points.service";
 import { CollectionPointsController } from "./collection-points.controller";
-import { CollectionPoints } from "./collection-points.entity";
-import { Route } from "../route/route.entity";
+import { PrismaModule } from "../prisma/prisma.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CollectionPoints, Route])],
+    imports: [PrismaModule],
     controllers: [CollectionPointsController],
     providers: [CollectionPointsService]
 })
