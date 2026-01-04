@@ -5,6 +5,7 @@
   import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
   import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
   import { DeviceSessionResponse, DeviceSessionListResponse, DeviceSessionErrorResponse, DeviceSessionsArrayResponse } from './dto/response.dto';
+import { FilterDeviceSessionDto } from './dto/device-session-filter.dto';
 
   @ApiTags('device-sessions')
   @Controller('device-sessions')
@@ -25,18 +26,54 @@
       };
     }
 
-    @Get()
-    @ApiOperation({ summary: 'Get all device sessions' })
-    @ApiResponse({ status: 200, description: 'List of all sessions', type: DeviceSessionListResponse })
-    async findAll(): Promise<DeviceSessionListResponse> {
-      const sessions = await this.deviceSessionService.findAll();
-      return {
-        success: true,
-        message: 'Device sessions retrieved successfully',
-        data: sessions,
-        total: sessions.length
-      };
-    } 
+  @Get()
+  @ApiOperation({ summary: 'Get all device sessions with comprehensive filtering' })
+  @ApiQuery({ name: 'session_id', description: 'Filter by session ID', required: false })
+  @ApiQuery({ name: 'device_route_id', description: 'Filter by device route ID', required: false })
+  @ApiQuery({ name: 'device_id', description: 'Filter by device ID', required: false })
+  @ApiQuery({ name: 'route_id', description: 'Filter by route ID', required: false })
+  @ApiQuery({ name: 'employee_id', description: 'Filter by employee ID', required: false })
+  @ApiQuery({ name: 'start_date', description: 'Filter sessions starting from this date (ISO format)', required: false })
+  @ApiQuery({ name: 'end_date', description: 'Filter sessions ending before this date (ISO format)', required: false })
+  @ApiQuery({ name: 'date', description: 'Filter sessions for a specific date (ISO format)', required: false })
+  @ApiQuery({ name: 'is_active', description: 'Filter by active status (true/false)', required: false, type: Boolean })
+  @ApiQuery({ name: 'has_report', description: 'Filter by report existence (true/false)', required: false, type: Boolean })
+  @ApiQuery({ name: 'started_after', description: 'Sessions started after this datetime (ISO format)', required: false })
+  @ApiQuery({ name: 'started_before', description: 'Sessions started before this datetime (ISO format)', required: false })
+  @ApiQuery({ name: 'ended_after', description: 'Sessions ended after this datetime (ISO format)', required: false })
+  @ApiQuery({ name: 'ended_before', description: 'Sessions ended before this datetime (ISO format)', required: false })
+  @ApiQuery({ name: 'device_name', description: 'Filter by device name', required: false })
+  @ApiQuery({ name: 'vehicle_plate_num', description: 'Filter by vehicle plate number', required: false })
+  @ApiQuery({ name: 'employee_name', description: 'Filter by employee name', required: false })
+  @ApiQuery({ name: 'employee_email', description: 'Filter by employee email', required: false })
+  @ApiQuery({ name: 'route_name', description: 'Filter by route name', required: false })
+  @ApiQuery({ name: 'search', description: 'Global search across multiple fields', required: false })
+  @ApiQuery({ name: 'page', description: 'Page number for pagination', required: false, type: Number })
+  @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, type: Number })
+  @ApiQuery({ name: 'sort_by', description: 'Field to sort by', required: false })
+  @ApiQuery({ name: 'sort_order', description: 'Sort order (ASC/DESC)', required: false, enum: ['ASC', 'DESC'] })
+  @ApiResponse({ status: 200, description: 'List of sessions with pagination info', type: DeviceSessionListResponse })
+  async findAll(@Query() filterDto: FilterDeviceSessionDto): Promise<DeviceSessionListResponse> {
+    // Convert string dates to Date objects
+    if (filterDto.start_date) filterDto.start_date = new Date(filterDto.start_date);
+    if (filterDto.end_date) filterDto.end_date = new Date(filterDto.end_date);
+    if (filterDto.date) filterDto.date = new Date(filterDto.date);
+    if (filterDto.started_after) filterDto.started_after = new Date(filterDto.started_after);
+    if (filterDto.started_before) filterDto.started_before = new Date(filterDto.started_before);
+    if (filterDto.ended_after) filterDto.ended_after = new Date(filterDto.ended_after);
+    if (filterDto.ended_before) filterDto.ended_before = new Date(filterDto.ended_before);
+
+    const result = await this.deviceSessionService.findAll(filterDto);
+    return {
+      success: true,
+      message: 'Device sessions retrieved successfully',
+      data: result.data,
+      total: result.total,
+      page: filterDto.page || 1,
+      limit: filterDto.limit || 10,
+      totalPages: Math.ceil(result.total / (filterDto.limit || 10))
+    };
+  }
 
     @Get('active')
     @ApiOperation({ summary: 'Get all active device sessions' })

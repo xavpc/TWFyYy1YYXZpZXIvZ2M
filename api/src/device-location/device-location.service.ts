@@ -6,6 +6,7 @@ import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
 import { Device } from '../device/device.entity';
 import { DeviceSession } from 'src/device-session/device-session.entity';
+import { DeviceLocationGateway } from 'src/sockets/device-location.gateway';
 
 @Injectable()
 export class DeviceLocationService {
@@ -16,6 +17,7 @@ export class DeviceLocationService {
     private deviceRepository: Repository<Device>,
     @InjectRepository(DeviceSession)
     private deviceSessionRepository: Repository<DeviceSession>,
+    private readonly gateway: DeviceLocationGateway
   ) {}
 
   async create(createDeviceLocationDto: CreateDeviceLocationDto): Promise<DeviceLocation> {
@@ -49,7 +51,16 @@ export class DeviceLocationService {
       deviceLocation.session = session;
     }
 
-    return this.deviceLocationRepository.save(deviceLocation);
+    const saved = await this.deviceLocationRepository.save(deviceLocation);
+
+    this.gateway.sendLocationUpdate({
+      session_id: saved.session?.session_id,
+      latitude: String(saved.latitude),
+      longitude: String(saved.longitude),
+      current_location_timestamp: String(saved.current_location_timestamp),
+    });
+
+    return saved;
   }
 
   findAll(): Promise<DeviceLocation[]> {

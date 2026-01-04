@@ -23,18 +23,28 @@ export class DeviceSessionsArrayResponse extends BaseSessionResponse {
 
 
 
+// export class DeviceSessionListResponse {
+//   @ApiProperty({ example: true })
+//   success: boolean;
+
+//   @ApiProperty({ example: 'Device sessions retrieved successfully' })
+//   message: string;
+
+//   @ApiProperty({ type: [DeviceSession], description: 'List of device sessions' })
+//   data: DeviceSession[];
+
+//   @ApiProperty({ example: 5, description: 'Total number of sessions' })
+//   total: number;
+// }
+
 export class DeviceSessionListResponse {
-  @ApiProperty({ example: true })
   success: boolean;
-
-  @ApiProperty({ example: 'Device sessions retrieved successfully' })
   message: string;
-
-  @ApiProperty({ type: [DeviceSession], description: 'List of device sessions' })
   data: DeviceSession[];
-
-  @ApiProperty({ example: 5, description: 'Total number of sessions' })
   total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 export class DeviceSessionErrorResponse {
