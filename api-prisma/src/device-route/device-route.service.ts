@@ -1,26 +1,15 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
-import { DeviceRoute } from './device-route.entity';
+import { PrismaService } from '../prisma/prisma.service';
+import { DeviceRoute, Prisma, DeviceRouteDay } from '@prisma/client';
 import { CreateDeviceRouteDto } from './dto/create-device-route.dto';
 import { UpdateDeviceRouteDto } from './dto/update-device-route.dto';
-import { Device } from '../device/device.entity';
-import { Route } from 'src/route/route.entity';
 
 @Injectable()
 export class DeviceRouteService {
-  constructor(
-    @InjectRepository(DeviceRoute)
-    private deviceRouteRepository: Repository<DeviceRoute>,
-    @InjectRepository(Device)
-    private deviceRepository: Repository<Device>,
-    @InjectRepository(Route)
-    private routeRepository: Repository<Route>,
-  ) { }
+  constructor(private prisma: PrismaService) { }
 
   async create(createDeviceRouteDto: CreateDeviceRouteDto): Promise<DeviceRoute> {
-
-    const device = await this.deviceRepository.findOne({
+    const device = await this.prisma.device.findUnique({
       where: { device_id: createDeviceRouteDto.device_id }
     });
 
@@ -30,7 +19,7 @@ export class DeviceRouteService {
       );
     }
 
-    const route = await this.routeRepository.findOne({
+    const route = await this.prisma.route.findUnique({
       where: { route_id: createDeviceRouteDto.route_id }
     });
 
@@ -40,77 +29,104 @@ export class DeviceRouteService {
       );
     }
 
-    const deviceRoute = this.deviceRouteRepository.create({
-      device: device,
-      route: route,
-      day_assigned: createDeviceRouteDto.day_assigned
-    });
-
     try {
-      return await this.deviceRouteRepository.save(deviceRoute);
+      return await this.prisma.deviceRoute.create({
+        data: {
+          device_id: createDeviceRouteDto.device_id,
+          route_id: createDeviceRouteDto.route_id,
+          day_assigned: createDeviceRouteDto.day_assigned as DeviceRouteDay
+        }
+      });
     } catch (error) {
-      if (error instanceof QueryFailedError && error.message.includes('Duplicate entry')) {
-        throw new ConflictException(
-          `Route with ID ${createDeviceRouteDto.route_id} and device with ID ${createDeviceRouteDto.device_id} is already assigned on ${createDeviceRouteDto.day_assigned}`
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `Route with ID ${createDeviceRouteDto.route_id} and device with ID ${createDeviceRouteDto.device_id} is already assigned on ${createDeviceRouteDto.day_assigned}`
+          );
+        }
       }
       throw error;
     }
   }
 
   findAll(): Promise<DeviceRoute[]> {
-    return this.deviceRouteRepository.find({
-      relations: ['device', 'route']
+    return this.prisma.deviceRoute.findMany({
+      include: {
+        device: true,
+        route: true
+      }
     });
   }
 
-  async findOne(id: string): Promise<DeviceRoute> {
-    const DeviceRoute = await this.deviceRouteRepository.findOne({
+  async findOne(id: string): Promise<DeviceRoute & { device: any; route: any }> {
+    const deviceRoute = await this.prisma.deviceRoute.findUnique({
       where: { device_route_id: id },
-      relations: ['device', 'route']
+      include: {
+        device: true,
+        route: true
+      }
     });
-    if (!DeviceRoute) {
+    if (!deviceRoute) {
       throw new NotFoundException(`Device Route with ID ${id} not found`);
     }
-    return DeviceRoute;
+    return deviceRoute;
   }
 
   async update(id: string, updateDeviceRouteDto: UpdateDeviceRouteDto): Promise<DeviceRoute> {
-    const DeviceRoute = await this.findOne(id);
-    Object.assign(DeviceRoute, updateDeviceRouteDto);
-    return this.deviceRouteRepository.save(DeviceRoute);
+    await this.findOne(id);
+
+    return this.prisma.deviceRoute.update({
+      where: { device_route_id: id },
+      data: updateDeviceRouteDto
+    });
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.deviceRouteRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Device Route with ID ${id} not found`);
+    try {
+      await this.prisma.deviceRoute.delete({
+        where: { device_route_id: id }
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Device Route with ID ${id} not found`);
+        }
+      }
+      throw error;
     }
   }
 
   findByDevice(deviceId: string): Promise<DeviceRoute[]> {
-    return this.deviceRouteRepository.find({
-      where: { device: { device_id: deviceId } },
-      relations: ['device', 'route']
+    return this.prisma.deviceRoute.findMany({
+      where: { device_id: deviceId },
+      include: {
+        device: true,
+        route: true
+      }
     });
   }
 
 
   async findByRoute(routeId: string, groupByDevice: boolean = false): Promise<DeviceRoute[] | any[]> {
-    const deviceRoutes = await this.deviceRouteRepository.find({
-      where: { route: { route_id: routeId } },
-      relations: ['route', 'device'],
-      order: {
-        day_assigned: 'ASC'
+    const deviceRoutes = await this.prisma.deviceRoute.findMany({
+      where: { route_id: routeId },
+      include: {
+        route: true,
+        device: true
+      },
+      orderBy: {
+        day_assigned: 'asc'
       }
     });
+
     if (!groupByDevice) {
       return deviceRoutes;
     }
+
     const deviceMap = new Map();
 
     deviceRoutes.forEach(deviceRoute => {
-      const deviceId = deviceRoute.device.device_id;
+      const deviceId = deviceRoute.device_id;
 
       if (!deviceMap.has(deviceId)) {
         deviceMap.set(deviceId, {
@@ -130,7 +146,7 @@ export class DeviceRouteService {
   }
 
   async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
-    const route = await this.routeRepository.findOne({
+    const route = await this.prisma.route.findUnique({
       where: { route_id: routeId }
     });
 
@@ -138,19 +154,16 @@ export class DeviceRouteService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    const result = await this.deviceRouteRepository
-      .createQueryBuilder()
-      .delete()
-      .from(DeviceRoute)
-      .where('route.route_id = :routeId', { routeId })
-      .execute();
+    const result = await this.prisma.deviceRoute.deleteMany({
+      where: { route_id: routeId }
+    });
 
-    return { affected: result.affected ?? 0 };
+    return { affected: result.count };
   }
 
 
   async removeAllByDeviceId(deviceId: string): Promise<{ affected: number }> {
-    const device = await this.deviceRepository.findOne({
+    const device = await this.prisma.device.findUnique({
       where: { device_id: deviceId }
     });
 
@@ -158,15 +171,10 @@ export class DeviceRouteService {
       throw new NotFoundException(`Device with ID ${deviceId} not found`);
     }
 
-    const result = await this.deviceRouteRepository
-      .createQueryBuilder()
-      .delete()
-      .from(DeviceRoute)
-      .where('device.device_id = :deviceId', { deviceId })
-      .execute();
+    const result = await this.prisma.deviceRoute.deleteMany({
+      where: { device_id: deviceId }
+    });
 
-    return { affected: result.affected ?? 0 };
+    return { affected: result.count };
   }
-
-
 }
