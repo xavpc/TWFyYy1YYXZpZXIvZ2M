@@ -265,5 +265,7 @@ model Reports {
   session_id           String        @unique @db.Char(36)
   session              DeviceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
+  @@index([report_timestamp])
+  @@index([route_name])
   @@map("reports")
 }
