@@ -30,7 +30,9 @@ steps:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker rm -f gcbackend-container || true
+      - docker stop -t 10 gcbackend-container || true
+      - docker kill gcbackend-container || true
+      - docker rm gcbackend-container || true
       - |
         docker run -d \
           --network gcnetwork \
