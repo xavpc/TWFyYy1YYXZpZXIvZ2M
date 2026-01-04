@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Route } from '../route.entity';
+import { Route } from '@prisma/client';
 
 export class RouteResponse {
   @ApiProperty({ example: true })
