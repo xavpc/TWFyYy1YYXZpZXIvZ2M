@@ -1,5 +1,17 @@
-// Prisma Schema for Garbage Collection System
-// Migrated from TypeORM entities
+// =============================================================================
+// Prisma Schema for Garbage Collection Management System
+// =============================================================================
+// This schema defines the database structure for a garbage collection tracking
+// system that manages employees, devices, routes, and collection activities.
+//
+// Key Features:
+// - Employee and device management
+// - Route planning with coordinates and collection points
+// - Real-time device location tracking
+// - Session-based collection tracking
+// - Complaint management with image support
+// - Automated report generation
+// =============================================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -10,35 +22,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
+// =============================================================================
 // ENUMS
-// ============================================
+// =============================================================================
 
+/// User roles for access control
 enum UserRole {
-  admin
-  garbage_collector
+  admin             /// Full system access
+  garbage_collector /// Limited access for field workers
 }
 
+/// Status for user accounts
 enum UserStatus {
-  active
-  inactive
+  active   /// User can log in and access the system
+  inactive /// User account is disabled
 }
 
+/// Status for employee records
 enum EmployeeStatus {
-  active
-  inactive
+  active   /// Employee is currently working
+  inactive /// Employee is no longer active
 }
 
+/// Status for device records
 enum DeviceStatus {
-  active
-  inactive
+  active   /// Device is operational and can be used
+  inactive /// Device is not in use
 }
 
+/// Status for uploaded images
 enum ImageStatus {
-  active
-  inactive
+  active   /// Image is visible and in use
+  inactive /// Image is hidden or archived
 }
 
+/// Days of the week for route assignments
 enum DeviceRouteDay {
   sunday
   monday
@@ -49,22 +67,31 @@ enum DeviceRouteDay {
   saturday
 }
 
-// ============================================
+// =============================================================================
 // MODELS
-// ============================================
+// =============================================================================
 
+/// System users for authentication and authorization
+/// Links to Employee for garbage collectors
 model Users {
   user_id         String     @id @default(uuid()) @db.Char(36)
+  /// User's role determining access permissions
   role            UserRole
+  /// Unique login username
   username        String     @db.VarChar(255)
+  /// BCrypt hashed password
   hashed_password String     @db.VarChar(255)
+  /// Account status
   status          UserStatus @default(active)
+  /// Optional link to employee record (for garbage collectors)
   employee_id     String?    @unique @db.Char(36)
   employee        Employee?  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction)
 
   @@map("users")
 }
 
+/// Employee records for garbage collection staff
+/// Each employee can be assigned devices for collection work
 model Employee {
   employee_id    String         @id @default(uuid()) @db.Char(36)
   first_name     String         @db.VarChar(255)
@@ -78,117 +105,184 @@ model Employee {
   created_at     DateTime       @default(now()) @db.DateTime(6)
   updated_at     DateTime       @updatedAt @db.DateTime(6)
 
+  /// Associated user account for login
   user    Users?
+  /// Devices assigned to this employee
   devices Device[]
 
+  @@index([status])
+  @@index([last_name, first_name])
   @@map("employee")
 }
 
+/// Devices (vehicles/tablets) used for garbage collection
+/// Each device is assigned to an employee and can track multiple routes
 model Device {
   device_id         String       @id @default(uuid()) @db.Char(36)
+  /// Friendly name for the device
   device_name       String       @db.VarChar(255)
+  /// Vehicle license plate number
   vehicle_plate_num String       @db.VarChar(255)
   status            DeviceStatus @default(active)
   created_at        DateTime     @default(now()) @db.DateTime(6)
   updated_at        DateTime     @updatedAt @db.DateTime(6)
+  /// Employee responsible for this device
   employee_id       String       @db.Char(36)
   employee          Employee     @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
 
+  /// GPS location history for this device
   device_locations DeviceLocation[]
+  /// Route assignments for this device
   device_routes    DeviceRoute[]
+  /// Collection points visited by this device
   collected_points CollectedPoints[]
+  /// Complaints reported from this device
   complaints       Complaints[]
 
+  @@index([status])
+  @@index([employee_id])
   @@map("device")
 }
 
+/// Active collection sessions for a device on a specific route
+/// Tracks start/end times and links to location and collection data
 model DeviceSession {
   session_id      String      @id @default(uuid()) @db.Char(36)
+  /// Session start timestamp
   start           DateTime    @db.Timestamp(0)
+  /// Session end timestamp (null if still active)
   end             DateTime?   @db.Timestamp(0)
+  /// The device-route assignment for this session
   device_route_id String      @db.Char(36)
   device_route    DeviceRoute @relation(fields: [device_route_id], references: [device_route_id], onDelete: Cascade)
 
+  /// GPS locations recorded during this session
   device_locations DeviceLocation[]
+  /// Collection points visited during this session
   collected_points CollectedPoints[]
+  /// Generated report for this session
   reports          Reports?
 
+  @@index([device_route_id])
+  @@index([start])
+  @@index([end])
   @@map("device_session")
 }
 
+/// Assignment of a device to a route on a specific day
+/// A route can only be assigned to one device per day
 model DeviceRoute {
   device_route_id String         @id @default(uuid()) @db.Char(36)
+  /// Day of the week this assignment is for
   day_assigned    DeviceRouteDay
   device_id       String         @db.Char(36)
   route_id        String         @db.Char(36)
   device          Device         @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
   route           Route          @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
 
+  /// Collection sessions for this device-route assignment
   device_sessions DeviceSession[]
 
+  /// Each route can only be assigned once per day
   @@unique([route_id, day_assigned])
+  @@index([device_id])
+  @@index([day_assigned])
   @@map("device_route")
 }
 
+/// Real-time GPS location data from collection devices
+/// Recorded during active collection sessions
 model DeviceLocation {
   device_location_id         String        @id @default(uuid()) @db.Char(36)
+  /// GPS latitude coordinate
   latitude                   Decimal       @db.Decimal(8, 6)
+  /// GPS longitude coordinate
   longitude                  Decimal       @db.Decimal(9, 6)
+  /// Server timestamp when location was received
   push_timestamp             DateTime      @default(now()) @db.DateTime(6)
+  /// Device timestamp when location was recorded
   current_location_timestamp DateTime      @db.Timestamp(0)
   device_id                  String        @db.Char(36)
   session_id                 String        @db.Char(36)
   device                     Device        @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
   session                    DeviceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
+  @@index([session_id])
+  @@index([device_id])
+  @@index([current_location_timestamp])
   @@map("device_location")
 }
 
+/// Garbage collection routes
+/// Contains the path coordinates and collection point locations
 model Route {
   route_id         String   @id @default(uuid()) @db.Char(36)
+  /// Unique name for the route
   route_name       String   @unique @db.VarChar(255)
+  /// Calculated center point latitude for map display
   center_latitude  Decimal  @default(35.676398) @db.Decimal(8, 6)
+  /// Calculated center point longitude for map display
   center_longitude Decimal  @default(139.699326) @db.Decimal(9, 6)
   created_at       DateTime @default(now()) @db.DateTime(6)
   updated_at       DateTime @updatedAt @db.DateTime(6)
 
+  /// GPS coordinates defining the route path
   route_coordinates RouteCoordinates[]
+  /// Designated garbage collection points along the route
   collection_points CollectionPoints[]
+  /// Reference images for the route
   images            Image[]
+  /// Device assignments for this route
   device_routes     DeviceRoute[]
 
   @@map("route")
 }
 
+/// GPS coordinates that define a route's path
+/// Includes both user-defined waypoints and generated route points
 model RouteCoordinates {
   route_coordinates_id String  @id @default(uuid()) @db.VarChar(36)
   latitude             Decimal @db.Decimal(8, 6)
   longitude            Decimal @db.Decimal(9, 6)
+  /// Order of this coordinate in the route path
   sequence             Int
+  /// True if manually placed by user, false if auto-generated
   is_user_point        Boolean @default(true)
   route_id             String  @db.Char(36)
   route                Route   @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
 
+  @@index([route_id, sequence])
+  @@index([route_id, is_user_point])
   @@map("route_coordinates")
 }
 
+/// Designated garbage collection points along a route
+/// These are the specific locations where garbage is collected
 model CollectionPoints {
   collection_point_id   String  @id @default(uuid()) @db.Char(36)
+  /// Order of this point in the collection sequence
   sequence              Int
+  /// Display name for the collection point
   collection_point_name String  @db.VarChar(255)
   latitude              Decimal @db.Decimal(8, 6)
   longitude             Decimal @db.Decimal(9, 6)
   route_id              String  @db.Char(36)
   route                 Route   @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
 
+  /// Records of when this point was collected
   collected_points CollectedPoints[]
 
+  @@index([route_id, sequence])
   @@map("collection_points")
 }
 
+/// Record of a collection point being visited during a session
+/// Tracks which points were collected and when
 model CollectedPoints {
   collected_point_id  String           @id @default(uuid()) @db.Char(36)
+  /// Server timestamp when collection was recorded
   push_timestamp      DateTime         @default(now()) @db.DateTime(6)
+  /// Device timestamp when collection occurred
   collected_timestamp DateTime         @db.Timestamp(0)
   collection_point_id String           @db.Char(36)
   device_id           String           @db.Char(36)
@@ -197,50 +291,86 @@ model CollectedPoints {
   device              Device           @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
   session             DeviceSession    @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
+  /// Each collection point can only be collected once per session
   @@unique([collection_point_id, session_id])
+  @@index([session_id])
+  @@index([device_id])
+  @@index([collected_timestamp])
   @@map("collected_points")
 }
 
+/// Reference images for routes (e.g., area photos, landmarks)
+/// Can be used for complaint documentation
 model Image {
   image_id  String      @id @default(uuid()) @db.Char(36)
+  /// Cloudinary URL for the image
   image_url String      @db.VarChar(255)
+  /// Original filename
   file_name String      @db.VarChar(255)
   status    ImageStatus @default(active)
   route_id  String      @db.Char(36)
   route     Route       @relation(fields: [route_id], references: [route_id], onDelete: Cascade)
 
+  /// Complaints that reference this image
   complaints Complaints[]
 
+  @@index([route_id])
+  @@index([status])
   @@map("image")
 }
 
+/// Complaints reported by garbage collection staff
+/// Used to document issues encountered during collection
 model Complaints {
   complaint_id        String   @id @default(uuid()) @db.Char(36)
+  /// Unique title/subject of the complaint
   title               String   @unique @db.VarChar(255)
+  /// Detailed description of the issue
   description         String   @db.VarChar(255)
+  /// Location latitude where issue was found
   latitude            Decimal  @db.Decimal(8, 6)
+  /// Location longitude where issue was found
   longitude           Decimal  @db.Decimal(9, 6)
+  /// Server timestamp when complaint was received
   push_timestamp      DateTime @default(now()) @db.DateTime(6)
+  /// Device timestamp when complaint was created
   complaint_timestamp DateTime @db.Timestamp(0)
+  /// Supporting image for the complaint
   image_id            String   @db.Char(36)
+  /// Device that submitted the complaint
   device_id           String   @db.Char(36)
   image               Image    @relation(fields: [image_id], references: [image_id], onDelete: Cascade)
   device              Device   @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
 
+  @@index([device_id])
+  @@index([image_id])
+  @@index([complaint_timestamp])
   @@map("complaints")
 }
 
+/// Generated reports for completed collection sessions
+/// Contains denormalized data for historical reference
 model Reports {
   report_id            String        @id @default(uuid()) @db.VarChar(36)
+  /// Route name at time of report (denormalized)
   route_name           String        @db.VarChar(255)
+  /// Vehicle plate at time of report (denormalized)
   vehicle_plate_number String        @db.VarChar(50)
+  /// Employee name at time of report (denormalized)
   employee_name        String        @db.VarChar(255)
+  /// When the report was generated
   report_timestamp     DateTime      @default(now()) @db.Timestamp(0)
+  /// Optional notes or observations
   remarks              String?       @db.Text
+  /// Session start time (denormalized)
   session_start_time   DateTime      @db.Timestamp(0)
+  /// Session end time (denormalized)
   session_end_time     DateTime      @db.Timestamp(0)
+  /// Link to the source session
   session_id           String        @unique @db.Char(36)
   session              DeviceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
+  @@index([report_timestamp])
+  @@index([route_name])
   @@map("reports")
 }

@@ -1,10 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Route } from './route.entity';
+import { Route, Prisma, DeviceRouteDay } from '@prisma/client';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { FilterRouteDto } from './dto/filter-route.dto';
-import { Prisma, DeviceRouteDay } from '@prisma/client';
 
 @Injectable()
 export class RouteService {

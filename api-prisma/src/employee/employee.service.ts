@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Employee } from './employee.entity';
+import { Employee, Prisma } from '@prisma/client';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { FilterEmployeeDto } from './dto/filter-employee.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EmployeeService {

@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Device } from './device.entity';
+import { Device, Prisma } from '@prisma/client';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 import { FilterDeviceDto } from './dto/filter-device.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DeviceService {

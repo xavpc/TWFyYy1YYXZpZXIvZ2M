@@ -3,29 +3,18 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './Logging.interceptor';
-import { createDatabaseIfNeeded } from './create-db'; 
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import * as cookieParser from 'cookie-parser';
+
 async function bootstrap() {
-
-  // if (process.env.NODE_ENV !== 'production') {
-  //   try {
-  //     await createDatabaseIfNeeded();
-  //     console.log('Production environment: Database check completed. Starting the application...');
-  //   } catch (error) {
-  //     console.error('Failed to create database:', error);
-  //     process.exit(1);
-  //   }
-  // } else {
-  //   console.log('Development environment: Skipping database creation check.');
-  // }
-
-
-    const app = await NestFactory.create(AppModule
-      , {
-        logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-      });
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    });
 
     app.use(cookieParser());
+
+    app.useGlobalFilters(new PrismaExceptionFilter());
+
     app.useGlobalInterceptors(
       new LoggingInterceptor(),
       new ClassSerializerInterceptor(app.get(Reflector), {

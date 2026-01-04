@@ -1,18 +1,12 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
 import { DeviceLocationController } from "./device-location.controller";
 import { DeviceLocationService } from "./device-location.service";
-import { DeviceLocation } from "./device-location.entity";
-import { Device } from "../device/device.entity";
-import { DeviceSession } from "../device-session/device-session.entity";
 import { DeviceLocationGateway } from "src/sockets/device-location.gateway";
+import { PrismaModule } from "../prisma/prisma.module";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([DeviceLocation, Device, DeviceSession]),
-  ],
+  imports: [PrismaModule],
   controllers: [DeviceLocationController],
   providers: [DeviceLocationService, DeviceLocationGateway]
-
 })
 export class DeviceLocationModule {}

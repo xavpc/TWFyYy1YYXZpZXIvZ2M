@@ -1,53 +1,47 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { And, IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
-import { DeviceSession } from './device-session.entity';
+import { PrismaService } from '../prisma/prisma.service';
+import { DeviceSession, Prisma } from '@prisma/client';
 import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
 import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
-import { DeviceRoute } from '../device-route/device-route.entity';
-import { Reports } from '../reports/reports.entity';
 import { FilterDeviceSessionDto } from './dto/device-session-filter.dto';
 
 @Injectable()
 export class DeviceSessionService {
-  constructor(
-    @InjectRepository(DeviceSession)
-    private deviceSessionRepository: Repository<DeviceSession>,
-    @InjectRepository(DeviceRoute)
-    private deviceRouteRepository: Repository<DeviceRoute>,
-    @InjectRepository(Reports)
-    private reportRepository: Repository<Reports>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async create(createDeviceSessionDto: CreateDeviceSessionDto): Promise<DeviceSession> {
-    const device_route = await this.deviceRouteRepository.findOne({
+    const device_route = await this.prisma.deviceRoute.findUnique({
       where: { device_route_id: createDeviceSessionDto.device_route_id }
     });
-    
+
     if (!device_route) {
       throw new NotFoundException(
         `Device Route with ID ${createDeviceSessionDto.device_route_id} not found`
       );
     }
-    
-    const deviceSession = this.deviceSessionRepository.create({
-      ...createDeviceSessionDto,
-      device_route: device_route,
-      start: new Date(), 
+
+    return this.prisma.deviceSession.create({
+      data: {
+        device_route_id: createDeviceSessionDto.device_route_id,
+        start: new Date(),
+      }
     });
-    return await this.deviceSessionRepository.save(deviceSession);
   }
 
   async findAll(filterDto?: FilterDeviceSessionDto): Promise<{ data: DeviceSession[], total: number }> {
     if (!filterDto) {
-      const data = await this.deviceSessionRepository.find({
-        relations: [
-          'device_route',
-          'device_route.device',
-          'device_route.device.employee',
-          'device_route.route'
-        ],
-        order: { start: 'DESC' }
+      const data = await this.prisma.deviceSession.findMany({
+        include: {
+          device_route: {
+            include: {
+              device: {
+                include: { employee: true }
+              },
+              route: true
+            }
+          }
+        },
+        orderBy: { start: 'desc' }
       });
       return { data, total: data.length };
     }
@@ -80,89 +74,89 @@ export class DeviceSessionService {
     } = filterDto;
 
     const skip = (page - 1) * limit;
-    
-    // Build the query
-    let query = this.deviceSessionRepository
-      .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device')
-      .leftJoinAndSelect('device.employee', 'employee')
-      .leftJoinAndSelect('device_route.route', 'route')
-      .leftJoinAndSelect('session.reports', 'reports');
 
-    // Handle global search first
+    // Build where clause
+    const where: Prisma.DeviceSessionWhereInput = {};
+    const deviceRouteWhere: Prisma.DeviceRouteWhereInput = {};
+    const deviceWhere: Prisma.DeviceWhereInput = {};
+    const employeeWhere: Prisma.EmployeeWhereInput = {};
+    const routeWhere: Prisma.RouteWhereInput = {};
+
+    // Handle global search
     if (search) {
-      query.andWhere(`(
-        session.session_id LIKE :search OR
-        device.device_name LIKE :search OR
-        device.vehicle_plate_num LIKE :search OR
-        device.device_id LIKE :search OR
-        route.route_name LIKE :search OR
-        employee.first_name LIKE :search OR
-        employee.last_name LIKE :search OR
-        employee.email LIKE :search OR
-        employee.employee_id LIKE :search
-      )`, { search: `%${search}%` });
+      where.OR = [
+        { session_id: { contains: search } },
+        { device_route: { device: { device_name: { contains: search } } } },
+        { device_route: { device: { vehicle_plate_num: { contains: search } } } },
+        { device_route: { device: { device_id: { contains: search } } } },
+        { device_route: { route: { route_name: { contains: search } } } },
+        { device_route: { device: { employee: { first_name: { contains: search } } } } },
+        { device_route: { device: { employee: { last_name: { contains: search } } } } },
+        { device_route: { device: { employee: { email: { contains: search } } } } },
+        { device_route: { device: { employee: { employee_id: { contains: search } } } } },
+      ];
     }
 
     // Apply individual filters
     if (session_id) {
-      query.andWhere('session.session_id LIKE :session_id', { session_id: `%${session_id}%` });
+      where.session_id = { contains: session_id };
     }
 
     if (device_route_id) {
-      query.andWhere('device_route.device_route_id = :device_route_id', { device_route_id });
+      where.device_route_id = device_route_id;
     }
 
     if (device_id) {
-      query.andWhere('device.device_id = :device_id', { device_id });
+      deviceWhere.device_id = device_id;
     }
 
     if (route_id) {
-      query.andWhere('route.route_id = :route_id', { route_id });
+      routeWhere.route_id = route_id;
     }
 
     if (employee_id) {
-      query.andWhere('employee.employee_id = :employee_id', { employee_id });
+      employeeWhere.employee_id = employee_id;
     }
 
     // Device info filters
     if (device_name) {
-      query.andWhere('device.device_name LIKE :device_name', { device_name: `%${device_name}%` });
+      deviceWhere.device_name = { contains: device_name };
     }
 
     if (vehicle_plate_num) {
-      query.andWhere('device.vehicle_plate_num LIKE :vehicle_plate_num', { vehicle_plate_num: `%${vehicle_plate_num}%` });
+      deviceWhere.vehicle_plate_num = { contains: vehicle_plate_num };
     }
 
     if (route_name) {
-      query.andWhere('route.route_name LIKE :route_name', { route_name: `%${route_name}%` });
+      routeWhere.route_name = { contains: route_name };
     }
 
     // Employee info filters
     if (employee_name) {
-      query.andWhere('(employee.first_name LIKE :employee_name OR employee.last_name LIKE :employee_name)', 
-        { employee_name: `%${employee_name}%` });
+      employeeWhere.OR = [
+        { first_name: { contains: employee_name } },
+        { last_name: { contains: employee_name } }
+      ];
     }
 
     if (employee_email) {
-      query.andWhere('employee.email LIKE :employee_email', { employee_email: `%${employee_email}%` });
+      employeeWhere.email = { contains: employee_email };
     }
 
     // Status filters
     if (is_active !== undefined) {
       if (is_active) {
-        query.andWhere('session.end IS NULL');
+        where.end = null;
       } else {
-        query.andWhere('session.end IS NOT NULL');
+        where.end = { not: null };
       }
     }
 
     if (has_report !== undefined) {
       if (has_report) {
-        query.andWhere('reports.report_id IS NOT NULL');
+        where.reports = { isNot: null };
       } else {
-        query.andWhere('reports.report_id IS NULL');
+        where.reports = null;
       }
     }
 
@@ -172,66 +166,98 @@ export class DeviceSessionService {
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
-      
-      query.andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
+
+      where.start = { gte: startOfDay, lte: endOfDay };
     }
 
     if (start_date && end_date) {
-      query.andWhere('session.start BETWEEN :start_date AND :end_date', { start_date, end_date });
+      where.start = { gte: new Date(start_date), lte: new Date(end_date) };
     } else {
       if (start_date) {
-        query.andWhere('session.start >= :start_date', { start_date });
+        where.start = { ...where.start as object, gte: new Date(start_date) };
       }
       if (end_date) {
-        query.andWhere('session.start <= :end_date', { end_date });
+        where.start = { ...where.start as object, lte: new Date(end_date) };
       }
     }
 
     // Time range filters
     if (started_after) {
-      query.andWhere('session.start > :started_after', { started_after });
+      where.start = { ...where.start as object, gt: new Date(started_after) };
     }
 
     if (started_before) {
-      query.andWhere('session.start < :started_before', { started_before });
+      where.start = { ...where.start as object, lt: new Date(started_before) };
     }
 
     if (ended_after) {
-      query.andWhere('session.end > :ended_after', { ended_after });
+      where.end = { ...where.end as object, gt: new Date(ended_after) };
     }
 
     if (ended_before) {
-      query.andWhere('session.end < :ended_before', { ended_before });
+      where.end = { ...where.end as object, lt: new Date(ended_before) };
+    }
+
+    // Build nested device_route where
+    if (Object.keys(employeeWhere).length > 0) {
+      deviceWhere.employee = employeeWhere;
+    }
+
+    if (Object.keys(deviceWhere).length > 0) {
+      deviceRouteWhere.device = deviceWhere;
+    }
+
+    if (Object.keys(routeWhere).length > 0) {
+      deviceRouteWhere.route = routeWhere;
+    }
+
+    if (Object.keys(deviceRouteWhere).length > 0) {
+      where.device_route = deviceRouteWhere;
     }
 
     // Get total count
-    const total = await query.getCount();
+    const total = await this.prisma.deviceSession.count({ where });
 
     // Apply sorting and pagination
-    const validSortFields = ['start', 'end', 'session_id', 'device_route.device.device_name', 'device_route.route.route_name'];
-    const sortField = validSortFields.includes(sort_by) ? sort_by : 'start';
-    
-    query
-      .orderBy(`session.${sortField}`, sort_order)
-      .skip(skip)
-      .take(limit);
-
-    const data = await query.getMany();
+    const data = await this.prisma.deviceSession.findMany({
+      where,
+      include: {
+        device_route: {
+          include: {
+            device: {
+              include: { employee: true }
+            },
+            route: true
+          }
+        },
+        reports: true
+      },
+      orderBy: { [sort_by]: sort_order.toLowerCase() as 'asc' | 'desc' },
+      skip,
+      take: limit
+    });
 
     return { data, total };
   }
 
-  
-  async findOne(session_id: string): Promise<DeviceSession> {
-    const session = await this.deviceSessionRepository.findOne({ 
+
+  async findOne(session_id: string): Promise<DeviceSession & { device_route: any }> {
+    const session = await this.prisma.deviceSession.findUnique({
       where: { session_id },
-      relations: ['device_route', 'device_route.device', 'device_route.route']
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        }
+      }
     });
-    
+
     if (!session) {
       throw new NotFoundException(`Device Session with ID ${session_id} not found`);
     }
-    
+
     return session;
   }
 
@@ -239,92 +265,106 @@ export class DeviceSessionService {
     device_id: string,
     getActive: boolean = false
   ): Promise<DeviceSession[]> {
-    const query = this.deviceSessionRepository
-      .createQueryBuilder('session')
-      .innerJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device_route_device')
-      .leftJoinAndSelect('device_route.route', 'device_route_route')
-      .innerJoinAndSelect(
-        'session.device_locations', 
-        'device_locations'
-      )
-      .innerJoin(
-        'device_locations.device',
-        'device',
-        'device.device_id = :device_id',
-        { device_id }
-      );
-    
+    const where: Prisma.DeviceSessionWhereInput = {
+      device_route: {
+        device_id
+      }
+    };
 
     if (getActive) {
-      query.andWhere('session.end IS NULL');
+      where.end = null;
     } else {
-      query.andWhere('session.end IS NOT NULL');
+      where.end = { not: null };
     }
-    
-    query.distinct(true);
-    
-    return await query.getMany();
+
+    return this.prisma.deviceSession.findMany({
+      where,
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        },
+        device_locations: true
+      }
+    });
   }
 
   async findActiveSessionByDeviceId(device_id: string): Promise<DeviceSession | null> {
-    const session = await this.deviceSessionRepository
-      .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device_route_device')
-      .leftJoinAndSelect('device_route.route', 'device_route_route')
-      .where('device_route.device_id = :device_id', { device_id })
-      .andWhere('session.end IS NULL')
-      .getOne();
-    
-    return session;
+    return this.prisma.deviceSession.findFirst({
+      where: {
+        device_route: { device_id },
+        end: null
+      },
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        }
+      }
+    });
   }
 
   async update(
-    session_id: string, 
+    session_id: string,
     updateDeviceSessionDto: UpdateDeviceSessionDto
   ): Promise<DeviceSession> {
-    const session = await this.findOne(session_id);
-    
-    const updatedSession = await this.deviceSessionRepository.save({
-      ...session,
-      ...updateDeviceSessionDto,
+    await this.findOne(session_id);
+
+    return this.prisma.deviceSession.update({
+      where: { session_id },
+      data: updateDeviceSessionDto
     });
-    
-    return updatedSession;
   }
 
   async endSession(session_id: string): Promise<DeviceSession> {
     const session = await this.findOne(session_id);
-    
+
     if (session.end) {
       throw new NotFoundException(`Session ${session_id} is already ended`);
     }
-    
-    session.end = new Date();
-    return await this.deviceSessionRepository.save(session);
+
+    return this.prisma.deviceSession.update({
+      where: { session_id },
+      data: { end: new Date() }
+    });
   }
 
   async endActiveSessionByDeviceId(device_id: string): Promise<DeviceSession | null> {
     const activeSession = await this.findActiveSessionByDeviceId(device_id);
-    
+
     if (!activeSession) {
       return null;
     }
-    
-    activeSession.end = new Date();
-    return await this.deviceSessionRepository.save(activeSession);
+
+    return this.prisma.deviceSession.update({
+      where: { session_id: activeSession.session_id },
+      data: { end: new Date() }
+    });
   }
 
   async remove(session_id: string): Promise<DeviceSession> {
     const session = await this.findOne(session_id);
-    return await this.deviceSessionRepository.remove(session);
+
+    return this.prisma.deviceSession.delete({
+      where: { session_id }
+    });
   }
 
   async findActiveSessions(): Promise<DeviceSession[]> {
-    return await this.deviceSessionRepository.find({
-      where: { end: IsNull() },
-      relations: ['device_route', 'device_route.device', 'device_route.route']
+    return this.prisma.deviceSession.findMany({
+      where: { end: null },
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        }
+      }
     });
   }
 
@@ -335,59 +375,74 @@ export class DeviceSessionService {
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
-    
-    const query = this.deviceSessionRepository
-      .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device_route_device')
-      .leftJoinAndSelect('device_route.route', 'device_route_route')
-      .where('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
-    
+
+    const where: Prisma.DeviceSessionWhereInput = {
+      start: { gte: startOfDay, lte: endOfDay }
+    };
 
     if (getActive) {
-      query.andWhere('session.end IS NULL');
+      where.end = null;
     } else {
-      query.andWhere('session.end IS NOT NULL');
+      where.end = { not: null };
     }
-    
-    if (deviceId) {
-      query.innerJoin('session.device_locations', 'device_locations')
-           .andWhere('device_locations.device_id = :deviceId', { deviceId });
-    }
-    
-    return await query.getMany();
-  }
-  
 
-  findByDeviceRoute(
-    deviceRouteId: string, 
-    deviceId?: string, 
+    if (deviceId) {
+      where.device_locations = {
+        some: { device_id: deviceId }
+      };
+    }
+
+    return this.prisma.deviceSession.findMany({
+      where,
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        }
+      }
+    });
+  }
+
+
+  async findByDeviceRoute(
+    deviceRouteId: string,
+    deviceId?: string,
     getActive: boolean = false
   ): Promise<DeviceSession[]> {
-    const query = this.deviceSessionRepository.createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device_route_device')
-      .leftJoinAndSelect('device_route.route', 'device_route_route')
-      .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId });
-    
+    const where: Prisma.DeviceSessionWhereInput = {
+      device_route_id: deviceRouteId
+    };
+
     if (getActive) {
-      query.andWhere('session.end IS NULL');
+      where.end = null;
     } else {
-      query.andWhere('session.end IS NOT NULL');
+      where.end = { not: null };
     }
-    
+
     if (deviceId) {
-      query.innerJoin('session.device_locations', 'device_locations')
-           .andWhere('device_locations.device_id = :deviceId', { deviceId });
+      where.device_locations = {
+        some: { device_id: deviceId }
+      };
     }
-    
-    return query.getMany();
+
+    return this.prisma.deviceSession.findMany({
+      where,
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        }
+      }
+    });
   }
-  
-  
+
 
   async findSessionsByRouteAndDate(
     deviceRouteId: string,
@@ -397,67 +452,76 @@ export class DeviceSessionService {
   ): Promise<DeviceSession[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
-    
-    const query = this.deviceSessionRepository
-      .createQueryBuilder('session')
-      .leftJoinAndSelect('session.device_route', 'device_route')
-      .leftJoinAndSelect('device_route.device', 'device_route_device')
-      .leftJoinAndSelect('device_route.route', 'device_route_route')
-      .where('device_route.device_route_id = :deviceRouteId', { deviceRouteId })
-      .andWhere('session.start BETWEEN :startOfDay AND :endOfDay', { startOfDay, endOfDay });
-    
+
+    const where: Prisma.DeviceSessionWhereInput = {
+      device_route_id: deviceRouteId,
+      start: { gte: startOfDay, lte: endOfDay }
+    };
+
     if (getActive) {
-      query.andWhere('session.end IS NULL');
+      where.end = null;
     } else {
-      query.andWhere('session.end IS NOT NULL');
+      where.end = { not: null };
     }
-    
+
     if (deviceId) {
-      query.innerJoin('session.device_locations', 'device_locations')
-           .andWhere('device_locations.device_id = :deviceId', { deviceId });
+      where.device_locations = {
+        some: { device_id: deviceId }
+      };
     }
-    
-    return await query.getMany();
+
+    return this.prisma.deviceSession.findMany({
+      where,
+      include: {
+        device_route: {
+          include: {
+            device: true,
+            route: true
+          }
+        }
+      }
+    });
   }
 
-  async removeAll(): Promise<DeviceSession[]> {
-    const sessions = await this.deviceSessionRepository.find();
-    return await this.deviceSessionRepository.remove(sessions);
+  async removeAll(): Promise<{ count: number }> {
+    return this.prisma.deviceSession.deleteMany({});
   }
 
 
   async findRecentlyEndedSessions(lookbackHours = 24): Promise<DeviceSession[]> {
     const lookbackDate = new Date();
     lookbackDate.setHours(lookbackDate.getHours() - lookbackHours);
-    
-    return this.deviceSessionRepository.find({
+
+    return this.prisma.deviceSession.findMany({
       where: {
-        end: And(Not(IsNull()), MoreThanOrEqual(lookbackDate)), // Only recent completed sessions
+        end: {
+          not: null,
+          gte: lookbackDate
+        }
       },
-      relations: [
-        'device_route',
-        'device_route.route',
-        'device_route.device',
-        'device_route.device.employee'
-      ],
-      order: {
-        end: 'DESC', 
+      include: {
+        device_route: {
+          include: {
+            route: true,
+            device: {
+              include: { employee: true }
+            }
+          }
+        }
       },
+      orderBy: { end: 'desc' }
     });
   }
-  
+
 
   async sessionHasReport(session_id: string): Promise<boolean> {
-    const reportCount = await this.reportRepository.count({
-      where: {
-        session: { session_id }
-      }
+    const reportCount = await this.prisma.reports.count({
+      where: { session_id }
     });
-    
+
     return reportCount > 0;
   }
-
 }

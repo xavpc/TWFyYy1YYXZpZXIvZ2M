@@ -1,9 +1,9 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import { v2 as cloudinary } from 'cloudinary';
 import { getCloudinaryConfig } from './config/cloudinary.config';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
+import { PrismaService } from './prisma/prisma.service';
 
 config({
   path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
@@ -12,18 +12,17 @@ config({
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
   constructor(
-    private dataSource: DataSource,
+    private prisma: PrismaService,
     private configService: ConfigService
   ) {
     cloudinary.config(getCloudinaryConfig(this.configService));
   }
 
   async onApplicationBootstrap() {
-    // Database connection test
+    // Database connection test using Prisma
     try {
-      const isConnected = this.dataSource.isInitialized;
-      console.log('Database connection status:', isConnected ? 'Connected! 🚀' : 'Not connected ❌');
-      await this.dataSource.query('SELECT 1');
+      await this.prisma.$queryRaw`SELECT 1`;
+      console.log('Database connection status: Connected! 🚀');
       console.log('Successfully ran test query!');
     } catch (error) {
       console.error('Database connection error:', error);
@@ -47,7 +46,7 @@ export class AppService implements OnApplicationBootstrap {
 
   getHello(): string {
     const baseUrl = this.configService.get('BASE_URL');
-    
+
     return `
     <!DOCTYPE html>
     <html lang="en">

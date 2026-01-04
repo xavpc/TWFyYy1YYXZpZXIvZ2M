@@ -1,13 +1,10 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { Device } from "../device/device.entity";
-import { Route } from "src/route/route.entity";
-import { DeviceRoute } from "./device-route.entity";
 import { DeviceRouteController } from "./device-route.controller";
 import { DeviceRouteService } from "./device-route.service";
+import { PrismaModule } from "../prisma/prisma.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Device, Route, DeviceRoute])],
+    imports: [PrismaModule],
     controllers: [DeviceRouteController],
     providers: [DeviceRouteService]
 })
