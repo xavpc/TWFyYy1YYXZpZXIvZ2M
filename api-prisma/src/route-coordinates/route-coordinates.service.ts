@@ -217,6 +217,14 @@ export class RouteCoordinatesService {
   }
 
 
+  /**
+   * Removes all coordinates for a route and resets the center point.
+   * Uses a transaction to atomically delete all coordinates and reset
+   * the route's center to default values.
+   * @param routeId - The route ID to clear coordinates from
+   * @returns Object containing the count of deleted coordinates
+   * @throws NotFoundException if route doesn't exist
+   */
   async removeAllByRouteId(routeId: string): Promise<{ affected: number }> {
     const route = await this.prisma.route.findUnique({
       where: { route_id: routeId }
@@ -226,7 +234,6 @@ export class RouteCoordinatesService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    // Use transaction for atomic delete + center update
     return this.prisma.$transaction(async (tx) => {
       const result = await tx.routeCoordinates.deleteMany({
         where: { route_id: routeId }
