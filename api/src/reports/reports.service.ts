@@ -6,6 +6,8 @@ import { DeviceSession } from '../device-session/device-session.entity';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { FilterReportDto } from './dto/filter-report.dto';
+import * as ExcelJS from 'exceljs';
+import { format } from 'date-fns';
 
 @Injectable()
 export class ReportsService {
@@ -15,6 +17,62 @@ export class ReportsService {
     @InjectRepository(DeviceSession)
     private sessionRepository: Repository<DeviceSession>,
   ) {}
+
+  async exportToExcel(filterDto: FilterReportDto): Promise<Buffer> {
+    // 1. Fetch ALL matching reports, ignoring pagination for the export.
+    const { data: reports } = await this.findAll({ 
+      ...filterDto, 
+      // Override pagination to get all records for the export
+      page: 1, 
+      limit: 0, // A value of 0 will signal to our modified findAll to fetch all
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Your App Name';
+    workbook.created = new Date();
+    const worksheet = workbook.addWorksheet('Reports');
+
+    // 2. Define the columns for the Excel sheet.
+    // The 'key' must match the property name in the 'reports' objects.
+    worksheet.columns = [
+      { header: 'Report ID', key: 'report_id', width: 38 },
+      { header: 'Route Name', key: 'route_name', width: 30 },
+      { header: 'Vehicle Plate Number', key: 'vehicle_plate_number', width: 25 },
+      { header: 'Employee Name', key: 'employee_name', width: 30 },
+      { header: 'Report Timestamp', key: 'report_timestamp_formatted', width: 25 },
+      { header: 'Session Start Time', key: 'session_start_time_formatted', width: 25 },
+      { header: 'Session End Time', key: 'session_end_time_formatted', width: 25 },
+      { header: 'Remarks', key: 'remarks', width: 50 },
+    ];
+    
+    // 3. Style the header row.
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF003366' }, // A dark blue background
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // 4. Format the data and add it to the worksheet.
+    const dataToExport = reports.map(report => ({
+      ...report,
+      // Format dates for consistent, readable output in Excel
+      report_timestamp_formatted: format(new Date(report.report_timestamp), 'yyyy-MM-dd HH:mm:ss'),
+      session_start_time_formatted: format(new Date(report.session_start_time), 'yyyy-MM-dd HH:mm:ss'),
+      session_end_time_formatted: format(new Date(report.session_end_time), 'yyyy-MM-dd HH:mm:ss'),
+    }));
+
+    worksheet.addRows(dataToExport);
+
+    // Make the remarks column wrap text
+    worksheet.getColumn('remarks').alignment = { wrapText: true, vertical: 'top' };
+
+    // 5. Generate the .xlsx file buffer and return it.
+    return await workbook.xlsx.writeBuffer() as Buffer;
+  }
+
 
   async create(createReportDto: CreateReportDto): Promise<Reports> {
     const { session_id, remarks } = createReportDto;
