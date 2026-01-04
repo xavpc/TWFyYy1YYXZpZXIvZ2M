@@ -1,125 +1,104 @@
-import { IsString, IsOptional, IsDateString, IsNumber, Min, IsIn, IsEnum } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsDateString, IsInt, Min, Max, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class FilterReportDto {
-  @ApiProperty({
-    description: 'Filter by route name (partial match)',
-    example: 'Tokyo',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Global search across route name, vehicle plate, employee name, and remarks',
+    example: 'Tokyo'
   })
-  @IsString()
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by route name',
+    example: 'Tokyo Central Route'
+  })
+  @IsOptional()
+  @IsString()
   route_name?: string;
 
-  @ApiProperty({
-    description: 'Filter by vehicle plate number (partial match)',
-    example: '1234',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Filter by vehicle plate number',
+    example: '品川500 さ 1234'
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   vehicle_plate_number?: string;
 
-  @ApiProperty({
-    description: 'Filter by employee name (partial match)',
-    example: 'Takeshi',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Filter by employee name',
+    example: 'Takeshi Sato'
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   employee_name?: string;
 
-  @ApiProperty({
-    description: 'Filter reports from this date (YYYY-MM-DD)',
-    example: '2025-03-01',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Search in remarks/comments',
+    example: 'incident'
   })
-  @IsDateString()
   @IsOptional()
-  start_date?: string;
-
-  @ApiProperty({
-    description: 'Filter reports until this date (YYYY-MM-DD)',
-    example: '2025-03-31',
-    required: false,
-  })
-  @IsDateString()
-  @IsOptional()
-  end_date?: string;
-
-  @ApiProperty({
-    description: 'Filter sessions that started after this time (HH:MM)',
-    example: '09:00',
-    required: false,
-  })
   @IsString()
-  @IsOptional()
-  start_time?: string;
-
-  @ApiProperty({
-    description: 'Filter sessions that ended before this time (HH:MM)',
-    example: '17:00',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  end_time?: string;
-
-  @ApiProperty({
-    description: 'Search in remarks (partial match)',
-    example: 'incident',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
   remarks_search?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    description: 'Start date for filtering reports (YYYY-MM-DD)',
+    example: '2025-01-01'
+  })
+  @IsOptional()
+  @IsDateString()
+  start_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'End date for filtering reports (YYYY-MM-DD)',
+    example: '2025-01-31'
+  })
+  @IsOptional()
+  @IsDateString()
+  end_date?: string;
+
+  @ApiPropertyOptional({
     description: 'Page number for pagination',
     example: 1,
-    default: 1,
-    required: false,
+    default: 1
   })
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number = 1;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Number of items per page',
     example: 10,
-    default: 10,
-    required: false,
+    default: 10
   })
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   limit?: number = 10;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Field to sort by',
     example: 'report_timestamp',
-    default: 'report_timestamp',
-    required: false,
-    enum: ['report_timestamp', 'route_name', 'employee_name', 'vehicle_plate_number', 'session_start_time', 'session_end_time'],
+    default: 'report_timestamp'
   })
-  @IsString()
   @IsOptional()
-  @IsIn(['report_timestamp', 'route_name', 'employee_name', 'vehicle_plate_number', 'session_start_time', 'session_end_time'])
+  @IsString()
+  @IsIn(['report_timestamp', 'route_name', 'vehicle_plate_number', 'employee_name', 'session_start_time', 'session_end_time'])
   sort_by?: string = 'report_timestamp';
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Sort order',
     example: 'DESC',
-    default: 'DESC',
-    required: false,
-    enum: ['ASC', 'DESC'],
+    default: 'DESC'
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   @IsIn(['ASC', 'DESC'])
   sort_order?: 'ASC' | 'DESC' = 'DESC';
 }

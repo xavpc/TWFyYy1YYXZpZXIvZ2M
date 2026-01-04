@@ -65,9 +65,8 @@ export class ReportsService {
       employee_name, 
       start_date, 
       end_date, 
-      // start_time, 
-      // end_time,
       remarks_search,
+      search, 
       page = 1, 
       limit = 10,
       sort_by = 'report_timestamp',
@@ -75,46 +74,84 @@ export class ReportsService {
     } = filterDto;
 
     const skip = (page - 1) * limit;
-    const where: FindOptionsWhere<Reports> = {};
+    let where: FindOptionsWhere<Reports> | FindOptionsWhere<Reports>[] = {};
 
-    
-    if (route_name) {
-      where.route_name = Like(`%${route_name}%`);
-    }
-    
-    if (vehicle_plate_number) {
-      where.vehicle_plate_number = Like(`%${vehicle_plate_number}%`);
-    }
-    
-    if (employee_name) {
-      where.employee_name = Like(`%${employee_name}%`);
-    }
-    
-    if (remarks_search) {
-      where.remarks = Like(`%${remarks_search}%`);
-    }
+    // Handle global search
+    if (search) {
+      // Create base search conditions across all searchable fields
+      const searchConditions: FindOptionsWhere<Reports>[] = [
+        { route_name: Like(`%${search}%`) },
+        { vehicle_plate_number: Like(`%${search}%`) },
+        { employee_name: Like(`%${search}%`) },
+        { remarks: Like(`%${search}%`) }
+      ];
 
-    // Date range filters
-    if (start_date && end_date) {
-      const startDate = new Date(start_date);
-      const endDate = new Date(end_date);
-      endDate.setHours(23, 59, 59, 999); // End of day
+      // Apply additional individual filters to each search condition
+      const additionalFilters: Partial<FindOptionsWhere<Reports>> = {};
       
-      where.report_timestamp = Between(startDate, endDate);
-    } else if (start_date) {
-      where.report_timestamp = MoreThanOrEqual(new Date(start_date));
-    } else if (end_date) {
-      const endDate = new Date(end_date);
-      endDate.setHours(23, 59, 59, 999); // End of day
-      where.report_timestamp = LessThanOrEqual(endDate);
+      if (route_name) additionalFilters.route_name = Like(`%${route_name}%`);
+      if (vehicle_plate_number) additionalFilters.vehicle_plate_number = Like(`%${vehicle_plate_number}%`);
+      if (employee_name) additionalFilters.employee_name = Like(`%${employee_name}%`);
+      if (remarks_search) additionalFilters.remarks = Like(`%${remarks_search}%`);
+
+      // Handle date range filters
+      if (start_date && end_date) {
+        const startDate = new Date(start_date);
+        const endDate = new Date(end_date);
+        endDate.setHours(23, 59, 59, 999);
+        additionalFilters.report_timestamp = Between(startDate, endDate);
+      } else if (start_date) {
+        additionalFilters.report_timestamp = MoreThanOrEqual(new Date(start_date));
+      } else if (end_date) {
+        const endDate = new Date(end_date);
+        endDate.setHours(23, 59, 59, 999);
+        additionalFilters.report_timestamp = LessThanOrEqual(endDate);
+      }
+
+      // Combine search conditions with additional filters
+      where = searchConditions.map(condition => ({
+        ...condition,
+        ...additionalFilters
+      }));
+    } else {
+      // Handle individual field filters when no global search
+      const whereCondition: FindOptionsWhere<Reports> = {};
+
+      if (route_name) {
+        whereCondition.route_name = Like(`%${route_name}%`);
+      }
+      
+      if (vehicle_plate_number) {
+        whereCondition.vehicle_plate_number = Like(`%${vehicle_plate_number}%`);
+      }
+      
+      if (employee_name) {
+        whereCondition.employee_name = Like(`%${employee_name}%`);
+      }
+      
+      if (remarks_search) {
+        whereCondition.remarks = Like(`%${remarks_search}%`);
+      }
+
+      // Date range filters
+      if (start_date && end_date) {
+        const startDate = new Date(start_date);
+        const endDate = new Date(end_date);
+        endDate.setHours(23, 59, 59, 999);
+        
+        whereCondition.report_timestamp = Between(startDate, endDate);
+      } else if (start_date) {
+        whereCondition.report_timestamp = MoreThanOrEqual(new Date(start_date));
+      } else if (end_date) {
+        const endDate = new Date(end_date);
+        endDate.setHours(23, 59, 59, 999);
+        whereCondition.report_timestamp = LessThanOrEqual(endDate);
+      }
+
+      where = whereCondition;
     }
 
-    // if (start_time && end_time) {
-    //   const [startHour, startMinute] = start_time.split(':').map(Number);
-    //   const [endHour, endMinute] = end_time.split(':').map(Number);
-      
-    // }
-
+    // Get total count with applied filters (FIXED: was missing where clause)
     const total = await this.reportRepository.count({ where });
 
     // Get paginated data with sorting
@@ -203,52 +240,4 @@ export class ReportsService {
     });
   }
 
-  // async getReportStatistics(): Promise<{
-  //   totalReports: number;
-  //   reportsByRoute: { route: string; count: number }[];
-  //   reportsByEmployee: { employee: string; count: number }[];
-  //   reportsByVehicle: { vehicle: string; count: number }[];
-  //   averageSessionDuration: number;
-  // }> {
-  //   const totalReports = await this.reportRepository.count();
-    
-  //   const reportsByRouteQuery = await this.reportRepository
-  //     .createQueryBuilder('report')
-  //     .select('report.route_name', 'route')
-  //     .addSelect('COUNT(report.report_id)', 'count')
-  //     .groupBy('report.route_name')
-  //     .orderBy('count', 'DESC')
-  //     .getRawMany();
-    
-  //   const reportsByEmployeeQuery = await this.reportRepository
-  //     .createQueryBuilder('report')
-  //     .select('report.employee_name', 'employee')
-  //     .addSelect('COUNT(report.report_id)', 'count')
-  //     .groupBy('report.employee_name')
-  //     .orderBy('count', 'DESC')
-  //     .getRawMany();
-    
-  //   const reportsByVehicleQuery = await this.reportRepository
-  //     .createQueryBuilder('report')
-  //     .select('report.vehicle_plate_number', 'vehicle')
-  //     .addSelect('COUNT(report.report_id)', 'count')
-  //     .groupBy('report.vehicle_plate_number')
-  //     .orderBy('count', 'DESC')
-  //     .getRawMany();
-    
-  //   const avgDurationQuery = await this.reportRepository
-  //     .createQueryBuilder('report')
-  //     .select('AVG(EXTRACT(EPOCH FROM (report.session_end_time - report.session_start_time)))', 'avg_duration')
-  //     .getRawOne();
-    
-  //   const averageSessionDuration = parseFloat(avgDurationQuery.avg_duration) || 0;
-    
-  //   return {
-  //     totalReports,
-  //     reportsByRoute: reportsByRouteQuery,
-  //     reportsByEmployee: reportsByEmployeeQuery,
-  //     reportsByVehicle: reportsByVehicleQuery,
-  //     averageSessionDuration, // in seconds
-  //   };
-  // }
 }
