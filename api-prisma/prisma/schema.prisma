@@ -134,6 +134,8 @@ model DeviceRoute {
   device_sessions DeviceSession[]
 
   @@unique([route_id, day_assigned])
+  @@index([device_id])
+  @@index([day_assigned])
   @@map("device_route")
 }
 
