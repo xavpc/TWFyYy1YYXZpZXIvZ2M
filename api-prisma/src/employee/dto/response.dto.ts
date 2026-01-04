@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Employee } from '../employee.entity';
+import { Employee } from '@prisma/client';
 
 export class EmployeeResponse {
   @ApiProperty({ example: true })
