@@ -81,6 +81,8 @@ model Employee {
   user    Users?
   devices Device[]
 
+  @@index([status])
+  @@index([last_name, first_name])
   @@map("employee")
 }
 
