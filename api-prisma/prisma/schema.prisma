@@ -101,6 +101,8 @@ model Device {
   collected_points CollectedPoints[]
   complaints       Complaints[]
 
+  @@index([status])
+  @@index([employee_id])
   @@map("device")
 }
 
