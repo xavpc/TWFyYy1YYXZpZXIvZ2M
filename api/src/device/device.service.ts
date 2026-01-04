@@ -122,12 +122,8 @@ export class DeviceService {
     }
 
     // Get total count
-    const total = await this.deviceRepository.count({ 
-      where,
-      relations: ['employee']
-    });
+    const total = await this.deviceRepository.count();
 
-    // Get paginated data with sorting
     const data = await this.deviceRepository.find({
       where,
       relations: ['employee'],
