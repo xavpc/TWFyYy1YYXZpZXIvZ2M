@@ -1,75 +1,61 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { PrismaService } from '../prisma/prisma.service';
 import { Route } from './route.entity';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { FilterRouteDto } from './dto/filter-route.dto';
-import { Logger } from '@nestjs/common';
-import { CollectionPoints } from '../collection-points/collection-points.entity';
-import { DeviceRoute } from '../device-route/device-route.entity';
-import { RouteCoordinates } from '../route-coordinates/route-coordinates.entity';
+import { Prisma, DeviceRouteDay } from '@prisma/client';
 
 @Injectable()
 export class RouteService {
-  // private readonly logger = new Logger(RouteService.name);
-  
-  constructor(
-    @InjectRepository(Route)
-    private routeRepository: Repository<Route>,
-    @InjectRepository(CollectionPoints)
-    private collectionPointsRepository: Repository<CollectionPoints>,
-    @InjectRepository(DeviceRoute)
-    private deviceRoutesRepository: Repository<DeviceRoute>,
-    @InjectRepository(RouteCoordinates)
-    private routeCoordinatesRepositoty: Repository<RouteCoordinates>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async create(createRouteDto: CreateRouteDto): Promise<Route> {
-    const existingRouteName = await this.routeRepository.findOne({
-      where: { route_name: createRouteDto.route_name }
+    const existingRouteName = await this.prisma.route.findUnique({
+      where: { route_name: createRouteDto.route_name },
     });
-    
+
     if (existingRouteName) {
       throw new ConflictException(
-        `route name: '${createRouteDto.route_name}' already exists`
+        `route name: '${createRouteDto.route_name}' already exists`,
       );
     }
-    const route = this.routeRepository.create(createRouteDto);
-    return this.routeRepository.save(route);
+
+    return this.prisma.route.create({
+      data: createRouteDto,
+    });
   }
 
-  async findAll(filterDto?: FilterRouteDto): Promise<{ data: Route[], total: number }> {
+  async findAll(filterDto?: FilterRouteDto): Promise<{ data: any[]; total: number }> {
     if (!filterDto) {
-      const data = await this.routeRepository.find({
-        relations: ['images', 'deviceRoutes', 'deviceRoutes.device'],
-        order: { route_name: 'ASC' }
+      const data = await this.prisma.route.findMany({
+        include: {
+          images: true,
+          device_routes: {
+            include: { device: true },
+          },
+        },
+        orderBy: { route_name: 'asc' },
       });
-      
-      // Add collection points count for each route
+
+      // Add counts for each route
       const dataWithCounts = await Promise.all(
         data.map(async (route) => {
-          const collectionPointsCount = await this.collectionPointsRepository.count({
-            where: { route: { route_id: route.route_id } }
-          });
+          const [collectionPointsCount, devicesCount, coordinatesCount] = await Promise.all([
+            this.prisma.collectionPoints.count({ where: { route_id: route.route_id } }),
+            this.prisma.deviceRoute.count({ where: { route_id: route.route_id } }),
+            this.prisma.routeCoordinates.count({ where: { route_id: route.route_id } }),
+          ]);
 
-          const devicesCount = await this.deviceRoutesRepository.count({
-            where: { route: { route_id: route.route_id } }
-          });
-
-          const coordinatesCount = await this.routeCoordinatesRepositoty.count({
-            where: { route: { route_id: route.route_id } }
-          });
-          
           return {
             ...route,
             collection_points_count: collectionPointsCount,
             devices_count: devicesCount,
-            has_coordinates: !!coordinatesCount
+            has_coordinates: !!coordinatesCount,
           };
-        })
+        }),
       );
-      
+
       return { data: dataWithCounts, total: dataWithCounts.length };
     }
 
@@ -83,377 +69,374 @@ export class RouteService {
     } = filterDto;
 
     const skip = (page - 1) * limit;
-    let where: FindOptionsWhere<Route> | FindOptionsWhere<Route>[] = {};
-    
 
-    // Handle global search
+    // Build where clause
+    let where: Prisma.RouteWhereInput = {};
+
     if (search) {
-      const searchConditions: FindOptionsWhere<Route>[] = [
-        { route_name: ILike(`%${search}%`) },
-        { route_id: ILike(`%${search}%`) },
-        // Search through related device information
-        { deviceRoutes: { device: { device_name: ILike(`%${search}%`) } } },
-        { deviceRoutes: { device: { vehicle_plate_num: ILike(`%${search}%`) } } },
-        { deviceRoutes: { device: { employee: { first_name: ILike(`%${search}%`) } } } },
-        { deviceRoutes: { device: { employee: { last_name: ILike(`%${search}%`) } } } }
-      ];
-
-      // Combine search conditions with additional filters
-      where = searchConditions.map(condition => {
-        const combinedCondition = { ...condition };
-        
-        // Apply route name filter
-        if (route_name && !combinedCondition.route_name) {
-          combinedCondition.route_name = ILike(`%${route_name}%`);
-        }
-        
-        return combinedCondition;
-      });
-    } else {
-      // Handle individual field filters when no global search
-      const whereCondition: FindOptionsWhere<Route> = {};
+      where = {
+        OR: [
+          { route_name: { contains: search } },
+          { route_id: { contains: search } },
+          { device_routes: { some: { device: { device_name: { contains: search } } } } },
+          { device_routes: { some: { device: { vehicle_plate_num: { contains: search } } } } },
+          { device_routes: { some: { device: { employee: { first_name: { contains: search } } } } } },
+          { device_routes: { some: { device: { employee: { last_name: { contains: search } } } } } },
+        ],
+      };
 
       if (route_name) {
-        whereCondition.route_name = ILike(`%${route_name}%`);
+        where = { AND: [where, { route_name: { contains: route_name } }] };
       }
-
-      where = whereCondition;
+    } else {
+      if (route_name) {
+        where.route_name = { contains: route_name };
+      }
     }
 
-    // Get total count
-    const total = await this.routeRepository.count();
+    const total = await this.prisma.route.count();
 
-    // Get paginated data with sorting
-    const data = await this.routeRepository.find({
+    const data = await this.prisma.route.findMany({
       where,
       skip,
       take: limit,
-      order: {
-        [sort_by]: sort_order,
+      orderBy: {
+        [sort_by]: sort_order.toLowerCase() as 'asc' | 'desc',
       },
     });
 
-    // Add collection points count for each route
+    // Add counts for each route
     const dataWithCounts = await Promise.all(
       data.map(async (route) => {
-        const collectionPointsCount = await this.collectionPointsRepository.count({
-          where: { route: { route_id: route.route_id } }
-        });
+        const [collectionPointsCount, devicesCount, coordinatesCount] = await Promise.all([
+          this.prisma.collectionPoints.count({ where: { route_id: route.route_id } }),
+          this.prisma.deviceRoute.count({ where: { route_id: route.route_id } }),
+          this.prisma.routeCoordinates.count({ where: { route_id: route.route_id } }),
+        ]);
 
-        const devicesCount = await this.deviceRoutesRepository.count({
-          where: { route: { route_id: route.route_id } }
-        });
-        
-        const coordinatesCount = await this.routeCoordinatesRepositoty.count({
-          where: { route: { route_id: route.route_id } }
-        });
         return {
           ...route,
           collection_points_count: collectionPointsCount,
           devices_count: devicesCount,
-          has_coordinates: !!coordinatesCount
-
+          has_coordinates: !!coordinatesCount,
         };
-      })
+      }),
     );
 
     return { data: dataWithCounts, total };
   }
 
-  async findOne(id: string): Promise<Route> {
-    const route = await this.routeRepository.findOne({ 
+  async findOne(id: string): Promise<any> {
+    const route = await this.prisma.route.findUnique({
       where: { route_id: id },
-      relations: ['images', 'deviceRoutes', 'deviceRoutes.device', 'deviceRoutes.device.employee']
+      include: {
+        images: true,
+        device_routes: {
+          include: {
+            device: {
+              include: { employee: true },
+            },
+          },
+        },
+      },
     });
+
     if (!route) {
       throw new NotFoundException(`Route with ID ${id} not found`);
     }
 
-    const collectionPointsCount = await this.collectionPointsRepository.count({
-      where: { route: { route_id: route.route_id } }
+    const collectionPointsCount = await this.prisma.collectionPoints.count({
+      where: { route_id: route.route_id },
     });
 
     return {
       ...route,
-      collection_points_count: collectionPointsCount
-    } as Route;
+      collection_points_count: collectionPointsCount,
+    };
   }
 
-  async findByName(routeName: string): Promise<Route> {
-    const route = await this.routeRepository.findOne({ 
+  async findByName(routeName: string): Promise<any> {
+    const route = await this.prisma.route.findUnique({
       where: { route_name: routeName },
-      relations: ['images', 'deviceRoutes', 'deviceRoutes.device']
+      include: {
+        images: true,
+        device_routes: {
+          include: { device: true },
+        },
+      },
     });
+
     if (!route) {
       throw new NotFoundException(`Route with name ${routeName} not found`);
     }
 
-    // Add collection points count
-    const collectionPointsCount = await this.collectionPointsRepository.count({
-      where: { route: { route_id: route.route_id } }
+    const collectionPointsCount = await this.prisma.collectionPoints.count({
+      where: { route_id: route.route_id },
     });
 
     return {
       ...route,
-      collection_points_count: collectionPointsCount
-    } as Route;
+      collection_points_count: collectionPointsCount,
+    };
   }
-  
+
   async update(id: string, updateRouteDto: UpdateRouteDto): Promise<Route> {
     const route = await this.findOne(id);
-    
-    // Check for route name conflict if updating route_name
+
     if (updateRouteDto.route_name && updateRouteDto.route_name !== route.route_name) {
-      const existingRoute = await this.routeRepository.findOne({
-        where: { route_name: updateRouteDto.route_name }
+      const existingRoute = await this.prisma.route.findUnique({
+        where: { route_name: updateRouteDto.route_name },
       });
-      
+
       if (existingRoute) {
         throw new ConflictException(
-          `Route name: '${updateRouteDto.route_name}' already exists`
+          `Route name: '${updateRouteDto.route_name}' already exists`,
         );
       }
     }
-    
-    Object.assign(route, updateRouteDto);
-    return this.routeRepository.save(route);
+
+    return this.prisma.route.update({
+      where: { route_id: id },
+      data: updateRouteDto,
+    });
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.routeRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Route with ID ${id} not found`);
-    }
+    await this.findOne(id);
+
+    await this.prisma.route.delete({
+      where: { route_id: id },
+    });
   }
 
-  // Enhanced search methods
-  async globalSearch(searchTerm: string): Promise<Route[]> {
-    const where: FindOptionsWhere<Route>[] = [
-      { route_name: ILike(`%${searchTerm}%`) },
-      { route_id: ILike(`%${searchTerm}%`) },
-      // Search through assigned devices
-      { deviceRoutes: { device: { device_name: ILike(`%${searchTerm}%`) } } },
-      { deviceRoutes: { device: { vehicle_plate_num: ILike(`%${searchTerm}%`) } } },
-      { deviceRoutes: { device: { device_id: ILike(`%${searchTerm}%`) } } },
-      // Search through device employees
-      { deviceRoutes: { device: { employee: { first_name: ILike(`%${searchTerm}%`) } } } },
-      { deviceRoutes: { device: { employee: { last_name: ILike(`%${searchTerm}%`) } } } },
-      { deviceRoutes: { device: { employee: { email: ILike(`%${searchTerm}%`) } } } }
-    ];
-
-    const results = await this.routeRepository.find({
-      where,
-      relations: ['images', 'deviceRoutes', 'deviceRoutes.device', 'deviceRoutes.device.employee'],
-      order: {
-        route_name: 'ASC',
+  async globalSearch(searchTerm: string): Promise<any[]> {
+    const results = await this.prisma.route.findMany({
+      where: {
+        OR: [
+          { route_name: { contains: searchTerm } },
+          { route_id: { contains: searchTerm } },
+          { device_routes: { some: { device: { device_name: { contains: searchTerm } } } } },
+          { device_routes: { some: { device: { vehicle_plate_num: { contains: searchTerm } } } } },
+          { device_routes: { some: { device: { device_id: { contains: searchTerm } } } } },
+          { device_routes: { some: { device: { employee: { first_name: { contains: searchTerm } } } } } },
+          { device_routes: { some: { device: { employee: { last_name: { contains: searchTerm } } } } } },
+          { device_routes: { some: { device: { employee: { email: { contains: searchTerm } } } } } },
+        ],
       },
+      include: {
+        images: true,
+        device_routes: {
+          include: {
+            device: {
+              include: { employee: true },
+            },
+          },
+        },
+      },
+      orderBy: { route_name: 'asc' },
     });
 
     if (results.length === 0) {
       throw new NotFoundException(`No routes found matching '${searchTerm}'`);
     }
 
-    // Add collection points count for each route
     const resultsWithCounts = await Promise.all(
       results.map(async (route) => {
-        const collectionPointsCount = await this.collectionPointsRepository.count({
-          where: { route: { route_id: route.route_id } }
+        const collectionPointsCount = await this.prisma.collectionPoints.count({
+          where: { route_id: route.route_id },
         });
-        
-        return {
-          ...route,
-          collection_points_count: collectionPointsCount
-        };
-      })
+        return { ...route, collection_points_count: collectionPointsCount };
+      }),
     );
 
     return resultsWithCounts;
   }
 
-  async searchByField(field: keyof Pick<Route, 'route_name' | 'route_id'>, value: string): Promise<Route[]> {
-    const validSearchFields: (keyof Pick<Route, 'route_name' | 'route_id'>)[] = [
-      'route_name',
-      'route_id'
-    ];
+  async searchByField(field: 'route_name' | 'route_id', value: string): Promise<any[]> {
+    const validSearchFields = ['route_name', 'route_id'];
 
     if (!validSearchFields.includes(field)) {
       throw new NotFoundException(`Field ${field} is not a valid searchable field`);
     }
 
-    const where: FindOptionsWhere<Route> = {
-      [field]: ILike(`%${value}%`)
-    };
-
-    const results = await this.routeRepository.find({
-      where,
-      relations: ['images', 'deviceRoutes', 'deviceRoutes.device'],
-      order: {
-        route_name: 'ASC',
+    const results = await this.prisma.route.findMany({
+      where: { [field]: { contains: value } },
+      include: {
+        images: true,
+        device_routes: {
+          include: { device: true },
+        },
       },
+      orderBy: { route_name: 'asc' },
     });
 
     if (results.length === 0) {
       throw new NotFoundException(`No routes found matching ${field}: ${value}`);
     }
 
-    // Add collection points count for each route
     const resultsWithCounts = await Promise.all(
       results.map(async (route) => {
-        const collectionPointsCount = await this.collectionPointsRepository.count({
-          where: { route: { route_id: route.route_id } }
+        const collectionPointsCount = await this.prisma.collectionPoints.count({
+          where: { route_id: route.route_id },
         });
-        
-        return {
-          ...route,
-          collection_points_count: collectionPointsCount
-        };
-      })
+        return { ...route, collection_points_count: collectionPointsCount };
+      }),
     );
 
     return resultsWithCounts;
   }
 
   async findByCoordinateRange(
-    minLat: number, 
-    maxLat: number, 
-    minLng: number, 
-    maxLng: number
-  ): Promise<Route[]> {
-    const routes = await this.routeRepository
-      .createQueryBuilder('route')
-      .where('route.center_latitude BETWEEN :minLat AND :maxLat', { minLat, maxLat })
-      .andWhere('route.center_longitude BETWEEN :minLng AND :maxLng', { minLng, maxLng })
-      .leftJoinAndSelect('route.images', 'images')
-      .leftJoinAndSelect('route.deviceRoutes', 'deviceRoutes')
-      .leftJoinAndSelect('deviceRoutes.device', 'device')
-      .orderBy('route.route_name', 'ASC')
-      .getMany();
+    minLat: number,
+    maxLat: number,
+    minLng: number,
+    maxLng: number,
+  ): Promise<any[]> {
+    const routes = await this.prisma.route.findMany({
+      where: {
+        center_latitude: { gte: minLat, lte: maxLat },
+        center_longitude: { gte: minLng, lte: maxLng },
+      },
+      include: {
+        images: true,
+        device_routes: {
+          include: { device: true },
+        },
+      },
+      orderBy: { route_name: 'asc' },
+    });
 
     if (routes.length === 0) {
       throw new NotFoundException(
-        `No routes found within coordinate range: (${minLat}, ${minLng}) to (${maxLat}, ${maxLng})`
+        `No routes found within coordinate range: (${minLat}, ${minLng}) to (${maxLat}, ${maxLng})`,
       );
     }
 
-    // Add collection points count for each route
     const routesWithCounts = await Promise.all(
       routes.map(async (route) => {
-        const collectionPointsCount = await this.collectionPointsRepository.count({
-          where: { route: { route_id: route.route_id } }
+        const collectionPointsCount = await this.prisma.collectionPoints.count({
+          where: { route_id: route.route_id },
         });
-        
-        return {
-          ...route,
-          collection_points_count: collectionPointsCount
-        };
-      })
+        return { ...route, collection_points_count: collectionPointsCount };
+      }),
     );
 
     return routesWithCounts;
   }
 
-  async findByAssignedDevice(deviceId: string): Promise<Route[]> {
-    const routes = await this.routeRepository.find({
-      where: { 
-        deviceRoutes: { 
-          device: { device_id: deviceId } 
-        } 
+  async findByAssignedDevice(deviceId: string): Promise<any[]> {
+    const routes = await this.prisma.route.findMany({
+      where: {
+        device_routes: { some: { device_id: deviceId } },
       },
-      relations: ['images', 'deviceRoutes', 'deviceRoutes.device', 'deviceRoutes.device.employee'],
-      order: { route_name: 'ASC' }
+      include: {
+        images: true,
+        device_routes: {
+          include: {
+            device: {
+              include: { employee: true },
+            },
+          },
+        },
+      },
+      orderBy: { route_name: 'asc' },
     });
 
     if (routes.length === 0) {
       throw new NotFoundException(`No routes found for device ID: ${deviceId}`);
     }
 
-    // Add collection points count for each route
     const routesWithCounts = await Promise.all(
       routes.map(async (route) => {
-        const collectionPointsCount = await this.collectionPointsRepository.count({
-          where: { route: { route_id: route.route_id } }
+        const collectionPointsCount = await this.prisma.collectionPoints.count({
+          where: { route_id: route.route_id },
         });
-        
-        return {
-          ...route,
-          collection_points_count: collectionPointsCount
-        };
-      })
+        return { ...route, collection_points_count: collectionPointsCount };
+      }),
     );
 
     return routesWithCounts;
   }
 
-  async findByDay(day: string): Promise<Route[]> {
-    const routes = await this.routeRepository.find({
-      where: { 
-        deviceRoutes: { 
-          day_assigned: day as any
-        } 
+  async findByDay(day: string): Promise<any[]> {
+    const routes = await this.prisma.route.findMany({
+      where: {
+        device_routes: { some: { day_assigned: day as DeviceRouteDay } },
       },
-      relations: ['images', 'deviceRoutes', 'deviceRoutes.device', 'deviceRoutes.device.employee'],
-      order: { route_name: 'ASC' }
+      include: {
+        images: true,
+        device_routes: {
+          include: {
+            device: {
+              include: { employee: true },
+            },
+          },
+        },
+      },
+      orderBy: { route_name: 'asc' },
     });
 
     if (routes.length === 0) {
       throw new NotFoundException(`No routes found assigned for ${day}`);
     }
 
-    // Add collection points count for each route
     const routesWithCounts = await Promise.all(
       routes.map(async (route) => {
-        const collectionPointsCount = await this.collectionPointsRepository.count({
-          where: { route: { route_id: route.route_id } }
+        const collectionPointsCount = await this.prisma.collectionPoints.count({
+          where: { route_id: route.route_id },
         });
-        
-        return {
-          ...route,
-          collection_points_count: collectionPointsCount
-        };
-      })
+        return { ...route, collection_points_count: collectionPointsCount };
+      }),
     );
 
     return routesWithCounts;
   }
 
-  async getRoutesWithImageCount(): Promise<Array<Route & { image_count: number }>> {
-    const routes = await this.routeRepository
-      .createQueryBuilder('route')
-      .leftJoinAndSelect('route.images', 'images')
-      .leftJoinAndSelect('route.deviceRoutes', 'deviceRoutes')
-      .leftJoinAndSelect('deviceRoutes.device', 'device')
-      .loadRelationCountAndMap('route.image_count', 'route.images')
-      .loadRelationCountAndMap('route.collection_points_count', 'route.collection_points')
-      .orderBy('route.route_name', 'ASC')
-      .getMany();
+  async getRoutesWithImageCount(): Promise<any[]> {
+    const routes = await this.prisma.route.findMany({
+      include: {
+        images: true,
+        device_routes: {
+          include: { device: true },
+        },
+        _count: {
+          select: {
+            images: true,
+            collection_points: true,
+          },
+        },
+      },
+      orderBy: { route_name: 'asc' },
+    });
 
-    return routes as Array<Route & { image_count: number; collection_points_count: number }>;
+    return routes.map((route) => ({
+      ...route,
+      image_count: route._count.images,
+      collection_points_count: route._count.collection_points,
+    }));
   }
 
   async getRouteStatistics() {
-    const totalRoutes = await this.routeRepository.count();
-    
-    const routesWithDevices = await this.routeRepository
-      .createQueryBuilder('route')
-      .innerJoin('route.deviceRoutes', 'deviceRoutes')
-      .getCount();
-    
-    const routesWithImages = await this.routeRepository
-      .createQueryBuilder('route')
-      .innerJoin('route.images', 'images')
-      .getCount();
-
-    const routesWithCollectionPoints = await this.routeRepository
-      .createQueryBuilder('route')
-      .innerJoin('route.collection_points', 'collection_points')
-      .getCount();
+    const [totalRoutes, routesWithDevices, routesWithImages, routesWithCollectionPoints] =
+      await Promise.all([
+        this.prisma.route.count(),
+        this.prisma.route.count({
+          where: { device_routes: { some: {} } },
+        }),
+        this.prisma.route.count({
+          where: { images: { some: {} } },
+        }),
+        this.prisma.route.count({
+          where: { collection_points: { some: {} } },
+        }),
+      ]);
 
     return {
       total_routes: totalRoutes,
       routes_with_assigned_devices: routesWithDevices,
       routes_with_images: routesWithImages,
       routes_with_collection_points: routesWithCollectionPoints,
-      routes_without_devices: totalRoutes - routesWithDevices
+      routes_without_devices: totalRoutes - routesWithDevices,
     };
   }
 }
