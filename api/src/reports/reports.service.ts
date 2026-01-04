@@ -151,8 +151,7 @@ export class ReportsService {
       where = whereCondition;
     }
 
-    // Get total count with applied filters (FIXED: was missing where clause)
-    const total = await this.reportRepository.count({ where });
+    const total = await this.reportRepository.count();
 
     // Get paginated data with sorting
     const data = await this.reportRepository.find({
