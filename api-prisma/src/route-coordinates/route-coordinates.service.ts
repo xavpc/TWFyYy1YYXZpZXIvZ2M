@@ -93,6 +93,15 @@ export class RouteCoordinatesService {
     return routeCoordinates;
   }
 
+  /**
+   * Creates multiple route coordinates in a single atomic transaction.
+   * All coordinates must belong to the same route.
+   * Automatically updates the route's center point after creation.
+   * @param dtos - Array of coordinate DTOs to create
+   * @returns Array of created route coordinates
+   * @throws Error if coordinates belong to different routes
+   * @throws NotFoundException if route doesn't exist
+   */
   async createBatch(dtos: CreateRouteCoordinatesDto[]): Promise<RouteCoordinates[]> {
     if (!dtos.length) {
       return [];
@@ -111,7 +120,6 @@ export class RouteCoordinatesService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    // Use transaction for atomic batch creation
     return this.prisma.$transaction(async (tx) => {
       const savedCoordinates: RouteCoordinates[] = [];
 
