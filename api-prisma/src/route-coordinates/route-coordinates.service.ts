@@ -5,6 +5,11 @@ import { CreateRouteCoordinatesDto } from './dto/create-routeCoordinates.dto';
 import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
 import { GmapsRoutingService } from 'src/third-party/routing-engine/google-maps/gmaps.service';
 
+/**
+ * Service for managing route coordinates.
+ * Handles CRUD operations for GPS coordinates that define collection routes,
+ * including both user-defined waypoints and auto-generated route points.
+ */
 @Injectable()
 export class RouteCoordinatesService {
   constructor(
@@ -12,6 +17,12 @@ export class RouteCoordinatesService {
     private gmapsRoutingService: GmapsRoutingService
   ) {}
 
+  /**
+   * Calculates the geographic center point of a set of coordinates.
+   * Used to set the map center for route display.
+   * @param coordinates - Array of route coordinates
+   * @returns The center point as latitude/longitude
+   */
   private calculateCenterPoint(coordinates: RouteCoordinates[]): { latitude: number; longitude: number } {
     if (coordinates.length === 0) {
       throw new Error('No coordinates provided');
