@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DeviceRoute } from '../device-route.entity';
+import { DeviceRoute } from '@prisma/client';
 import { DeviceRouteDay } from '../enums/device-route-day.enum';
 
 export class DeviceRouteResponse {
@@ -30,8 +30,8 @@ export class DeviceRouteResponse {
 
   constructor(deviceRoute: DeviceRoute) {
     this.device_route_id = deviceRoute.device_route_id;
-    this.device_id = deviceRoute.device.device_id;
-    this.route_id = deviceRoute.route.route_id;
+    this.device_id = deviceRoute.device_id;
+    this.route_id = deviceRoute.route_id;
     this.day_assigned = deviceRoute.day_assigned;
   }
 }
