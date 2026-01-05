@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { DeviceSession } from '../device-session.entity';
+import { DeviceSession } from '@prisma/client';
 
 export class BaseSessionResponse {
   @ApiProperty({ example: true })
