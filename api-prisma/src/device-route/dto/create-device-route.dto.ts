@@ -22,7 +22,7 @@ export class CreateDeviceRouteDto {
     @ApiProperty({
         description: 'Day when the route is assigned to the device',
         enum: DeviceRouteDay,
-        example: DeviceRouteDay.MONDAY,
+        example: DeviceRouteDay.monday,
     })
     @IsNotEmpty()
     @IsEnum(DeviceRouteDay)
