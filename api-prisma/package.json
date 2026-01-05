@@ -22,7 +22,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "seed": "npx prisma db seed",
+    "seed:reset": "npx prisma migrate reset --force"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -111,5 +113,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed/index.ts"
   }
 }
