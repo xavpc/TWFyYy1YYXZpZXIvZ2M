@@ -34,14 +34,14 @@ describe('EmployeeController (e2e)', () => {
 
   describe('/employee (GET)', () => {
     it('should return all employees', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/employee');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/employees');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/employee');
+      const response = await authHelper.unauthenticatedRequest().get('/employees');
 
       expect([401, 403]).toContain(response.status);
     });
@@ -72,7 +72,7 @@ describe('EmployeeController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/employee')
+        .post('/employees')
         .send(newEmployee);
 
       expect([200, 201]).toContain(response.status);
@@ -85,7 +85,7 @@ describe('EmployeeController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/employee')
+        .post('/employees')
         .send(employee);
 
       expect([400, 409]).toContain(response.status);
@@ -94,7 +94,7 @@ describe('EmployeeController (e2e)', () => {
     it('should validate required fields', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/employee')
+        .post('/employees')
         .send({
           first_name: 'Only First Name',
         });
@@ -141,7 +141,7 @@ describe('EmployeeController (e2e)', () => {
       const newEmployee = dataFactory.createEmployee();
       const createResponse = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/employee')
+        .post('/employees')
         .send(newEmployee);
 
       const employeeId = createResponse.body.employee_id;

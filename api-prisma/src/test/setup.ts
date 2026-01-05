@@ -3,6 +3,12 @@
  * Configures Jest environment for all tests
  */
 
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load environment variables from .env file
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 // Increase test timeout for slow operations
 jest.setTimeout(30000);
 
@@ -18,10 +24,11 @@ jest.setTimeout(30000);
 
 // Setup global mocks
 beforeAll(() => {
-  // Set test environment variables
+  // Set test environment variables (only override what's necessary)
   process.env.NODE_ENV = 'test';
-  process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing';
-  process.env.API_KEY = 'test-api-key';
+  // JWT_SECRET is loaded from .env, only set if not present
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key-for-testing';
+  // API_KEY is loaded from .env, don't override it
   process.env.DATABASE_URL = process.env.DATABASE_URL || 'mysql://test:test@localhost:3306/gomicollection_test';
 });
 

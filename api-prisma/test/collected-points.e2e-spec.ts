@@ -38,10 +38,11 @@ describe('CollectedPointsController (e2e)', () => {
     await context.prisma.collectedPoints.createMany({
       data: [
         {
-          collected_points_id: 'e2e-cp-collected-001',
-          collected_at: new Date(),
+          collected_point_id: 'e2e-cp-collected-001',
+          collected_timestamp: new Date(),
           session_id: sessionId,
           collection_point_id: 'e2e-cp-id-001',
+          device_id: 'e2e-device-id-001',
         },
       ],
       skipDuplicates: true,
@@ -75,7 +76,7 @@ describe('CollectedPointsController (e2e)', () => {
         .get('/collected-points/e2e-cp-collected-001');
 
       expect(response.status).toBe(200);
-      expect(response.body.collected_points_id).toBe('e2e-cp-collected-001');
+      expect(response.body.data?.collected_point_id || response.body.collected_point_id).toBe('e2e-cp-collected-001');
     });
 
     it('should return 404 for non-existent collected point', async () => {
@@ -90,9 +91,10 @@ describe('CollectedPointsController (e2e)', () => {
   describe('/collected-points (POST)', () => {
     it('should create new collected point', async () => {
       const newCollectedPoint = {
-        collected_at: new Date().toISOString(),
+        collected_timestamp: new Date().toISOString(),
         session_id: sessionId,
         collection_point_id: 'e2e-cp-id-002',
+        device_id: 'e2e-device-id-001',
       };
 
       const response = await authHelper
@@ -101,7 +103,7 @@ describe('CollectedPointsController (e2e)', () => {
         .send(newCollectedPoint);
 
       expect([200, 201]).toContain(response.status);
-      expect(response.body.collection_point_id).toBe('e2e-cp-id-002');
+      expect(response.body.data?.collection_point_id || response.body.collection_point_id).toBe('e2e-cp-id-002');
     });
 
     it('should reject non-existent session', async () => {
@@ -109,9 +111,10 @@ describe('CollectedPointsController (e2e)', () => {
         .authenticatedRequest(adminToken)
         .post('/collected-points')
         .send({
-          collected_at: new Date().toISOString(),
+          collected_timestamp: new Date().toISOString(),
           session_id: 'nonexistent-session',
           collection_point_id: 'e2e-cp-id-001',
+          device_id: 'e2e-device-id-001',
         });
 
       expect([400, 404]).toContain(response.status);
@@ -122,9 +125,10 @@ describe('CollectedPointsController (e2e)', () => {
         .authenticatedRequest(adminToken)
         .post('/collected-points')
         .send({
-          collected_at: new Date().toISOString(),
+          collected_timestamp: new Date().toISOString(),
           session_id: sessionId,
           collection_point_id: 'nonexistent-cp',
+          device_id: 'e2e-device-id-001',
         });
 
       expect([400, 404]).toContain(response.status);
@@ -136,16 +140,17 @@ describe('CollectedPointsController (e2e)', () => {
       // Create collected point to delete
       const created = await context.prisma.collectedPoints.create({
         data: {
-          collected_points_id: `e2e-cp-delete-${Date.now()}`,
-          collected_at: new Date(),
+          collected_point_id: `e2e-cp-delete-${Date.now()}`,
+          collected_timestamp: new Date(),
           session_id: sessionId,
-          collection_point_id: 'e2e-cp-id-001',
+          collection_point_id: 'e2e-cp-id-003',
+          device_id: 'e2e-device-id-001',
         },
       });
 
       const deleteResponse = await authHelper
         .authenticatedRequest(adminToken)
-        .delete(`/collected-points/${created.collected_points_id}`);
+        .delete(`/collected-points/${created.collected_point_id}`);
 
       expect([200, 204]).toContain(deleteResponse.status);
     });

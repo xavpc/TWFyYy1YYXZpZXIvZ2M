@@ -31,14 +31,14 @@ describe('DeviceSessionController (e2e)', () => {
 
   describe('/device-session (GET)', () => {
     it('should return all device sessions', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/device-session');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/device-sessions');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/device-session');
+      const response = await authHelper.unauthenticatedRequest().get('/device-sessions');
 
       expect([401, 403]).toContain(response.status);
     });

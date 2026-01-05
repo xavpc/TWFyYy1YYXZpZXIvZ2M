@@ -31,14 +31,14 @@ describe('DeviceRouteController (e2e)', () => {
 
   describe('/device-route (GET)', () => {
     it('should return all device routes', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/device-route');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/device-routes');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/device-route');
+      const response = await authHelper.unauthenticatedRequest().get('/device-routes');
 
       expect([401, 403]).toContain(response.status);
     });
@@ -73,7 +73,7 @@ describe('DeviceRouteController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-route')
+        .post('/device-routes')
         .send(newDeviceRoute);
 
       expect([200, 201]).toContain(response.status);
@@ -83,7 +83,7 @@ describe('DeviceRouteController (e2e)', () => {
     it('should reject non-existent device', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-route')
+        .post('/device-routes')
         .send({
           day_assigned: 'monday',
           device_id: 'nonexistent-device',
@@ -96,7 +96,7 @@ describe('DeviceRouteController (e2e)', () => {
     it('should reject non-existent route', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-route')
+        .post('/device-routes')
         .send({
           day_assigned: 'monday',
           device_id: 'e2e-device-id-001',
@@ -109,7 +109,7 @@ describe('DeviceRouteController (e2e)', () => {
     it('should validate day_assigned', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-route')
+        .post('/device-routes')
         .send({
           day_assigned: 'invalid_day',
           device_id: 'e2e-device-id-001',

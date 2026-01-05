@@ -260,16 +260,26 @@ export class E2EAuthHelper {
       throw new Error(`Login failed: ${response.status} - ${JSON.stringify(response.body)}`);
     }
 
-    // Extract token from response or cookie
+    // Extract token from response body or cookie
     const token = response.body?.access_token || response.body?.token;
     if (token) {
       return token;
     }
 
-    // Try to extract from cookies
+    // Try to extract from cookies (access_token cookie)
     const cookies = response.headers['set-cookie'];
     if (cookies) {
-      const jwtCookie = cookies.find((c: string) => c.startsWith('jwt='));
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      // Look for access_token cookie
+      const accessTokenCookie = cookieArray.find((c: string) => c.startsWith('access_token='));
+      if (accessTokenCookie) {
+        const match = accessTokenCookie.match(/access_token=([^;]+)/);
+        if (match) {
+          return match[1];
+        }
+      }
+      // Fallback: look for jwt cookie
+      const jwtCookie = cookieArray.find((c: string) => c.startsWith('jwt='));
       if (jwtCookie) {
         const match = jwtCookie.match(/jwt=([^;]+)/);
         if (match) {

@@ -34,14 +34,14 @@ describe('RouteController (e2e)', () => {
 
   describe('/route (GET)', () => {
     it('should return all routes', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/route');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/routes');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/route');
+      const response = await authHelper.unauthenticatedRequest().get('/routes');
 
       expect([401, 403]).toContain(response.status);
     });
@@ -72,7 +72,7 @@ describe('RouteController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/route')
+        .post('/routes')
         .send(newRoute);
 
       expect([200, 201]).toContain(response.status);
@@ -85,7 +85,7 @@ describe('RouteController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/route')
+        .post('/routes')
         .send(route);
 
       expect([400, 409]).toContain(response.status);
@@ -94,7 +94,7 @@ describe('RouteController (e2e)', () => {
     it('should validate coordinates', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/route')
+        .post('/routes')
         .send({
           route_name: 'Invalid Coords Route',
           center_latitude: 999,
@@ -142,7 +142,7 @@ describe('RouteController (e2e)', () => {
       const newRoute = dataFactory.createRoute();
       const createResponse = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/route')
+        .post('/routes')
         .send(newRoute);
 
       const routeId = createResponse.body.route_id;

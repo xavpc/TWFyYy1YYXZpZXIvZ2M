@@ -31,14 +31,14 @@ describe('ImageController (e2e)', () => {
 
   describe('/image (GET)', () => {
     it('should return all images', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/image');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/images');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/image');
+      const response = await authHelper.unauthenticatedRequest().get('/images');
 
       expect([401, 403]).toContain(response.status);
     });

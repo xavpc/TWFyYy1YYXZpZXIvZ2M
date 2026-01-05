@@ -34,14 +34,14 @@ describe('DeviceController (e2e)', () => {
 
   describe('/device (GET)', () => {
     it('should return all devices', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/device');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/devices');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/device');
+      const response = await authHelper.unauthenticatedRequest().get('/devices');
 
       expect([401, 403]).toContain(response.status);
     });
@@ -72,7 +72,7 @@ describe('DeviceController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device')
+        .post('/devices')
         .send(newDevice);
 
       expect([200, 201]).toContain(response.status);
@@ -85,7 +85,7 @@ describe('DeviceController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device')
+        .post('/devices')
         .send(device);
 
       expect([400, 409]).toContain(response.status);
@@ -96,7 +96,7 @@ describe('DeviceController (e2e)', () => {
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device')
+        .post('/devices')
         .send(device);
 
       expect([400, 404]).toContain(response.status);
@@ -140,7 +140,7 @@ describe('DeviceController (e2e)', () => {
       const newDevice = dataFactory.createDevice('e2e-employee-id-001');
       const createResponse = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device')
+        .post('/devices')
         .send(newDevice);
 
       const deviceId = createResponse.body.device_id;

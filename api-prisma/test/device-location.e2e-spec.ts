@@ -41,15 +41,17 @@ describe('DeviceLocationController (e2e)', () => {
           device_location_id: 'e2e-location-id-001',
           latitude: 35.6762,
           longitude: 139.6503,
-          recorded_at: new Date(),
+          current_location_timestamp: new Date(),
           session_id: sessionId,
+          device_id: 'e2e-device-id-001',
         },
         {
           device_location_id: 'e2e-location-id-002',
           latitude: 35.6770,
           longitude: 139.6510,
-          recorded_at: new Date(),
+          current_location_timestamp: new Date(),
           session_id: sessionId,
+          device_id: 'e2e-device-id-001',
         },
       ],
       skipDuplicates: true,
@@ -63,14 +65,14 @@ describe('DeviceLocationController (e2e)', () => {
 
   describe('/device-location (GET)', () => {
     it('should return all device locations', async () => {
-      const response = await authHelper.authenticatedRequest(adminToken).get('/device-location');
+      const response = await authHelper.authenticatedRequest(adminToken).get('/device-locations');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body) || response.body.data).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
-      const response = await authHelper.unauthenticatedRequest().get('/device-location');
+      const response = await authHelper.unauthenticatedRequest().get('/device-locations');
 
       expect([401, 403]).toContain(response.status);
     });
@@ -100,13 +102,14 @@ describe('DeviceLocationController (e2e)', () => {
       const newLocation = {
         latitude: 35.6780,
         longitude: 139.6520,
-        recorded_at: new Date().toISOString(),
+        current_location_timestamp: new Date().toISOString(),
         session_id: sessionId,
+        device_id: 'e2e-device-id-001',
       };
 
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-location')
+        .post('/device-locations')
         .send(newLocation);
 
       expect([200, 201]).toContain(response.status);
@@ -116,12 +119,13 @@ describe('DeviceLocationController (e2e)', () => {
     it('should validate coordinates', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-location')
+        .post('/device-locations')
         .send({
           latitude: 999,
           longitude: 999,
-          recorded_at: new Date().toISOString(),
+          current_location_timestamp: new Date().toISOString(),
           session_id: sessionId,
+          device_id: 'e2e-device-id-001',
         });
 
       expect([400, 422]).toContain(response.status);
@@ -130,12 +134,13 @@ describe('DeviceLocationController (e2e)', () => {
     it('should reject non-existent session', async () => {
       const response = await authHelper
         .authenticatedRequest(adminToken)
-        .post('/device-location')
+        .post('/device-locations')
         .send({
           latitude: 35.6762,
           longitude: 139.6503,
-          recorded_at: new Date().toISOString(),
+          current_location_timestamp: new Date().toISOString(),
           session_id: 'nonexistent-session',
+          device_id: 'e2e-device-id-001',
         });
 
       expect([400, 404]).toContain(response.status);
@@ -150,8 +155,9 @@ describe('DeviceLocationController (e2e)', () => {
           device_location_id: `e2e-location-delete-${Date.now()}`,
           latitude: 35.6800,
           longitude: 139.6530,
-          recorded_at: new Date(),
+          current_location_timestamp: new Date(),
           session_id: sessionId,
+          device_id: 'e2e-device-id-001',
         },
       });
 
