@@ -11,13 +11,13 @@ export class BaseSessionResponse {
 
 // Single session response
 export class DeviceSessionResponse extends BaseSessionResponse {
-  @ApiProperty({ type: DeviceSession })
+  @ApiProperty({ type: 'object' })
   data: DeviceSession;
 }
 
 // Multiple sessions response
 export class DeviceSessionsArrayResponse extends BaseSessionResponse {
-  @ApiProperty({ type: [DeviceSession] })
+  @ApiProperty({ type: 'array', items: { type: 'object' } })
   data: DeviceSession[];
 }
 
