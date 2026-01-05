@@ -8,7 +8,7 @@ export class RouteResponse {
   @ApiProperty({ example: 'Route request successful' })
   message: string;
 
-  @ApiProperty({ type: Route })
+  @ApiProperty()
   data: Route;
 }
 
@@ -19,7 +19,7 @@ export class RouteListResponse {
   @ApiProperty({ example: 'Routes retrieved successfully' })
   message: string;
 
-  @ApiProperty({ type: [Route], description: 'List of routes' })
+  @ApiProperty({ type: 'array', items: { type: 'object' }, description: 'List of routes' })
   data: Route[];
 
   @ApiProperty({ example: 5, description: 'Total number of routes' })

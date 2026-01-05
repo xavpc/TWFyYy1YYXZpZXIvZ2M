@@ -26,7 +26,7 @@ export class FilterDeviceDto {
     description: 'Filter by device status',
     required: false,
     enum: DeviceStatus,
-    example: DeviceStatus.ACTIVE
+    example: DeviceStatus.active
   })
   @IsOptional()
   @IsEnum(DeviceStatus)

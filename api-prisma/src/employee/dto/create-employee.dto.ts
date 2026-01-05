@@ -87,7 +87,7 @@ export class CreateEmployeeDto {
 
   @ApiProperty({
     enum: EmployeeStatus,
-    default: EmployeeStatus.ACTIVE,
+    default: EmployeeStatus.active,
     description: 'Employee status(not required, but can be initialized at post)'
   })
   @IsEnum(EmployeeStatus)

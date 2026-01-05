@@ -27,7 +27,6 @@ export class DeviceService {
       data: {
         device_name: createDeviceDto.device_name,
         vehicle_plate_num: createDeviceDto.vehicle_plate_num,
-        status: createDeviceDto.status,
         employee: {
           connect: { employee_id: createDeviceDto.employee_id },
         },

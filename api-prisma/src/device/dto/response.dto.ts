@@ -8,7 +8,7 @@ export class DeviceResponse {
   @ApiProperty({ example: 'Device request successful' })
   message: string;
 
-  @ApiProperty({ type: Device })
+  @ApiProperty()
   data: Device;
 }
 
@@ -16,11 +16,11 @@ export class DeviceResponse {
 export class DeviceListResponse {
     @ApiProperty({ example: true })
     success: boolean;
-  
+
     @ApiProperty({ example: 'Devices retrieved successfully' })
     message: string;
-  
-    @ApiProperty({ type: [Device], description: 'List of devices' })
+
+    @ApiProperty({ type: 'array', items: { type: 'object' }, description: 'List of devices' })
     data: Device[];
   
     @ApiProperty({ example: 5, description: 'Total number of devices' })

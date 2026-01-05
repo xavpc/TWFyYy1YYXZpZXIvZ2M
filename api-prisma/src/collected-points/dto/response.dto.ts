@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CollectedPoints } from '../collected-points.entity';
+import { CollectedPoints, Prisma } from '@prisma/client';
+
+type CollectedPointsWithRelations = Prisma.CollectedPointsGetPayload<{
+  include: { device: true; session: true; collection_point: true }
+}>;
 
 export class CollectedPointResponse {
   @ApiProperty({
@@ -38,7 +42,7 @@ export class CollectedPointResponse {
   })
   session_id: string;
 
-  constructor(collectedPoint: CollectedPoints) {
+  constructor(collectedPoint: CollectedPointsWithRelations) {
     this.collected_point_id = collectedPoint.collected_point_id;
     this.device_id = collectedPoint.device.device_id;
     this.session_id = collectedPoint.session.session_id;
@@ -61,7 +65,7 @@ export class CollectedPointListResponse {
   })
   total: number;
 
-  constructor(collectedPoints: CollectedPoints[]) {
+  constructor(collectedPoints: CollectedPointsWithRelations[]) {
     this.data = collectedPoints.map(
       (collectedPoint) => new CollectedPointResponse(collectedPoint),
     );

@@ -18,12 +18,12 @@ export class UserResponse {
       role: { 
         type: 'string',
         enum: Object.values(UserRole),
-        example: UserRole.GARBAGE_COLLECTOR
+        example: UserRole.garbage_collector
       },
       status: { 
         type: 'string',
         enum: Object.values(UserStatus),
-        example: UserStatus.ACTIVE
+        example: UserStatus.active
       },
       employee_id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' }
     }

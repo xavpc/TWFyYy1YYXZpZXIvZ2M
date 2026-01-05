@@ -7,7 +7,7 @@ export class UpdateImageDto {
       description: 'Status of the image',
       enum: ImageStatus,
       required: false,
-      example: ImageStatus.ACTIVE
+      example: ImageStatus.active
     })
     @IsEnum(ImageStatus)
     @IsOptional()

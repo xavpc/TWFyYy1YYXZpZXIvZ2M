@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { DeviceSession } from '../device-session.entity';
+import { DeviceSession } from '@prisma/client';
 
 export class BaseSessionResponse {
   @ApiProperty({ example: true })
@@ -11,13 +11,13 @@ export class BaseSessionResponse {
 
 // Single session response
 export class DeviceSessionResponse extends BaseSessionResponse {
-  @ApiProperty({ type: DeviceSession })
+  @ApiProperty()
   data: DeviceSession;
 }
 
 // Multiple sessions response
 export class DeviceSessionsArrayResponse extends BaseSessionResponse {
-  @ApiProperty({ type: [DeviceSession] })
+  @ApiProperty({ isArray: true })
   data: DeviceSession[];
 }
 

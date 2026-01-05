@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, UseGuards, Res, StreamableFile, HttpException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
-import { Reports } from './reports.entity';
+import { Reports } from '@prisma/client';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { FilterReportDto } from './dto/filter-report.dto';
@@ -136,7 +136,7 @@ export class ReportsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a report by ID' })
   @ApiParam({ name: 'id', description: 'Reports ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the report', type: Reports })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the report' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Reports not found' })
   findOne(@Param('id') id: string): Promise<Reports> {
     return this.reportService.findOne(id);
@@ -145,7 +145,7 @@ export class ReportsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a report' })
   @ApiParam({ name: 'id', description: 'Reports ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Reports successfully updated', type: Reports })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Reports successfully updated' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Reports not found' })
   update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto): Promise<Reports> {
     return this.reportService.update(id, updateReportDto);

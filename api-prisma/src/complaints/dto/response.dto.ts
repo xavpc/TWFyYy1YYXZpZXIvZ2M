@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Complaints } from '../complaints.entity';
+import { Complaints, Prisma } from '@prisma/client';
+
+type ComplaintsWithRelations = Prisma.ComplaintsGetPayload<{
+  include: { image: true; device: true }
+}>;
 
 class ImageResponse {
   @ApiProperty({
@@ -108,7 +112,7 @@ export class ComplaintResponse {
   })
   device: DeviceResponse;
 
-  constructor(complaint: Complaints) {
+  constructor(complaint: ComplaintsWithRelations) {
     this.complaint_id = complaint.complaint_id;
     this.title = complaint.title;
     this.description = complaint.description;
@@ -144,7 +148,7 @@ export class ComplaintListResponse {
   })
   total: number;
 
-  constructor(complaints: Complaints[]) {
+  constructor(complaints: ComplaintsWithRelations[]) {
     this.data = complaints.map(complaint => new ComplaintResponse(complaint));
     this.total = complaints.length;
   }

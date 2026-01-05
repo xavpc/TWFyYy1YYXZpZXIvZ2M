@@ -19,7 +19,7 @@ export class UserController {
   async create(@Body() createUserDto: CreateUserDto) {
     const adminUserDto: CreateUserDto = {
       ...createUserDto,
-      role: UserRole.ADMIN,
+      role: UserRole.admin,
     };
 
     const user = await this.userService.create(adminUserDto);
