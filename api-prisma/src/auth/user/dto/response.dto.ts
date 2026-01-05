@@ -23,7 +23,7 @@ export class UserResponse {
       status: { 
         type: 'string',
         enum: Object.values(UserStatus),
-        example: UserStatus.ACTIVE
+        example: UserStatus.active
       },
       employee_id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' }
     }
