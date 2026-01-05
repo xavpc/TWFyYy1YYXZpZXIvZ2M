@@ -145,7 +145,7 @@ export class ReportsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a report' })
   @ApiParam({ name: 'id', description: 'Reports ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Reports successfully updated', type: Reports })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Reports successfully updated' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Reports not found' })
   update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto): Promise<Reports> {
     return this.reportService.update(id, updateReportDto);
