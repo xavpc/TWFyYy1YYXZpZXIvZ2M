@@ -8,7 +8,7 @@ export class ImageResponseDto {
   @ApiProperty({ example: 'Operation completed successfully' })
   message: string;
 
-  @ApiProperty({ type: Image })
+  @ApiProperty()
   data: Image;
 }
 
@@ -19,7 +19,7 @@ export class ImageListResponseDto {
   @ApiProperty({ example: 'Images retrieved successfully' })
   message: string;
 
-  @ApiProperty({ type: [Image] })
+  @ApiProperty({ isArray: true })
   data: Image[];
 
   @ApiProperty({ example: 10 })
