@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CollectedPoints } from '../collected-points.entity';
+import { CollectedPoints } from '@prisma/client';
 
 export class CollectedPointResponse {
   @ApiProperty({
