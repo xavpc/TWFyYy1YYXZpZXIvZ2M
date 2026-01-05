@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RouteCoordinates, Route } from '@prisma/client';
+import { RouteCoordinates, Route, Prisma } from '@prisma/client';
+
+type RouteCoordinatesWithRoute = Prisma.RouteCoordinatesGetPayload<{ include: { route: true } }>;
 
 export class RouteCoordinatesResponse {
   @ApiProperty({
@@ -7,8 +9,6 @@ export class RouteCoordinatesResponse {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   route_coordinates_id: string;
-
-
 
   @ApiProperty({
     description: 'The latitude of the route coordinates',
@@ -34,10 +34,9 @@ export class RouteCoordinatesResponse {
   })
   is_user_point: boolean;
 
-
   @ApiProperty({
     description: 'The route associated with these coordinates',
-    type: () => Route,
+    type: 'object',
     example: {
       route_id: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f',
       route_name: 'Route D',
@@ -47,15 +46,13 @@ export class RouteCoordinatesResponse {
   })
   route: Route;
 
-
-
-  constructor(routeCoordinates: RouteCoordinates) {
+  constructor(routeCoordinates: RouteCoordinatesWithRoute) {
     this.route_coordinates_id = routeCoordinates.route_coordinates_id;
-    this.latitude = routeCoordinates.latitude;
-    this.longitude = routeCoordinates.longitude;
+    this.latitude = Number(routeCoordinates.latitude);
+    this.longitude = Number(routeCoordinates.longitude);
     this.sequence = routeCoordinates.sequence;
     this.is_user_point = routeCoordinates.is_user_point;
-    this.route = routeCoordinates.route; // Assuming the route object is linked here
+    this.route = routeCoordinates.route;
   }
 }
 
