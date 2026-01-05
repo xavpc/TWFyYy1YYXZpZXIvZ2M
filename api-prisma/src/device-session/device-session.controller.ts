@@ -1,7 +1,7 @@
   import { Controller, Get, Post, Body, Param, Put, Delete, Query, HttpStatus, HttpCode, NotFoundException } from '@nestjs/common';
   import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
   import { DeviceSessionService } from './device-session.service';
-  import { DeviceSession } from './device-session.entity';
+  import { DeviceSession } from '@prisma/client';
   import { CreateDeviceSessionDto } from './dto/device-session-create.dto';
   import { UpdateDeviceSessionDto } from './dto/device-session-update.dto';
   import { DeviceSessionResponse, DeviceSessionListResponse, DeviceSessionErrorResponse, DeviceSessionsArrayResponse } from './dto/response.dto';
