@@ -8,7 +8,7 @@ export class RouteResponse {
   @ApiProperty({ example: 'Route request successful' })
   message: string;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty()
   data: Route;
 }
 
