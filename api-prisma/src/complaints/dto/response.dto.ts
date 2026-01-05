@@ -112,7 +112,7 @@ export class ComplaintResponse {
   })
   device: DeviceResponse;
 
-  constructor(complaint: Complaints) {
+  constructor(complaint: ComplaintsWithRelations) {
     this.complaint_id = complaint.complaint_id;
     this.title = complaint.title;
     this.description = complaint.description;
