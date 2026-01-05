@@ -8,7 +8,7 @@ export class DeviceResponse {
   @ApiProperty({ example: 'Device request successful' })
   message: string;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty()
   data: Device;
 }
 

@@ -319,14 +319,14 @@ import { FilterDeviceSessionDto } from './dto/device-session-filter.dto';
 
     //dont use this TwT
     @Delete()
-    @ApiResponse({ status: 200, description: 'All sessions removed successfully', type: DeviceSessionsArrayResponse })
-    async removeAll(): Promise<DeviceSessionsArrayResponse> {
+    @ApiResponse({ status: 200, description: 'All sessions removed successfully' })
+    async removeAll(): Promise<{ success: boolean; message: string; count: number }> {
       try {
-        const sessions = await this.deviceSessionService.removeAll();
+        const result = await this.deviceSessionService.removeAll();
         return {
           success: true,
           message: 'All device sessions removed successfully',
-          data: sessions
+          count: result.count
         };
       } catch (error) {
         throw error;

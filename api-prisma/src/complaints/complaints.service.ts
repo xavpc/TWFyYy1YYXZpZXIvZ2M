@@ -43,7 +43,8 @@ export class ComplaintsService {
           complaint_timestamp: new Date(createComplaintDto.complaint_timestamp),
           image_id: createComplaintDto.image_id,
           device_id: createComplaintDto.device_id,
-        }
+        },
+        include: { device: true, image: true }
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

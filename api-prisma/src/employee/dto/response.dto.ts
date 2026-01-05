@@ -8,7 +8,7 @@ export class EmployeeResponse {
   @ApiProperty({ example: 'Employee request successful' })
   message: string;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty()
   data: Employee;
 }
 

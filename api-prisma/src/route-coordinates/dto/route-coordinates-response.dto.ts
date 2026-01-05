@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RouteCoordinates, Route, Prisma } from '@prisma/client';
 
-type RouteCoordinatesWithRoute = Prisma.RouteCoordinatesGetPayload<{ include: { route: true } }>;
+type RouteCoordinatesWithOptionalRoute = RouteCoordinates & { route?: Route };
 
 export class RouteCoordinatesResponse {
   @ApiProperty({
@@ -36,17 +36,17 @@ export class RouteCoordinatesResponse {
 
   @ApiProperty({
     description: 'The route associated with these coordinates',
-    type: 'object',
     example: {
       route_id: 'e5a53ba6-deda-11ef-9da2-54ee75718d0f',
       route_name: 'Route D',
       center_latitude: 35.6895,
       center_longitude: 139.6917
     },
+    required: false,
   })
-  route: Route;
+  route?: Route;
 
-  constructor(routeCoordinates: RouteCoordinatesWithRoute) {
+  constructor(routeCoordinates: RouteCoordinatesWithOptionalRoute) {
     this.route_coordinates_id = routeCoordinates.route_coordinates_id;
     this.latitude = Number(routeCoordinates.latitude);
     this.longitude = Number(routeCoordinates.longitude);
@@ -69,7 +69,7 @@ export class RouteCoordinatesListResponse {
   })
   total: number;
 
-  constructor(routeCoordinates: RouteCoordinatesWithRoute[]) {
+  constructor(routeCoordinates: RouteCoordinatesWithOptionalRoute[]) {
     this.data = routeCoordinates.map(
       (coord) => new RouteCoordinatesResponse(coord),
     );
