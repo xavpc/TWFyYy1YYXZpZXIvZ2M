@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Complaints } from '../complaints.entity';
+import { Complaints } from '@prisma/client';
 
 class ImageResponse {
   @ApiProperty({
