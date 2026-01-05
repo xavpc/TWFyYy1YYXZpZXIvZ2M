@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Complaints } from '@prisma/client';
+import { Complaints, Prisma } from '@prisma/client';
+
+type ComplaintsWithRelations = Prisma.ComplaintsGetPayload<{
+  include: { image: true; device: true }
+}>;
 
 class ImageResponse {
   @ApiProperty({
