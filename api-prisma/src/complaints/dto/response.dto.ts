@@ -148,7 +148,7 @@ export class ComplaintListResponse {
   })
   total: number;
 
-  constructor(complaints: Complaints[]) {
+  constructor(complaints: ComplaintsWithRelations[]) {
     this.data = complaints.map(complaint => new ComplaintResponse(complaint));
     this.total = complaints.length;
   }
