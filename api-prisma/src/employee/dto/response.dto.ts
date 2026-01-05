@@ -8,7 +8,7 @@ export class EmployeeResponse {
   @ApiProperty({ example: 'Employee request successful' })
   message: string;
 
-  @ApiProperty({ type: Employee })
+  @ApiProperty({ type: 'object' })
   data: Employee;
 }
 
@@ -19,7 +19,7 @@ export class EmployeeListResponse {
   @ApiProperty({ example: 'Employees retrieved successfully' })
   message: string;
 
-  @ApiProperty({ type: [Employee], description: 'List of employees' })
+  @ApiProperty({ type: 'array', items: { type: 'object' }, description: 'List of employees' })
   data: Employee[];
 
   @ApiProperty({ example: 1, description: 'Total number of employees' })
