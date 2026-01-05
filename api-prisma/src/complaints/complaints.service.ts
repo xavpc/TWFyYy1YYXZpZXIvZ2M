@@ -4,11 +4,15 @@ import { Complaints, Prisma } from '@prisma/client';
 import { CreateComplaintDto } from './dto/create-complaints.dto';
 import { UpdateComplaintDto } from './dto/update-complaints.dto';
 
+type ComplaintsWithRelations = Prisma.ComplaintsGetPayload<{
+  include: { image: true; device: true }
+}>;
+
 @Injectable()
 export class ComplaintsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createComplaintDto: CreateComplaintDto): Promise<Complaints> {
+  async create(createComplaintDto: CreateComplaintDto): Promise<ComplaintsWithRelations> {
     const existingTitle = await this.prisma.complaints.findUnique({
       where: { title: createComplaintDto.title }
     });
