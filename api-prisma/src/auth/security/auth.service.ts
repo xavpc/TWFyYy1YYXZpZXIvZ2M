@@ -59,7 +59,7 @@ export class AuthService {
       user_id: user.user_id,
       username: user.username,
       role: user.role,
-      employee_id: user.employee?.employee_id
+      employee_id: user.employee_id
     };
     
     res.json(userData);
