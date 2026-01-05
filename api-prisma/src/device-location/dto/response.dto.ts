@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DeviceLocation } from '@prisma/client';
+import { DeviceLocation, Prisma } from '@prisma/client';
 
+type DeviceLocationWithRelations = Prisma.DeviceLocationGetPayload<{
+  include: { device: true; session: true }
+}>;
 
 export class DeviceLocationResponse {
   @ApiProperty({
@@ -26,6 +29,7 @@ export class DeviceLocationResponse {
     example: '2025-01-30T12:00:00Z',
   })
   push_timestamp: Date;
+
   @ApiProperty({
     description: 'The timestamp when the device location was recorded',
     example: '2025-01-30T12:00:00Z',
@@ -45,26 +49,27 @@ export class DeviceLocationResponse {
   })
   session_id: string;
 
-  constructor(deviceLocation: DeviceLocation) {
+  constructor(deviceLocation: DeviceLocationWithRelations) {
     this.device_location_id = deviceLocation.device_location_id;
-    this.latitude = deviceLocation.latitude;
-    this.longitude = deviceLocation.longitude;
+    this.latitude = Number(deviceLocation.latitude);
+    this.longitude = Number(deviceLocation.longitude);
     this.push_timestamp = deviceLocation.push_timestamp;
     this.current_location_timestamp = deviceLocation.current_location_timestamp;
-    this.device_id = deviceLocation.device.device_id; 
-    this.session_id = deviceLocation.session.session_id
+    this.device_id = deviceLocation.device.device_id;
+    this.session_id = deviceLocation.session.session_id;
   }
 }
+
 export class DeviceLocationBatchResponse {
   @ApiProperty({ example: true })
   success: boolean;
-  
+
   @ApiProperty({ example: 'Device locations created successfully' })
   message: string;
-  
-  @ApiProperty({ 
-    type: [DeviceLocationResponse], 
-    description: 'Array of created device locations' 
+
+  @ApiProperty({
+    type: [DeviceLocationResponse],
+    description: 'Array of created device locations'
   })
   data: DeviceLocationResponse[];
 }
@@ -82,7 +87,7 @@ export class DeviceLocationListResponse {
   })
   total: number;
 
-  constructor(deviceLocations: DeviceLocation[]) {
+  constructor(deviceLocations: DeviceLocationWithRelations[]) {
     this.data = deviceLocations.map(
       (deviceLocation) => new DeviceLocationResponse(deviceLocation),
     );
