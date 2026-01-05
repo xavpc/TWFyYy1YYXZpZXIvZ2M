@@ -24,7 +24,7 @@ export class DeviceRouteResponse {
   @ApiProperty({
     description: 'Day when the route is assigned to the device',
     enum: DeviceRouteDay,
-    example: DeviceRouteDay.MONDAY,
+    example: DeviceRouteDay.monday,
   })
   day_assigned: DeviceRouteDay;
 
