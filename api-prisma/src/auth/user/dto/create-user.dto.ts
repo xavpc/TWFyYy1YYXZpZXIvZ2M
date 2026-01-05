@@ -35,7 +35,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Role of the user in the system',
-    example: UserRole.ADMIN,
+    example: UserRole.admin,
     enum: UserRole
   })
   @IsNotEmpty()
