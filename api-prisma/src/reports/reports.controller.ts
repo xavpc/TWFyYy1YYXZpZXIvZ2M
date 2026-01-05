@@ -136,7 +136,7 @@ export class ReportsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a report by ID' })
   @ApiParam({ name: 'id', description: 'Reports ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the report', type: Reports })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the report' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Reports not found' })
   findOne(@Param('id') id: string): Promise<Reports> {
     return this.reportService.findOne(id);
