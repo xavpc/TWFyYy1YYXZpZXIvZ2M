@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Image } from '../image.entity';
+import { Image } from '@prisma/client';
 
 export class ImageResponseDto {
   @ApiProperty({ example: true })
