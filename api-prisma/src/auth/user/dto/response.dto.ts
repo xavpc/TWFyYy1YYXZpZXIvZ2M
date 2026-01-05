@@ -18,7 +18,7 @@ export class UserResponse {
       role: { 
         type: 'string',
         enum: Object.values(UserRole),
-        example: UserRole.GARBAGE_COLLECTOR
+        example: UserRole.garbage_collector
       },
       status: { 
         type: 'string',
