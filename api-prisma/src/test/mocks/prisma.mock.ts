@@ -69,6 +69,7 @@ export const mockPrismaService = {
     findFirst: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    deleteMany: jest.fn(),
     count: jest.fn(),
   },
 

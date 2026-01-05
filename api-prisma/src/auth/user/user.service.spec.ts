@@ -36,6 +36,7 @@ describe('UserService', () => {
       username: 'newuser',
       password: 'Password123!',
       role: 'garbage_collector' as const,
+      employee_id: 'test-employee-id-00001',
     };
 
     it('should create user with valid data', async () => {
@@ -219,10 +220,10 @@ describe('UserService', () => {
       prisma.users.findFirst.mockResolvedValue(null);
       prisma.users.update.mockResolvedValue({
         ...testUsers.admin,
-        status: 'inactive',
+        role: 'garbage_collector',
       });
 
-      await service.update(testUsers.admin.user_id, { status: 'inactive' });
+      await service.update(testUsers.admin.user_id, { role: 'garbage_collector' as any });
 
       const updateCall = prisma.users.update.mock.calls[0][0];
       expect(updateCall.data.hashed_password).toBeUndefined();

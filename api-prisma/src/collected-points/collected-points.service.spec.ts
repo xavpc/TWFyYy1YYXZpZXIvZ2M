@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DeviceLocationGateway } from '../sockets/device-location.gateway';
 import { mockPrismaService, resetPrismaMocks } from '../test/mocks/prisma.mock';
 import { testCollectedPoints, testDevices, testCollectionPoints, testDeviceSessions, createDTOs } from '../test/fixtures';
+import { Prisma } from '@prisma/client';
 
 describe('CollectedPointsService', () => {
   let service: CollectedPointsService;
@@ -142,7 +143,7 @@ describe('CollectedPointsService', () => {
 
       const result = await service.update(
         testCollectedPoints.collected1.collected_point_id,
-        { collected_timestamp: new Date() },
+        { collected_timestamp: new Date().toISOString() },
       );
 
       expect(result).toBeDefined();
@@ -159,8 +160,10 @@ describe('CollectedPointsService', () => {
     });
 
     it('should throw NotFoundException for invalid ID', async () => {
-      const prismaError = new Error('Record not found');
-      (prismaError as any).code = 'P2025';
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        'Record not found',
+        { code: 'P2025', clientVersion: '5.0.0' }
+      );
       prisma.collectedPoints.delete.mockRejectedValue(prismaError);
 
       await expect(service.remove('nonexistent')).rejects.toThrow(NotFoundException);

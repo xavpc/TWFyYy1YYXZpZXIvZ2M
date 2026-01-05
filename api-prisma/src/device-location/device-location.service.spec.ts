@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DeviceLocationGateway } from '../sockets/device-location.gateway';
 import { mockPrismaService, resetPrismaMocks } from '../test/mocks/prisma.mock';
 import { testDeviceLocations, testDevices, testDeviceSessions } from '../test/fixtures';
+import { Prisma } from '@prisma/client';
 
 describe('DeviceLocationService', () => {
   let service: DeviceLocationService;
@@ -51,7 +52,7 @@ describe('DeviceLocationService', () => {
       const result = await service.create({
         latitude: 35.6762,
         longitude: 139.6503,
-        current_location_timestamp: new Date(),
+        current_location_timestamp: new Date().toISOString(),
         device_id: testDevices.device1.device_id,
         session_id: testDeviceSessions.activeSession.session_id,
       });
@@ -68,7 +69,7 @@ describe('DeviceLocationService', () => {
         service.create({
           latitude: 35.6762,
           longitude: 139.6503,
-          current_location_timestamp: new Date(),
+          current_location_timestamp: new Date().toISOString(),
           device_id: 'nonexistent',
           session_id: 'session-id',
         }),
@@ -83,7 +84,7 @@ describe('DeviceLocationService', () => {
         service.create({
           latitude: 35.6762,
           longitude: 139.6503,
-          current_location_timestamp: new Date(),
+          current_location_timestamp: new Date().toISOString(),
           device_id: testDevices.device1.device_id,
           session_id: 'nonexistent',
         }),
@@ -145,18 +146,14 @@ describe('DeviceLocationService', () => {
     });
 
     it('should throw NotFoundException for invalid ID', async () => {
-      const prismaError = new Error('Record not found');
-      (prismaError as any).code = 'P2025';
-      prismaError.constructor = { name: 'PrismaClientKnownRequestError' };
-      Object.setPrototypeOf(prismaError, { constructor: { name: 'PrismaClientKnownRequestError' } });
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        'Record not found',
+        { code: 'P2025', clientVersion: '5.0.0' }
+      );
 
       prisma.deviceLocation.delete.mockRejectedValue(prismaError);
 
-      // The service catches P2025 errors and throws NotFoundException
-      // But since we're mocking, we need to handle this differently
-      prisma.deviceLocation.delete.mockRejectedValue(
-        Object.assign(new Error('P2025'), { code: 'P2025' }),
-      );
+      await expect(service.remove('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -207,14 +204,14 @@ describe('DeviceLocationService', () => {
         {
           latitude: 35.6762,
           longitude: 139.6503,
-          current_location_timestamp: new Date(),
+          current_location_timestamp: new Date().toISOString(),
           device_id: testDevices.device1.device_id,
           session_id: testDeviceSessions.activeSession.session_id,
         },
         {
           latitude: 35.6770,
           longitude: 139.6510,
-          current_location_timestamp: new Date(),
+          current_location_timestamp: new Date().toISOString(),
           device_id: testDevices.device1.device_id,
           session_id: testDeviceSessions.activeSession.session_id,
         },
@@ -233,7 +230,7 @@ describe('DeviceLocationService', () => {
           {
             latitude: 35.6762,
             longitude: 139.6503,
-            current_location_timestamp: new Date(),
+            current_location_timestamp: new Date().toISOString(),
             device_id: 'nonexistent',
             session_id: 'session-id',
           },

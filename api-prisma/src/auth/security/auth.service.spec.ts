@@ -165,20 +165,25 @@ describe('AuthService', () => {
   });
 
   describe('verifyPassword', () => {
-    it('should return true for matching password', async () => {
-      const hashedPassword = await bcrypt.hash('password123', 10);
+    it('should call bcrypt.compare with correct arguments', async () => {
+      const compareSpy = jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
 
-      const result = await service.verifyPassword('password123', hashedPassword);
+      const result = await service.verifyPassword('password123', '$2b$10$hashedpassword');
 
+      expect(compareSpy).toHaveBeenCalledWith('password123', '$2b$10$hashedpassword');
       expect(result).toBe(true);
+
+      compareSpy.mockRestore();
     });
 
-    it('should return false for non-matching password', async () => {
-      const hashedPassword = await bcrypt.hash('password123', 10);
+    it('should return false when bcrypt.compare returns false', async () => {
+      const compareSpy = jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
 
-      const result = await service.verifyPassword('wrongpassword', hashedPassword);
+      const result = await service.verifyPassword('wrongpassword', '$2b$10$hashedpassword');
 
       expect(result).toBe(false);
+
+      compareSpy.mockRestore();
     });
   });
 });
