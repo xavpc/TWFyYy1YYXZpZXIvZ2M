@@ -69,7 +69,7 @@ export class RouteCoordinatesListResponse {
   })
   total: number;
 
-  constructor(routeCoordinates: RouteCoordinates[]) {
+  constructor(routeCoordinates: RouteCoordinatesWithRoute[]) {
     this.data = routeCoordinates.map(
       (coord) => new RouteCoordinatesResponse(coord),
     );
