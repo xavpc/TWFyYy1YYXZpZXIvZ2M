@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CollectionPoints } from '@prisma/client';
+import { CollectionPoints, Prisma } from '@prisma/client';
+
+type CollectionPointsWithRoute = Prisma.CollectionPointsGetPayload<{ include: { route: true } }>;
 
 export class CollectionPointResponse {
   @ApiProperty({
@@ -38,11 +40,11 @@ export class CollectionPointResponse {
   })
   route_id: string;
 
-  constructor(collectionPoint: CollectionPoints) {
+  constructor(collectionPoint: CollectionPointsWithRoute) {
     this.collection_point_id = collectionPoint.collection_point_id;
     this.collection_point_name = collectionPoint.collection_point_name;
-    this.latitude = collectionPoint.latitude;
-    this.longitude = collectionPoint.longitude;
+    this.latitude = Number(collectionPoint.latitude);
+    this.longitude = Number(collectionPoint.longitude);
     this.route_id = collectionPoint.route.route_id;
   }
 }
@@ -60,7 +62,7 @@ export class CollectionPointListResponse {
   })
   total: number;
 
-  constructor(collectionPoints: CollectionPoints[]) {
+  constructor(collectionPoints: CollectionPointsWithRoute[]) {
     this.data = collectionPoints.map(
       (collectionPoint) => new CollectionPointResponse(collectionPoint),
     );
