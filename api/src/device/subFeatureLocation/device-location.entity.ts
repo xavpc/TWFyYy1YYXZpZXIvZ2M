@@ -21,7 +21,7 @@ export class DeviceLocation{
   timestamp: Date;
 
   @Index('IDX_SEQUENCE', { unique: true })
-  @Column('int', { unique: true })
+  @Column({ type: 'int', unique: true, nullable: false, default: 0 })
   sequence: number;
 
 }
