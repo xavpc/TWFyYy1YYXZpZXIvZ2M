@@ -21,11 +21,6 @@ export class DeviceLocationController {
   findOne(@Param('id') id: string) {
     return this.deviceLocationService.findOne(id);
   }
-  
-  @Get('device/:deviceId')
-  findByDevice(@Param('deviceId') deviceId: string) {
-    return this.deviceLocationService.findByDevice(deviceId);
-  }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateDeviceLocationDto: UpdateDeviceLocationDto) {
