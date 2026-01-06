@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceLocation } from '../device-location.entity';
 
-/**
- * Response DTO for a single DeviceLocation
- */
+
 export class DeviceLocationResponse {
   @ApiProperty({
     description: 'The unique ID of the device location',
@@ -52,9 +50,7 @@ export class DeviceLocationResponse {
   }
 }
 
-/**
- * Response DTO for a list of DeviceLocations
- */
+
 export class DeviceLocationListResponse {
   @ApiProperty({
     description: 'List of device locations',
@@ -76,9 +72,7 @@ export class DeviceLocationListResponse {
   }
 }
 
-/**
- * Error Response DTO
- */
+
 export class ErrorResponse {
   @ApiProperty({
     description: 'Error code',
