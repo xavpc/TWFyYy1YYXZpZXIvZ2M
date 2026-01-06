@@ -6,13 +6,14 @@ import { Employee } from './employee/employee.entity';
 import { Device } from './device/device.entity';
 import { join } from 'path';
 import { DeviceLocation } from './device/subFeatureLocation/device-location.entity';
+import { Route } from './route/route.entity';
 
 config();
 const configService = new ConfigService();
 
 export default new DataSource({
   ...getTypeOrmConfig(configService),
-  entities: [Employee, Device, DeviceLocation],
+  entities: [Employee, Device, DeviceLocation, Route],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   subscribers: [],
 });
