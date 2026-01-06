@@ -10,10 +10,7 @@ export class RouteCoordinates {
   @JoinColumn({ name: 'route_id' })  
   route: Route;
 
-  @Column('decimal', { precision: 8, scale: 6 })
-  latitude: number;
-
-  @Column('decimal', { precision: 9, scale: 6 })
-  longitude: number;
+  @Column({ nullable: false })
+  route_name: string;
 
 }
