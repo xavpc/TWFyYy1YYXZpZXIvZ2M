@@ -1,14 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { Device } from '../device/device.entity';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Employee {
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   employee_id: string;
 
-  @OneToMany(() => Device, (device) => device.employee)
-  devices: Device[];
-  
   @Column({ nullable: false }) 
   first_name: string;
 
