@@ -3,7 +3,7 @@ import { Device } from '../device/device.entity';
 
 @Entity()
 export class Employee {
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   employee_id: string;
 
   @OneToMany(() => Device, (device) => device.employee)
