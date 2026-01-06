@@ -4,50 +4,28 @@ import { DeviceStatus } from './enums/device-status.enum';
 import { DeviceLocation } from './device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-
 @Entity()
 export class Device {
-  @ApiProperty({
-    description: 'Unique device ID (UUID)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   device_id: string;
 
   @OneToMany(() => DeviceLocation, (location) => location.device)
   device_locations: DeviceLocation[];
 
-  @Column({ nullable: false })
-  @ApiProperty({
-    description: 'Name of the device',
-    example: 'Tablet X12',
-  })
+  @Column({ nullable: false }) 
   device_name: string;
 
   @ManyToOne(() => Employee, (employee) => employee.devices)
-  @JoinColumn({ name: 'employee_id' })
-  @ApiProperty({
-    description: 'Employee assigned to the device',
-    type: () => Employee,
-  })
+  @JoinColumn({ name: 'employee_id' })  
   employee: Employee;
 
-  @Column({ nullable: false })
-  @ApiProperty({
-    description: 'Vehicle plate number associated with the device',
-    example: 'ABC-1234',
-  })
+  @Column({ nullable: false }) 
   vehicle_plate_num: string;
 
   @Column({
     type: 'enum',
     enum: DeviceStatus,
-    default: DeviceStatus.ACTIVE,
-  })
-  @ApiProperty({
-    description: 'Current status of the device',
-    enum: DeviceStatus,
-    example: DeviceStatus.ACTIVE,
+    default: DeviceStatus.ACTIVE
   })
   status: DeviceStatus;
 }
