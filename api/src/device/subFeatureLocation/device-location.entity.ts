@@ -4,7 +4,7 @@ import { Device } from "../device.entity";
 
 @Entity()
 export class DeviceLocation{
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   device_location_id: string;
 
   @ManyToOne(() => Device, (device) => device.device_locations)
@@ -21,7 +21,7 @@ export class DeviceLocation{
   timestamp: Date;
 
   @Index('IDX_SEQUENCE', { unique: true })
-  @Column('int', { unique: true })
+  @Column({ type: 'int', unique: true, nullable: false, default: 0 })
   sequence: number;
 
 }
