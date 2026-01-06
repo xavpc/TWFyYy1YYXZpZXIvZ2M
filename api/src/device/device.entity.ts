@@ -4,7 +4,7 @@ import { DeviceStatus } from './enums/device-status.enum';
 import { DeviceLocation } from './subFeatureLocation/device-location.entity';
 @Entity()
 export class Device {
-  @PrimaryGeneratedColumn('uuid')
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   device_id: string;
 
   @OneToMany(() => DeviceLocation, (location) => location.device)

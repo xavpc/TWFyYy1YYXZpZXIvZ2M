@@ -1,9 +1,14 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Device } from '../device/device.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Employee {
-  @PrimaryGeneratedColumn('uuid')
+  @ApiProperty({
+    description: 'Unique employee ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @Column('char', { primary: true, length: 36, generated: 'uuid' })
   employee_id: string;
 
   @OneToMany(() => Device, (device) => device.employee)
