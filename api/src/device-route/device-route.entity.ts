@@ -14,4 +14,6 @@ export class DeviceRoute {
   @ManyToOne(() => Route, (route) => route.deviceRoutes, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'route_id' })
   route: Route;
+
+  //TODO: make em unique together
 }
