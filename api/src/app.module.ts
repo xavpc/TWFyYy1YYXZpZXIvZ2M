@@ -6,6 +6,10 @@ import { AppService } from './app.service';
 import { EmployeeModule } from './employee/employee.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { DeviceModule } from './device/device.module';
+import { DeviceLocationModule } from './device/subFeatureLocation/device-location.module';
+
+
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -17,6 +21,7 @@ import { DeviceModule } from './device/device.module';
     }),
     EmployeeModule,
     DeviceModule,
+    DeviceLocationModule,
     
   ],
   controllers: [AppController],
