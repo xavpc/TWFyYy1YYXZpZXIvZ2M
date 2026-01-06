@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmployeeModule } from './employee/employee.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
+import { DeviceModule } from './device/device.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -15,6 +16,8 @@ import { getTypeOrmConfig } from './config/typeorm.config';
       inject: [ConfigService],
     }),
     EmployeeModule,
+    DeviceModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],
