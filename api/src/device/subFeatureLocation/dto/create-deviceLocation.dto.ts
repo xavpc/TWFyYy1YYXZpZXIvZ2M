@@ -15,6 +15,16 @@ export class CreateDeviceLocationDto {
   longitude: number;
 
   @IsNotEmpty()
+  @Type(() => Date)
+  @IsDate()
+  timestamp: Date;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  sequence: number;
+
+  @IsNotEmpty()
   @IsUUID('4')
   device_id: string;
 }

@@ -1,10 +1,10 @@
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Device } from "../device.entity";
 
-
+ 
 @Entity()
 export class DeviceLocation{
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   device_location_id: string;
 
   @ManyToOne(() => Device, (device) => device.device_locations)
@@ -17,11 +17,10 @@ export class DeviceLocation{
   @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
 
-  @CreateDateColumn()
+  @Column()
   timestamp: Date;
 
-  @Index('IDX_SEQUENCE', { unique: true })
-  @Column({ type: 'int', unique: true, nullable: false, default: 0 })
+  @Column()
   sequence: number;
 
 }
