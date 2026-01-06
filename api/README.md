@@ -21,6 +21,7 @@
 - [Support](#support)
 - [Stay in Touch](#stay-in-touch)
 - [License](#license)
+- [Important Note 📝](#important-note-📝)
 
 ---
 
@@ -141,3 +142,21 @@ npm run test:cov
 ## Stay in Touch
 
 - **Framework**: [NestJS](https://nestjs.com)
+
+
+## Important Note 📝
+
+#################################################
+#                   NOTE 📝                      #
+#################################################
+#                                               #
+# When importing entities in relationships:     #
+#                                              #
+# DON'T USE: src                               #
+# USE THIS: ..                                 #
+#                                              #
+# Example:                                     #
+# import { Employee } from                     #
+#   '../employee/employee.entity'              #
+#                                              #
+#################################################
