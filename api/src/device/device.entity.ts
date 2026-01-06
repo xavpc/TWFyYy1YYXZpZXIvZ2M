@@ -1,8 +1,9 @@
 import { Employee } from '../employee/employee.entity';
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { DeviceStatus } from './enums/device-status.enum';
-import { DeviceLocation } from './device-location/device-location.entity';
+import { DeviceLocation } from '../device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { DeviceRoute } from '../device-route/device-route.entity';
 
 
 @Entity()
@@ -26,6 +27,10 @@ export class Device {
 
   @ManyToOne(() => Employee, (employee) => employee.devices)
   @JoinColumn({ name: 'employee_id' })
+
+  @OneToMany(() => DeviceRoute, deviceRoute => deviceRoute.device)
+  deviceRoutes: DeviceRoute[];
+
   @ApiProperty({
     description: 'Employee assigned to the device',
     type: () => Employee,
