@@ -4,16 +4,34 @@ import { Repository } from 'typeorm';
 import { Device } from './device.entity';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
+import { Employee } from 'src/employee/employee.entity';
 
 @Injectable()
 export class DeviceService {
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
+    @InjectRepository(Employee)
+    private employeeRepository: Repository<Employee>,
   ) {}
 
-  create(createDeviceDto: CreateDeviceDto): Promise<Device> {
+  async create(createDeviceDto: CreateDeviceDto): Promise<Device> {
     const device = this.deviceRepository.create(createDeviceDto);
+    
+    if (createDeviceDto.employee_id) {
+      const employee = await this.employeeRepository.findOne({
+        where: { employee_id: createDeviceDto.employee_id }
+      });
+      
+      if (!employee) {
+        throw new NotFoundException(
+          `Employee with ID ${createDeviceDto.employee_id} not found`
+        );
+      }
+      
+      device.employee = employee;
+    }
+
     return this.deviceRepository.save(device);
   }
 

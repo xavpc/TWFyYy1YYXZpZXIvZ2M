@@ -1,5 +1,6 @@
 import { Employee } from '../employee/employee.entity';
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { DeviceStatus } from './enums/device-status.enum';
 
 @Entity()
 export class Device {
@@ -16,6 +17,10 @@ export class Device {
   @Column({ nullable: false }) 
   vehicle_plate_num: string;
 
-  @Column({ nullable: true })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: DeviceStatus,
+    default: DeviceStatus.ACTIVE
+  })
+  status: DeviceStatus;
 }

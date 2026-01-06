@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsUUID, IsNotEmpty, isNotEmpty } from 'class-validator';
-
+import { DeviceStatus } from '../enums/device-status.enum';
 export class CreateDeviceDto {
   @IsString()
   @IsNotEmpty({ message: 'Vehicle plate number is required' })
@@ -10,8 +10,7 @@ export class CreateDeviceDto {
   device_name : string;
 
   @IsOptional()
-  @IsString()
-  status?: string;
+  status?: DeviceStatus;
 
   @IsOptional()
   @IsString()
