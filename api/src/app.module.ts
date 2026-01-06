@@ -10,16 +10,18 @@ import { DeviceLocationModule } from './device-location/device-location.module';
 import { RouteModule } from './route/route.module';
 import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.module';
 import { DeviceRouteModule } from './device-route/device-route.module';
+import { CollectionPointsModule } from './collection-points/collection-points.module';
 
 
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      envFilePath: process.env.NODE_ENV === 'production' ? '.env.online' : '.env',
+    }),
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule],
-        useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
       inject: [ConfigService],
     }),
     EmployeeModule,
@@ -28,6 +30,7 @@ import { DeviceRouteModule } from './device-route/device-route.module';
     RouteModule,
     RouteCoordinatesModule,
     DeviceRouteModule,
+    CollectionPointsModule
     
   ],
   controllers: [AppController],

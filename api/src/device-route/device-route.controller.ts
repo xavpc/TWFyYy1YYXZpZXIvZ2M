@@ -4,7 +4,7 @@ import { CreateDeviceRouteDto } from './dto/create-device-route.dto';
 import { UpdateDeviceRouteDto } from './dto/update-device-route.dto';
 import { ApiTags } from '@nestjs/swagger';
 
-@ApiTags('Device Routes(still under development)')
+@ApiTags('Device Routes(API documentation still under development)')
 @Controller('web.device-routes')
 export class DeviceRouteController {
   constructor(private readonly deviceRouteService: DeviceRouteService) {}
