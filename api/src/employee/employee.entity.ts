@@ -1,13 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Device } from '../device/device.entity';
-import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Employee {
-  @ApiProperty({
-    description: 'Unique employee ID (UUID)',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
   @PrimaryGeneratedColumn('uuid')
   employee_id: string;
 
