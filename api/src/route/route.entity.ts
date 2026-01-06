@@ -9,7 +9,7 @@ export class Route {
   @OneToMany(() => RouteCoordinates, (coordinates) => coordinates.route)
   route_coordinates: RouteCoordinates[];
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   route_name: string;
 
 }
