@@ -1,8 +1,0 @@
-POST http://localhost:3001/auth/login
-Content-Type: application/json
-x-api-key: IamAPIK3y@rewqqwerty321
-
-{
-    "username": "admin",
-    "password": "admin"
-}
