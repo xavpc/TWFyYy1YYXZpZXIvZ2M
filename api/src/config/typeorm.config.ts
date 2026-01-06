@@ -12,7 +12,7 @@ export const getTypeOrmConfig = (configService: ConfigService): DataSourceOption
   synchronize: false,
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   migrationsTableName: 'migrations',
-  extra: {
+  extra: {  
     charset: 'utf8mb4_unicode_ci',
   },
 });
