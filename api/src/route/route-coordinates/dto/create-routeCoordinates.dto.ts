@@ -2,7 +2,7 @@ import { IsString, IsNotEmpty, IsUUID, IsNumber, Min, Max} from 'class-validator
 
 export class CreateRouteCoordinatesDto {
   @IsNotEmpty()
-  @IsUUID('4')
+  @IsUUID()
   route_id: string;
 
   @IsNotEmpty()
