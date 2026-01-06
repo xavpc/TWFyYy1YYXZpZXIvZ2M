@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import { EmployeeModule } from './employee/employee.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { DeviceModule } from './device/device.module';
-import { DeviceLocationModule } from './device/subFeatureLocation/device-location.module';
+import { DeviceLocationModule } from './device/device-location/device-location.module';
 import { RouteModule } from './route/route.module';
 
 
