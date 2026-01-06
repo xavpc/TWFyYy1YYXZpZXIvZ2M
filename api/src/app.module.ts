@@ -7,6 +7,7 @@ import { EmployeeModule } from './employee/employee.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { DeviceModule } from './device/device.module';
 import { DeviceLocationModule } from './device/subFeatureLocation/device-location.module';
+import { RouteModule } from './route/route.module';
 
 
 
@@ -22,6 +23,7 @@ import { DeviceLocationModule } from './device/subFeatureLocation/device-locatio
     EmployeeModule,
     DeviceModule,
     DeviceLocationModule,
+    RouteModule
     
   ],
   controllers: [AppController],
