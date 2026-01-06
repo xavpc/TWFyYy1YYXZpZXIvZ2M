@@ -1,9 +1,13 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { ApiProperty } from '@nestjs/swagger';
 import { Device } from "../device.entity";
 
-
 @Entity()
-export class DeviceLocation{
+export class DeviceLocation {
+  @ApiProperty({
+    description: 'Unique identifier for the device location.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @PrimaryGeneratedColumn('uuid')
   device_location_id: string;
 
@@ -11,17 +15,36 @@ export class DeviceLocation{
   @JoinColumn({ name: 'device_id' })  
   device: Device;
 
+  @ApiProperty({
+    description: 'The latitude of the device location. It should be between -90 and 90.',
+    example: 34.052235,
+    minimum: -90,
+    maximum: 90,
+  })
   @Column('decimal', { precision: 8, scale: 6 })
   latitude: number;
 
+  @ApiProperty({
+    description: 'The longitude of the device location. It should be between -180 and 180.',
+    example: -118.243683,
+    minimum: -180,
+    maximum: 180,
+  })
   @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
 
+  @ApiProperty({
+    description: 'Timestamp when the device location was created.',
+    example: '2025-01-01T12:00:00Z',
+  })
   @CreateDateColumn()
   timestamp: Date;
 
+  @ApiProperty({
+    description: 'A unique sequence number for the device location.',
+    example: 1,
+  })
   @Index('IDX_SEQUENCE', { unique: true })
   @Column({ type: 'int', unique: true, nullable: false, default: 0 })
   sequence: number;
-
 }
