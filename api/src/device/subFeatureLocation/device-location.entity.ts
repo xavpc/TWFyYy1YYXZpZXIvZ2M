@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Device } from "../device.entity";
 
- 
+
 @Entity()
 export class DeviceLocation{
   @PrimaryGeneratedColumn('uuid')
