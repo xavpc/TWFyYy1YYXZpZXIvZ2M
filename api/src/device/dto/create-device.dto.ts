@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, ArrayNotEmpty, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateDeviceDto {
   @IsString()
@@ -9,8 +9,7 @@ export class CreateDeviceDto {
   status?: string;
 
   @IsOptional()
-  @IsArray()
+  @IsString()
   @IsUUID('4', { each: true })
-  @ArrayNotEmpty()
-  employee_ids?: string[];
+  employee_ids?: string;
 }
