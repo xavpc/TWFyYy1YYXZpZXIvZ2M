@@ -5,7 +5,7 @@ import { UpdateCollectedPointsDto } from './dto/update-collected-points.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Collected Points(API documentation still under development)')
-@Controller('web.collected-points')
+@Controller('mobile.collected-points')
 export class CollectedPointsController {
   constructor(private readonly collectedPointsService: CollectedPointsService) {}
 
