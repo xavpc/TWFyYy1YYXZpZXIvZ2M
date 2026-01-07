@@ -1,0 +1,1 @@
+oh-my-posh init pwsh --config 'C:\Users\NON\AppData\Local\Programs\oh-my-posh\themes\night-owl.omp.json' | Invoke-Expression
