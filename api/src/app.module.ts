@@ -13,6 +13,7 @@ import { DeviceRouteModule } from './device-route/device-route.module';
 import { CollectionPointsModule } from './collection-points/collection-points.module';
 import { CollectedPointsModule } from './collected-points/collected-points.module';
 import { LoggingMiddleware } from './Logging.middleware';
+import { ImageModule } from './image/image.module';
 
 
 
@@ -34,6 +35,8 @@ import { LoggingMiddleware } from './Logging.middleware';
     DeviceRouteModule,
     CollectionPointsModule,
     CollectedPointsModule,
+    ImageModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],

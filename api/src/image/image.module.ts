@@ -4,7 +4,6 @@ import { Image } from './image.entity';
 import { ImageController } from './image.controller';
 import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { ConfigModule } from '@nestjs/config';
-import { ImageService } from './image.service';
 
 @Module({
   imports: [
@@ -12,7 +11,7 @@ import { ImageService } from './image.service';
     ConfigModule
   ],
   controllers: [ImageController],
-  providers: [CloudinaryService, ImageService],
+  providers: [CloudinaryService],
   exports: [CloudinaryService],
 })
 export class ImageModule {}
