@@ -11,7 +11,7 @@ export class RouteCoordinates {
   @PrimaryGeneratedColumn('uuid')
   route_coordinates_id: string;
 
-  @ManyToOne(() => Route, (route) => route.route_coordinates)
+  @ManyToOne(() => Route, (route) => route.route_coordinates, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'route_id' })
   route: Route;
 
