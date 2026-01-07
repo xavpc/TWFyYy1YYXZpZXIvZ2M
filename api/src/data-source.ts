@@ -13,6 +13,7 @@ import { CollectionPoints } from './collection-points/collection-points.entity';
 import { join } from 'path';
 import { CollectedPoints } from './collected-points/collected-points.entity';
 import { Image } from './image/image.entity';
+import { Complaints } from './complaints/complaints.entity';
 
 // Load the appropriate .env file based on NODE_ENV
 config({
@@ -33,6 +34,7 @@ export default new DataSource({
     CollectionPoints,
     CollectedPoints,
     Image,
+    Complaints,
   
   ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
