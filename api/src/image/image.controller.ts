@@ -59,3 +59,13 @@ export class ImageController {
   }
 
   @Get('route/:routeId')
+  async findByRouteId(@Param('routeId') routeId: string) {
+    const images = await this.imageService.findByRouteId(routeId);
+    return {
+        success: true,
+        message: 'Collection points retrieved successfully',
+        data: images,
+        total: images.length,
+      };
+  }
+}
