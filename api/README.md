@@ -10,37 +10,35 @@
 
 ---
 
-## Table of Contents
+## 📌 Table of Contents
 - [Quick Start 🚀](#quick-start-🚀)
   - [Clone the Repository](#clone-the-repository)
   - [Install Dependencies](#install-dependencies)
   - [Configure Environment](#configure-environment)
   - [Database Migration](#database-migration)
 - [Running the App 🔥](#running-the-app-🔥)
-- [Test ⚡](#test-⚡)
-- [Support](#support)
-- [Stay in Touch](#stay-in-touch)
-- [License](#license)
+- [Testing ⚡](#testing-⚡)
+- [Stay in Touch 📬](#stay-in-touch-📬)
 - [Important Note 📝](#important-note-📝)
 
 ---
 
-## Quick Start 🚀
+## 🚀 Quick Start
 
-### Clone the Repository
+### 📂 Clone the Repository
 
 ```bash
 git clone https://github.com/jnoval/gcbackend.git
 cd gcbackend
 ```
 
-### Install Dependencies
+### 📦 Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Configure Environment
+### ⚙️ Configure Environment
 
 Create a `.env` file in the root directory with the following content:
 
@@ -63,11 +61,11 @@ DATABASE_NAME=example_gomicollection
 
 > **Note:** Update the database credentials according to your MySQL/MariaDB setup.
 
-### Database Migration
+### 📜 Database Migration
 
-Before running the application, you need to set up the database schema using migrations:
+Before running the application, set up the database schema using migrations:
 
-1. First, check your `package.json` has these scripts:
+1. First, ensure your `package.json` includes these scripts:
 
 ```json
 {
@@ -101,13 +99,13 @@ npm run migration:run
 npm run migration:revert
 ```
 
-> **Note:** Make sure your database is running and accessible before running migrations.
+> **Note:** Ensure your database is running and accessible before executing migrations.
 
 ---
 
-## Running the App 🔥
+## 🔥 Running the App
 
-To run the application, use the following commands:
+Use the following commands to run the application:
 
 ```bash
 # Run in development mode
@@ -122,15 +120,15 @@ npm run start:prod  # Optimized for production
 
 ---
 
-## Test ⚡
+## ⚡ Testing
 
-You can run various tests to ensure the application is working correctly:
+You can run tests to ensure the application works correctly:
 
 ```bash
-# Run unit tests (tests isolated components of the application)
+# Run unit tests
 npm run test
 
-# Run end-to-end (e2e) tests (tests the entire application flow)
+# Run end-to-end (e2e) tests
 npm run test:e2e
 
 # View test coverage report
@@ -139,24 +137,30 @@ npm run test:cov
 
 ---
 
-## Stay in Touch
+## 📬 Stay in Touch
 
 - **Framework**: [NestJS](https://nestjs.com)
 
+---
 
-## Important Note 📝
+## 📝 Important Note
 
-#################################################
-#                   NOTE 📝                      #
-#################################################
-#                                               #
-# When importing entities in relationships:     #
-#                                              #
-# DON'T USE: src                               #
-# USE THIS: ..                                 #
-#                                              #
-# Example:                                     #
-# import { Employee } from                     #
-#   '../employee/employee.entity'              #
-#                                              #
-#################################################
+### ⚠️ Correct Import Paths for Relationships
+When importing related entities in TypeORM, **avoid using `src` in the import path**.
+Instead, use relative paths (`..`).
+
+❌ **Incorrect:**
+```ts
+import { Employee } from "src/employee/employee.entity";
+```
+
+✅ **Correct:**
+```ts
+import { Employee } from "../employee/employee.entity";
+```
+
+Using `src/` can cause issues when running TypeORM commands, as it references the TypeScript structure instead of the compiled JavaScript output.
+
+---
+
+
