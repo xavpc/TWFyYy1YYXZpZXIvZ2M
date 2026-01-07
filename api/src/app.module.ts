@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -11,6 +11,8 @@ import { RouteModule } from './route/route.module';
 import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.module';
 import { DeviceRouteModule } from './device-route/device-route.module';
 import { CollectionPointsModule } from './collection-points/collection-points.module';
+import { CollectedPointsModule } from './collected-points/collected-points.module';
+import { LoggingMiddleware } from './Logging.middleware';
 
 
 
@@ -30,10 +32,16 @@ import { CollectionPointsModule } from './collection-points/collection-points.mo
     RouteModule,
     RouteCoordinatesModule,
     DeviceRouteModule,
-    CollectionPointsModule
-    
+    CollectionPointsModule,
+    CollectedPointsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggingMiddleware)
+      .forRoutes('*');
+  }
+}

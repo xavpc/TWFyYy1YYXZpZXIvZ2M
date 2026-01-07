@@ -11,7 +11,7 @@ import { RouteCoordinates } from './route-coordinates/route-coordinates.entity';
 import { DeviceRoute } from './device-route/device-route.entity';
 import { CollectionPoints } from './collection-points/collection-points.entity';
 import { join } from 'path';
-import { Image } from './image/image.entity';
+import { CollectedPoints } from './collected-points/collected-points.entity';
 
 // Load the appropriate .env file based on NODE_ENV
 config({
@@ -22,7 +22,17 @@ const configService = new ConfigService();
 
 export default new DataSource({
   ...getTypeOrmConfig(configService),
-  entities: [Employee, Device, DeviceLocation, Route, RouteCoordinates, DeviceRoute, CollectionPoints, Image],
+  entities: [
+    Employee, 
+    Device, 
+    DeviceLocation, 
+    Route, 
+    RouteCoordinates, 
+    DeviceRoute, 
+    CollectionPoints,
+    CollectedPoints
+  
+  ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   subscribers: [],
 });
