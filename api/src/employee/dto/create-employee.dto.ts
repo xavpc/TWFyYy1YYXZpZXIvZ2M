@@ -1,7 +1,7 @@
 import { IsString, IsInt, IsEmail, IsOptional, Min, Max, Matches, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { nameRegex, japanPhoneRegex, emailRegex } from '../utils/regex';
-
+import { ValidateIf } from 'class-validator';
 export class CreateEmployeeDto {
   @ApiProperty({
     description: 'Employee\'s first name',
@@ -30,6 +30,7 @@ export class CreateEmployeeDto {
   })
   @IsString()
   @IsOptional()
+  @ValidateIf((o, value) => value !== '')  
   @MinLength(2, { message: 'Middle name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Middle name cannot exceed 50 characters' })
   @Matches(nameRegex, { 
@@ -69,9 +70,9 @@ export class CreateEmployeeDto {
     pattern: japanPhoneRegex.toString(), // Convert regex to string for Swagger
   })
   @IsString()
-  @Matches(japanPhoneRegex, { 
-    message: 'Please enter a valid Japanese phone number (e.g., 090-1234-5678 or +81 90-1234-5678)'
-  })
+  // @Matches(japanPhoneRegex, { 
+  //   message: 'Please enter a valid Japanese phone number (e.g., 090-1234-5678 or +81 90-1234-5678)'
+  // })
   contact_number: string;
 
   @ApiProperty({
