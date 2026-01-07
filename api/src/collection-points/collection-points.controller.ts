@@ -2,7 +2,9 @@ import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } fr
 import { CollectionPointsService } from './collection-points.service';
 import { CreateCollectionPointsDto } from './dto/create-collection-points.dto';
 import { UpdateCollectionPointsDto } from './dto/update-collection-points.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Collection Points(API documentation still under development)')
 @Controller('web.collection-points')
 export class CollectionPointsController {
   constructor(private readonly collectionPointsService: CollectionPointsService) {}
