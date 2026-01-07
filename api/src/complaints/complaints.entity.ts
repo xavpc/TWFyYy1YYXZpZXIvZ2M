@@ -20,7 +20,9 @@ export class Complaints {
   device: Device;
 
 
-  //TODO: add title
+  @Column({ nullable: false, unique: true })
+  title: string;
+  
   @Column({ nullable: false, unique: true })
   description: string;
 
