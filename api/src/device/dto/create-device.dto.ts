@@ -22,6 +22,15 @@ export class CreateDeviceDto {
   device_name: string;
 
   @ApiProperty({
+    description: 'Current status of the device',
+    enum: DeviceStatus,
+    default: DeviceStatus.ACTIVE + "(NOT REQUIRED)",
+    required: false,
+  })
+  @IsOptional()
+  status?: DeviceStatus;
+
+  @ApiProperty({
     description: 'Employee ID associated with the device (optional)',
     example: '123e4567-e89b-12d3-a456-426614174000',
     required: false,

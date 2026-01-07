@@ -22,15 +22,10 @@ export class DeviceLocationResponse {
   longitude: number;
 
   @ApiProperty({
-    description: 'The timestamp when the device location was pushed',
-    example: '2025-01-30T12:00:00Z',
-  })
-  push_timestamp: Date;
-  @ApiProperty({
     description: 'The timestamp when the device location was recorded',
     example: '2025-01-30T12:00:00Z',
   })
-  current_location_timestamp: Date;
+  timestamp: Date;
 
   @ApiProperty({
     description: 'The sequence number of the device location entry',
@@ -49,8 +44,7 @@ export class DeviceLocationResponse {
     this.device_location_id = deviceLocation.device_location_id;
     this.latitude = deviceLocation.latitude;
     this.longitude = deviceLocation.longitude;
-    this.push_timestamp = deviceLocation.push_timestamp;
-    this.current_location_timestamp = deviceLocation.current_location_timestamp;
+    this.timestamp = deviceLocation.timestamp;
     this.sequence = deviceLocation.sequence;
     this.device_id = deviceLocation.device.device_id; // Assuming a device object is linked here
   }

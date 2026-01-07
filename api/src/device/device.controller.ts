@@ -74,25 +74,6 @@ export class DeviceController {
     };
   }
 
-    @Get('employee/:employeeId')
-    @ApiOperation({ summary: 'Get all device for a specific employee' })
-    @ApiParam({ name: 'employeeId', description: 'Employee ID' })
-    @ApiResponse({
-      status: 200,
-      description: 'Devices retrieved successfully',
-      type: DeviceListResponse,
-    })
-    async findByEmployee(@Param('employeeId') employeeId: string) {
-      const device = await this.deviceService.findByEmployee(employeeId);
-      return {
-        success: true,
-        message: 'Devices retrieved successfully for the employee',
-        data: device,
-        total: device.length,
-      };
-    }
-
-
   @Put(':id')
   @ApiOperation({ summary: 'Update a device' })
   @ApiParam({ name: 'id', description: 'Device ID', example: '123e4567-e89b-12d3-a456-426614174000' })

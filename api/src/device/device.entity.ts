@@ -4,8 +4,6 @@ import { DeviceStatus } from './enums/device-status.enum';
 import { DeviceLocation } from '../device-location/device-location.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { DeviceRoute } from '../device-route/device-route.entity';
-import { CollectedPoints } from '../collected-points/collected-points.entity';
-import { Complaints } from '../complaints/complaints.entity';
 
 
 @Entity()
@@ -20,9 +18,6 @@ export class Device {
   @OneToMany(() => DeviceLocation, (location) => location.device)
   device_locations: DeviceLocation[];
 
-  @OneToMany(() => CollectedPoints, (collected_points) => collected_points.device)
-  collected_points: CollectedPoints[];
-
   @Column({ nullable: false })
   @ApiProperty({
     description: 'Name of the device',
@@ -30,20 +25,16 @@ export class Device {
   })
   device_name: string;
 
-
+  @ManyToOne(() => Employee, (employee) => employee.devices)
+  @JoinColumn({ name: 'employee_id' })
 
   @OneToMany(() => DeviceRoute, deviceRoute => deviceRoute.device)
   deviceRoutes: DeviceRoute[];
-
-  @OneToMany(() => Complaints, complaints => complaints.device)
-  complaints: Complaints[];
 
   @ApiProperty({
     description: 'Employee assigned to the device',
     type: () => Employee,
   })
-  @ManyToOne(() => Employee, (employee) => employee.devices, { nullable: false, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'employee_id' })
   employee: Employee;
 
   @Column({ nullable: false })

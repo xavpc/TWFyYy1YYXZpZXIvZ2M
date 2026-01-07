@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -9,42 +9,26 @@ import { DeviceModule } from './device/device.module';
 import { DeviceLocationModule } from './device-location/device-location.module';
 import { RouteModule } from './route/route.module';
 import { RouteCoordinatesModule } from './route-coordinates/route-coordinates.module';
-import { DeviceRouteModule } from './device-route/device-route.module';
-import { CollectionPointsModule } from './collection-points/collection-points.module';
-import { CollectedPointsModule } from './collected-points/collected-points.module';
-import { LoggingMiddleware } from './Logging.middleware';
-import { ImageModule } from './image/image.module';
 
 
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: process.env.NODE_ENV === 'production' ? '.env.online' : '.env',
-    }),
+    ConfigModule.forRoot(),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
+      imports: [
+        ConfigModule],
+        useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
       inject: [ConfigService],
     }),
     EmployeeModule,
     DeviceModule,
     DeviceLocationModule,
     RouteModule,
-    RouteCoordinatesModule,
-    DeviceRouteModule,
-    CollectionPointsModule,
-    CollectedPointsModule,
-    ImageModule,
+    RouteCoordinatesModule
     
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggingMiddleware)
-      .forRoutes('*');
-  }
-}
+export class AppModule {}
