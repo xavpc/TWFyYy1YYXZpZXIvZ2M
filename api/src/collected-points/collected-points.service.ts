@@ -85,7 +85,7 @@ export class CollectedPointsService {
     });
   }
 
-  findByCollectionPoints(collectionPointId: string): Promise<CollectedPoints[]> {
+  findByCollectionPoint(collectionPointId: string): Promise<CollectedPoints[]> {
     return this.collectedPointsRepository.find({
       where: { collection_point: { collection_point_id: collectionPointId } },
       relations: ['route','collection_points']
