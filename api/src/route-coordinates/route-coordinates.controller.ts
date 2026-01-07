@@ -6,7 +6,7 @@ import { UpdateRouteCoordinatesDto } from './dto/update-routeCoordinates.dto';
 import { RouteCoordinatesResponse, RouteCoordinatesListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Routes Coordinates')
-@Controller('web.route-coordinates')
+@Controller('mobile.route-coordinates')
 export class RouteCoordinatesController {
   constructor(private readonly routeCoordinatesService: RouteCoordinatesService) {}
 

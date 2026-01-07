@@ -7,7 +7,7 @@ import { extname } from 'path';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Images (API documentation still under development)')
-@Controller('images')
+@Controller('mobile.images')
 export class ImageController {
   constructor(
     private readonly cloudinaryService: CloudinaryService,
