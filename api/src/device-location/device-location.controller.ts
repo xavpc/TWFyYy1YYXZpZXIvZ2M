@@ -3,15 +3,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { DeviceLocationService } from './device-location.service';
 import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
-import { DeviceLocationResponse, DeviceLocationListResponse, DeviceLocationErrorResponse, DeviceLocationBatchResponse } from './dto/response.dto';
+import { DeviceLocationResponse, DeviceLocationListResponse, ErrorResponse } from './dto/response.dto';
 
 @ApiTags('Device Locations')
-@Controller('device-locations')
+@Controller('mobile.device-locations')
 export class DeviceLocationController {
   constructor(private readonly deviceLocationService: DeviceLocationService) {}
 
   @Post('')
-  @ApiTags('FOR MOBILE USE')
   @ApiOperation({ summary: 'Create a new device location' })
   @ApiBody({ type: CreateDeviceLocationDto, description: 'Device location data to create' })
   @ApiResponse({
@@ -22,7 +21,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Invalid input data',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async create(@Body() createDeviceLocationDto: CreateDeviceLocationDto) {
     const newDeviceLocation = await this.deviceLocationService.create(createDeviceLocationDto);
@@ -61,7 +60,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async findOne(@Param('id') id: string) {
     const deviceLocation = await this.deviceLocationService.findOne(id);
@@ -93,24 +92,6 @@ export class DeviceLocationController {
     };
   }
 
-  @Get('session/:sessionId')
-  @ApiOperation({ summary: 'Get all device locations for a specific session' })
-  @ApiParam({ name: 'sessionId', description: 'Session ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Device locations retrieved successfully',
-    type: DeviceLocationListResponse,
-  })
-  async findBySession(@Param('sessionId') sessionId: string) {
-    const deviceLocations = await this.deviceLocationService.findBySession(sessionId);
-    return {
-      success: true,
-      message: 'Device locations retrieved successfully for the session',
-      data: deviceLocations,
-      total: deviceLocations.length,
-    };
-  }
-
   @Put(':id')
   @ApiOperation({ summary: 'Update a device location' })
   @ApiParam({ name: 'id', description: 'Device location ID', example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -123,7 +104,7 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async update(@Param('id') id: string, @Body() updateDeviceLocationDto: UpdateDeviceLocationDto) {
     const updatedDeviceLocation = await this.deviceLocationService.update(id, updateDeviceLocationDto);
@@ -150,39 +131,13 @@ export class DeviceLocationController {
   @ApiResponse({
     status: 404,
     description: 'Device location not found',
-    type: DeviceLocationErrorResponse,
+    type: ErrorResponse,
   })
   async remove(@Param('id') id: string) {
     await this.deviceLocationService.remove(id);
     return {
       success: true,
       message: 'Device location deleted successfully',
-    };
-  }
-
-  @Post('batch')
-  @ApiTags('FOR MOBILE USE')
-  @ApiOperation({ summary: 'Create multiple device locations in batch' })
-  @ApiBody({ 
-    type: [CreateDeviceLocationDto], 
-    description: 'Array of device location data to create' 
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Device locations created successfully',
-    type: DeviceLocationBatchResponse,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid input data',
-    type: DeviceLocationErrorResponse,
-  })
-  async createBatch(@Body() createDeviceLocationDtos: CreateDeviceLocationDto[]) {
-    const newDeviceLocations = await this.deviceLocationService.createBatch(createDeviceLocationDtos);
-    return {
-      success: true,
-      message: 'Device locations created successfully',
-      data: newDeviceLocations,
     };
   }
 }

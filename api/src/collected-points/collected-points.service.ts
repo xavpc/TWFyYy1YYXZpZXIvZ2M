@@ -1,13 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CollectedPoints } from './collected-points.entity';
 import { CreateCollectedPointsDto } from './dto/create-collected-points.dto';
 import { UpdateCollectedPointsDto } from './dto/update-collected-points.dto';
 import { Device } from '../device/device.entity';
 import { CollectionPoints } from 'src/collection-points/collection-points.entity';
-import { DeviceSession } from '../device-session/device-session.entity';
-import { DeviceLocationGateway } from 'src/sockets/device-location.gateway';
 
 @Injectable()
 export class CollectedPointsService {
@@ -18,9 +16,6 @@ export class CollectedPointsService {
     private deviceRepository: Repository<Device>,
     @InjectRepository(CollectionPoints)
     private collectionPointsRepository: Repository<CollectionPoints>,
-    @InjectRepository(DeviceSession)
-    private deviceSessionRepository: Repository<DeviceSession>,
-    private readonly gateway: DeviceLocationGateway
   ) {}
 
   async create(createCollectedPointsDto: CreateCollectedPointsDto): Promise<CollectedPoints> {
@@ -45,72 +40,30 @@ export class CollectedPointsService {
       );
     }
 
-    const device_session = await this.deviceSessionRepository.findOne({
-      where: { session_id: createCollectedPointsDto.session_id }
-    });
-    
-    if (!device_session) {
-      throw new NotFoundException(
-        `Device session with ID ${createCollectedPointsDto.collection_point_id} not found`
-      );
-    }
-
-    const existingEntry = await this.collectedPointsRepository.findOne({
-      where: {
-        collection_point: { collection_point_id: createCollectedPointsDto.collection_point_id },
-        session: { session_id: createCollectedPointsDto.session_id }
-      }
-    });
-
-    if (existingEntry) {
-      throw new ConflictException(
-        `Entry for Collection Point ${collection_point.collection_point_name} and Session ${createCollectedPointsDto.session_id} already exists.`
-      );
-    }
-
-
     const CollectedPoints = this.collectedPointsRepository.create({
-      ...createCollectedPointsDto,
       device: device,
-      collection_point: collection_point,
-      session: device_session
+      collection_point: collection_point
     });
   
-    const saved = await  this.collectedPointsRepository.save(CollectedPoints);
-
-    this.gateway.sendCollectedUpdate({
-      session_id: saved.session?.session_id,
-      collected_point_id: saved.collected_point_id,
-      push_timestamp: saved.push_timestamp instanceof Date
-        ? saved.push_timestamp.getTime()
-        : Number(saved.push_timestamp),
-      collected_timestamp: saved.collected_timestamp instanceof Date
-        ? saved.collected_timestamp.toISOString()
-        : String(saved.collected_timestamp),
-      collection_point: saved.collection_point
-    });
-    
-    return saved;
+    return this.collectedPointsRepository.save(CollectedPoints);
   }
 
   findAll(): Promise<CollectedPoints[]> {
     return this.collectedPointsRepository.find({
-      relations: ['device', 'collection_point', 'session']
+      relations: ['device', 'collection_point']
     });
   }
-
 
   async findOne(id: string): Promise<CollectedPoints> {
     const CollectedPoints = await this.collectedPointsRepository.findOne({
       where: { collected_point_id: id },
-      relations: ['device', 'collection_point', 'session']
+      relations: ['device', 'collection_point']
     });
     if (!CollectedPoints) {
       throw new NotFoundException(`Collected Point with ID ${id} not found`);
     }
     return CollectedPoints;
   }
-
 
   async update(id: string, updateCollectedPointsDto: UpdateCollectedPointsDto): Promise<CollectedPoints> {
     const CollectedPoints = await this.findOne(id);
@@ -128,45 +81,14 @@ export class CollectedPointsService {
   findByDevice(deviceId: string): Promise<CollectedPoints[]> {
     return this.collectedPointsRepository.find({
       where: { device: { device_id: deviceId } },
-      relations: ['device', 'collection_point', 'session']
+      relations: ['device', 'collection_point']
     });
   }
 
-  findBySession(sessionId: string): Promise<CollectedPoints[]> {
+  findByCollectionPoint(collectionPointId: string): Promise<CollectedPoints[]> {
     return this.collectedPointsRepository.find({
-      where: { session: { session_id: sessionId } },
-      relations: ['device', 'collection_point', 'session']
+      where: { collection_point: { collection_point_id: collectionPointId } },
+      relations: ['route','collection_points']
     });
   }
-
-  async isCollectionAlreadyCollected(
-    collectionPointId: string,
-    sessionId: string
-  ): Promise<boolean> {
-    const collectionPoint = await this.collectionPointsRepository.findOne({
-      where: { collection_point_id: collectionPointId },
-    });
-  
-    if (!collectionPoint) {
-      throw new NotFoundException(`Collection Point with ID ${collectionPointId} not found.`);
-    }
-  
-    const session = await this.deviceSessionRepository.findOne({
-      where: { session_id: sessionId },
-    });
-  
-    if (!session) {
-      throw new NotFoundException(`Session with ID ${sessionId} not found.`);
-    }
-  
-    const collectedPoint = await this.collectedPointsRepository.findOne({
-      where: {
-        collection_point: { collection_point_id: collectionPointId },
-        session: { session_id: sessionId },
-      },
-    });
-  
-    return !!collectedPoint;
-  }
-  
 }

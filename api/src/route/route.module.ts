@@ -3,12 +3,9 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { RouteController } from "./route.controller";
 import { RouteService } from "./route.service";
 import { Route } from "./route.entity";
-import { CollectionPoints } from "../collection-points/collection-points.entity";
-import { DeviceRoute } from "../device-route/device-route.entity";
-import { RouteCoordinates } from "../route-coordinates/route-coordinates.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Route, CollectionPoints, DeviceRoute, RouteCoordinates])],
+    imports: [TypeOrmModule.forFeature([Route])],
     controllers: [RouteController],
     providers: [RouteService]
 })

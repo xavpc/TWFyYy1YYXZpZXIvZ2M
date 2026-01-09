@@ -1,9 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { Device } from "../device/device.entity";
-import { DeviceSession } from "../device-session/device-session.entity";
-import { Route } from "../route/route.entity";
-import { Transform } from "class-transformer";
 
 @Entity()
 export class DeviceLocation {
@@ -11,7 +8,7 @@ export class DeviceLocation {
     description: 'Unique identifier for the device location.',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   device_location_id: string;
 
   @ManyToOne(() => Device, (device) => device.device_locations, { nullable: false, onDelete: 'CASCADE' })
@@ -48,21 +45,14 @@ export class DeviceLocation {
     example: '2025-01-01T12:00:00Z',
   })
   @Column('timestamp')
-  @Transform(({ value }) => {
-    if (value instanceof Date) {
-      // Preserve the original time components but format as ISO string with Z
-      return `${value.getFullYear()}-${
-        String(value.getMonth() + 1).padStart(2, '0')}-${
-        String(value.getDate()).padStart(2, '0')}T${
-        String(value.getHours()).padStart(2, '0')}:${
-        String(value.getMinutes()).padStart(2, '0')}:${
-        String(value.getSeconds()).padStart(2, '0')}.000Z`;
-    }
-    return value;
-  })
   current_location_timestamp: Date;
 
-  @ManyToOne(() => DeviceSession, (session) => session.device_locations, { nullable: false, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'session_id' })
-  session: DeviceSession;
+
+  @ApiProperty({
+    description: 'A unique sequence number for the device location.',
+    example: 1,
+  })
+  @Index('IDX_SEQUENCE', { unique: true })
+  @Column({ type: 'int', unique: true, nullable: false, default: 0 })
+  sequence: number;
 }

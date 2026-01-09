@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Image } from './image.entity';
-import { UpdateImageDto } from './dto/update-image.dto';
 
 @Injectable()
 export class ImageService {
@@ -33,13 +32,5 @@ export class ImageService {
       where: { route: { route_id: routeId } },
       relations: ['route'],
     });
-  }
-
-  async update(id: string, updateImageDto: UpdateImageDto): Promise<Image> {
-    const image = await this.findOne(id);
-    
-    Object.assign(image, updateImageDto);
-    
-    return this.imageRepository.save(image);
   }
 }

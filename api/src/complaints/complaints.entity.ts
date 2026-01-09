@@ -7,7 +7,7 @@ import { Device } from "../device/device.entity";
 
 @Entity()
 export class Complaints {
-  @Column('char', { primary: true, length: 36, generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   complaint_id: string;
 
 
@@ -20,10 +20,8 @@ export class Complaints {
   device: Device;
 
 
+  //TODO: add title
   @Column({ nullable: false, unique: true })
-  title: string;
-
-  @Column({ nullable: false})
   description: string;
 
   @Column('decimal', { precision: 8, scale: 6 })
@@ -32,11 +30,8 @@ export class Complaints {
   @Column('decimal', { precision: 9, scale: 6 })
   longitude: number;
 
-
   @CreateDateColumn()
-  push_timestamp: Date;
+  timestamp: Date;
+  
 
-
-  @Column('timestamp')
-  complaint_timestamp: Date;
 }

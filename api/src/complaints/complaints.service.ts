@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Complaints } from './complaints.entity';
@@ -19,18 +19,6 @@ export class ComplaintsService {
   ) {}
 
   async create(createComplaintDto: CreateComplaintDto): Promise<Complaints> {
-    
-    const existingTitle = await this.complaintsRepository.findOne({
-      where: { title: createComplaintDto.title }
-    });
-    
-    if (existingTitle) {
-      throw new ConflictException(
-        `Title '${createComplaintDto.title}' already exists`
-      );
-    }
-        
-    
     const image = await this.imageRepository.findOne({ where: { image_id: createComplaintDto.image_id }});
     if (!image) {
       throw new NotFoundException(`Image with ID ${createComplaintDto.image_id} not found`);
@@ -43,7 +31,6 @@ export class ComplaintsService {
 
     const complaint = this.complaintsRepository.create({
       ...createComplaintDto,
-      complaint_timestamp: new Date(createComplaintDto.complaint_timestamp), // Convert string to Date
       image,
       device,
     });

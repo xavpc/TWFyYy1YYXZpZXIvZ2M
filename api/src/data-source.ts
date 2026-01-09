@@ -1,3 +1,4 @@
+// 3. src/data-source.ts
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
@@ -13,16 +14,11 @@ import { join } from 'path';
 import { CollectedPoints } from './collected-points/collected-points.entity';
 import { Image } from './image/image.entity';
 import { Complaints } from './complaints/complaints.entity';
-import { Users } from './auth/user/user.entity';
-import { DeviceSession } from './device-session/device-session.entity';
-import { Reports } from './reports/reports.entity';
 
-//warning: dont remove this ples or error in migrations
+// Load the appropriate .env file based on NODE_ENV
 config({
   path: process.env.NODE_ENV === 'production' ? '.env.online' : '.env'
 });
-///
-
 
 const configService = new ConfigService();
 
@@ -39,9 +35,7 @@ export default new DataSource({
     CollectedPoints,
     Image,
     Complaints,
-    Users,
-    DeviceSession,
-    Reports
+  
   ],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   subscribers: [],

@@ -11,4 +11,4 @@ import { Device } from "../device/device.entity";
     controllers: [ComplaintsController],
     providers: [ComplaintsService]
 })
-export class ComplaintsModule {}
+export class CollectionPointsModule {}

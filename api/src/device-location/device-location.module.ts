@@ -4,15 +4,10 @@ import { DeviceLocationController } from "./device-location.controller";
 import { DeviceLocationService } from "./device-location.service";
 import { DeviceLocation } from "./device-location.entity";
 import { Device } from "../device/device.entity";
-import { DeviceSession } from "../device-session/device-session.entity";
-import { DeviceLocationGateway } from "src/sockets/device-location.gateway";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([DeviceLocation, Device, DeviceSession]),
-  ],
-  controllers: [DeviceLocationController],
-  providers: [DeviceLocationService, DeviceLocationGateway]
-
+    imports: [TypeOrmModule.forFeature([DeviceLocation, Device])],
+    controllers: [DeviceLocationController],
+    providers: [DeviceLocationService]
 })
 export class DeviceLocationModule {}

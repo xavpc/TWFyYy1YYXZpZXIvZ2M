@@ -1,40 +1,23 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, UseInterceptors } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  private readonly logger = new Logger('Request');
-
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const req = context.switchToHttp().getRequest();
-    const { method, url, body, query, params } = req;
-    const now = Date.now();
+    const method = req.method;
+    const url = req.url;
 
-    this.logger.debug(`[${method}] ${url}`);
-    this.logger.debug(`Body: ${JSON.stringify(body)}`);
-    this.logger.debug(`Query: ${JSON.stringify(query)}`);
-    this.logger.debug(`Params: ${JSON.stringify(params)}`);
-
+    console.log(`[${new Date().toISOString()}] ${method} ${url}`);
+    console.log('Request Body:', req.body);
+    
     return next.handle().pipe(
-      tap((response) => {
-        const delay = Date.now() - now;
-        this.logger.log(`[${method}] ${url} -> ${delay}ms`);
-        this.logger.debug(`Response: ${JSON.stringify(response)}`);
-      }),
-      catchError((err) => {
-        const delay = Date.now() - now;
-        this.logger.error(
-          `[${method}] ${url} FAILED after ${delay}ms - ${err.message}`
-        );
-        throw err;
+      tap(response => {
+        console.log('Response Body:', response);
       })
     );
   }
 }
+

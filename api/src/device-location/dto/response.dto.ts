@@ -27,23 +27,23 @@ export class DeviceLocationResponse {
   })
   push_timestamp: Date;
   @ApiProperty({
-    description: 'The timestamp when the device location was recorded',
+    description: 'The timestamp when the device location was pushed',
     example: '2025-01-30T12:00:00Z',
   })
   current_location_timestamp: Date;
 
   @ApiProperty({
+    description: 'The sequence number of the device location entry',
+    example: 1,
+  })
+  sequence: number;
+
+  @ApiProperty({
     description: 'The device associated with this device location',
-    type: String,
+    type: String, // Or map it directly to a device DTO if required
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   device_id: string;
-
-  @ApiProperty({
-    description: 'The UUID of the device session associated with this location.',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  session_id: string;
 
   constructor(deviceLocation: DeviceLocation) {
     this.device_location_id = deviceLocation.device_location_id;
@@ -51,23 +51,11 @@ export class DeviceLocationResponse {
     this.longitude = deviceLocation.longitude;
     this.push_timestamp = deviceLocation.push_timestamp;
     this.current_location_timestamp = deviceLocation.current_location_timestamp;
-    this.device_id = deviceLocation.device.device_id; 
-    this.session_id = deviceLocation.session.session_id
+    this.sequence = deviceLocation.sequence;
+    this.device_id = deviceLocation.device.device_id; // Assuming a device object is linked here
   }
 }
-export class DeviceLocationBatchResponse {
-  @ApiProperty({ example: true })
-  success: boolean;
-  
-  @ApiProperty({ example: 'Device locations created successfully' })
-  message: string;
-  
-  @ApiProperty({ 
-    type: [DeviceLocationResponse], 
-    description: 'Array of created device locations' 
-  })
-  data: DeviceLocationResponse[];
-}
+
 
 export class DeviceLocationListResponse {
   @ApiProperty({
@@ -91,7 +79,7 @@ export class DeviceLocationListResponse {
 }
 
 
-export class DeviceLocationErrorResponse {
+export class ErrorResponse {
   @ApiProperty({
     description: 'Error code',
     example: 'NOT_FOUND',

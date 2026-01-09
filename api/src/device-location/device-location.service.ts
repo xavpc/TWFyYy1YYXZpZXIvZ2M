@@ -5,9 +5,6 @@ import { DeviceLocation } from './device-location.entity';
 import { CreateDeviceLocationDto } from './dto/create-deviceLocation.dto';
 import { UpdateDeviceLocationDto } from './dto/update-deviceLocation.dto';
 import { Device } from '../device/device.entity';
-import { DeviceSession } from 'src/device-session/device-session.entity';
-import { DeviceLocationGateway } from 'src/sockets/device-location.gateway';
-import { LocationObjectType } from 'src/sockets/types/location-data.type';
 
 @Injectable()
 export class DeviceLocationService {
@@ -16,64 +13,38 @@ export class DeviceLocationService {
     private deviceLocationRepository: Repository<DeviceLocation>,
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
-    @InjectRepository(DeviceSession)
-    private deviceSessionRepository: Repository<DeviceSession>,
-    private readonly gateway: DeviceLocationGateway
-  ) { }
+  ) {}
 
   async create(createDeviceLocationDto: CreateDeviceLocationDto): Promise<DeviceLocation> {
     const deviceLocation = this.deviceLocationRepository.create(createDeviceLocationDto);
-
+    
     if (createDeviceLocationDto.device_id) {
       const device = await this.deviceRepository.findOne({
         where: { device_id: createDeviceLocationDto.device_id }
       });
-
+      
       if (!device) {
         throw new NotFoundException(
           `Device with ID ${createDeviceLocationDto.device_id} not found`
         );
       }
-
+      
       deviceLocation.device = device;
     }
 
-    if (createDeviceLocationDto.session_id) {
-      const session = await this.deviceSessionRepository.findOne({
-        where: { session_id: createDeviceLocationDto.session_id }
-      });
-
-      if (!session) {
-        throw new NotFoundException(
-          `session with ID ${createDeviceLocationDto.session_id} not found`
-        );
-      }
-
-      deviceLocation.session = session;
-    }
-
-    const saved = await this.deviceLocationRepository.save(deviceLocation);
-
-    this.gateway.sendLocationUpdate({
-      session_id: saved.session?.session_id,
-      latitude: String(saved.latitude),
-      longitude: String(saved.longitude),
-      current_location_timestamp: String(saved.current_location_timestamp),
-    });
-
-    return saved;
+    return this.deviceLocationRepository.save(deviceLocation);
   }
 
   findAll(): Promise<DeviceLocation[]> {
     return this.deviceLocationRepository.find({
-      relations: ['device', 'session']
+      relations: ['device']
     });
   }
 
   async findOne(id: string): Promise<DeviceLocation> {
     const deviceLocation = await this.deviceLocationRepository.findOne({
       where: { device_location_id: id },
-      relations: ['device', 'session']
+      relations: ['device']
     });
     if (!deviceLocation) {
       throw new NotFoundException(`Device Location with ID ${id} not found`);
@@ -97,65 +68,7 @@ export class DeviceLocationService {
   findByDevice(deviceId: string): Promise<DeviceLocation[]> {
     return this.deviceLocationRepository.find({
       where: { device: { device_id: deviceId } },
-      relations: ['device', 'session']
+      relations: ['device']
     });
   }
-
-  findBySession(sessionId: string): Promise<DeviceLocation[]> {
-    return this.deviceLocationRepository.find({
-      where: { session: { session_id: sessionId } },
-      relations: ['device', 'session']
-    });
-  }
-
-  async createBatch(createDeviceLocationDtos: CreateDeviceLocationDto[]): Promise<DeviceLocation[]> {
-    const createdLocations: DeviceLocation[] = [];
-    const batchSocketLocations: LocationObjectType[] = []
-    for (const dto of createDeviceLocationDtos) {
-      const deviceLocation = this.deviceLocationRepository.create(dto);
-
-      if (dto.device_id) {
-        const device = await this.deviceRepository.findOne({
-          where: { device_id: dto.device_id }
-        });
-
-        if (!device) {
-          throw new NotFoundException(
-            `Device with ID ${dto.device_id} not found`
-          );
-        }
-
-        deviceLocation.device = device;
-      }
-
-      if (dto.session_id) {
-        const session = await this.deviceSessionRepository.findOne({
-          where: { session_id: dto.session_id }
-        });
-
-        if (!session) {
-          throw new NotFoundException(
-            `Session with ID ${dto.session_id} not found`
-          );
-        }
-
-        deviceLocation.session = session;
-      }
-
-      const savedLocation = await this.deviceLocationRepository.save(deviceLocation);
-      createdLocations.push(savedLocation);
-      batchSocketLocations.push({
-        session_id: savedLocation.session.session_id,
-        latitude: String(savedLocation.latitude),
-        longitude: String(savedLocation.longitude),
-        current_location_timestamp: String(savedLocation.current_location_timestamp)
-
-      })
-    }
-
-    this.gateway.sendBatchLocationUpdate(batchSocketLocations);
-
-    return createdLocations;
-  }
-
 }

@@ -9,12 +9,6 @@ export class CollectionPointResponse {
   collection_point_id: string;
 
   @ApiProperty({
-    description: 'sequence of the collection point',
-    example: 1
-  })
-  sequence: number;
-
-  @ApiProperty({
     description: 'Name of the collection point',
     example: 'Downtown Collection Point',
   })
@@ -68,7 +62,7 @@ export class CollectionPointListResponse {
   }
 }
 
-export class CollectionPointsErrorResponse {
+export class ErrorResponse {
   @ApiProperty({
     description: 'Error code',
     example: 'NOT_FOUND',
