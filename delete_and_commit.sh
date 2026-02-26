@@ -32,9 +32,9 @@ while true; do
 
     # --- Step 1: Add a dot ---
     echo "." >> "$FILE"
+    sleep 1
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
-    sleep 1
     if [ $? -eq 0 ]; then
         echo "  [+] Added dot and committed"
     else
@@ -44,13 +44,14 @@ while true; do
     # --- Step 2: Remove the last dot ---
     # Remove the last line (the dot we just added)
     if [[ "$OSTYPE" == "darwin"* ]]; then
+    sleep 1
         sed -i '' '$ d' "$FILE"
     else
+    sleep 1
         sed -i '$ d' "$FILE"
     fi
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
-    sleep 1
     if [ $? -eq 0 ]; then
         echo "  [-] Removed dot and committed"
     else
