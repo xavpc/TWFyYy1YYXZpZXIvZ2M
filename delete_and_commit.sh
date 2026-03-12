@@ -32,7 +32,6 @@ while true; do
 
     # --- Step 1: Delete a.txt ---
     rm -f "$FILE"
-    sleep 2
     git rm --cached "$FILE" > /dev/null 2>&1
     git add -A
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
@@ -43,7 +42,6 @@ while true; do
     fi
 
     # --- Step 2: Add a.txt ---
-    sleep 2
     touch "$FILE"
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
