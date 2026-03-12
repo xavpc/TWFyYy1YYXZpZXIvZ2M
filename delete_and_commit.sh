@@ -12,7 +12,7 @@ COMMIT_MSG="${2:-.}"
 FILE="a.txt"
 
 echo "========================================="
-echo "Dot Add/Remove Commit Loop"
+echo "File Add/Delete Commit Loop"
 echo "========================================="
 echo "File: $FILE"
 echo "Commit date: $COMMIT_DATE"
@@ -30,32 +30,27 @@ while true; do
     loop_count=$((loop_count + 1))
     echo "--- Loop #$loop_count ---"
 
-    # --- Step 1: Add a dot ---
-    echo "." >> "$FILE"
+    # --- Step 1: Delete a.txt ---
+    rm -f "$FILE"
     sleep 2
-    git add "$FILE"
+    git rm --cached "$FILE" > /dev/null 2>&1
+    git add -A
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        echo "  [+] Added dot and committed"
+        echo "  [-] Deleted $FILE and committed"
     else
-        echo "  [!] Failed to commit after adding dot"
+        echo "  [!] Failed to commit after deleting $FILE"
     fi
 
-    # --- Step 2: Remove the last dot ---
-    # Remove the last line (the dot we just added)
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    # --- Step 2: Add a.txt ---
     sleep 2
-        sed -i '' '$ d' "$FILE"
-    else
-    sleep 2
-        sed -i '$ d' "$FILE"
-    fi
+    touch "$FILE"
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        echo "  [-] Removed dot and committed"
+        echo "  [+] Added $FILE and committed"
     else
-        echo "  [!] Failed to commit after removing dot"
+        echo "  [!] Failed to commit after adding $FILE"
     fi
 
 done
