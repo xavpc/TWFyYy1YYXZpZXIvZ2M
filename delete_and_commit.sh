@@ -7,7 +7,7 @@
 # Usage: ./dot_commit_loop.sh <date> <commit-msg>
 # Example: ./delete_and_commit.sh "1987-01-14 10:30:00" "commit"
 
-COMMIT_DATE="${1:-1991-02-16 00:00:00}"
+COMMIT_DATE="${1:-1991-02-26 00:00:00}"
 COMMIT_MSG="${2:-.}"
 FILE="a.txt"
 
