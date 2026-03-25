@@ -1,28 +1,34 @@
 
 
-# bash ./delete_and_commit.sh ./api-prisma 2026-06-28 2026-07-13 40 "."
+# bash ./delete_and_commit.sh 2026-06-28 2026-07-13 "."
 
 #!/bin/bash
 
-# Usage: ./dot_commit_loop.sh <date> <commit-msg>
-# Example: ./delete_and_commit.sh "1987-01-14 10:30:00" "commit"
+# Usage: ./delete_and_commit.sh <from-date> <to-date> <commit-msg>
+# Example: ./delete_and_commit.sh 1987-01-14 1987-06-30 "commit"
 
-BASE_DATE="${1:-1991-03-26}"
-COMMIT_MSG="${2:-.}"
+FROM_DATE="${1:-1991-01-01}"
+TO_DATE="${2:-1991-12-31}"
+COMMIT_MSG="${3:-.}"
 FILE="a.txt"
 
 generate_random_time() {
+    local base_date="$1"
     hour=$(printf "%02d" $((RANDOM % 24)))
     minute=$(printf "%02d" $((RANDOM % 60)))
     second=$(printf "%02d" $((RANDOM % 60)))
-    echo "$BASE_DATE $hour:$minute:$second"
+    echo "$base_date $hour:$minute:$second"
+}
+
+advance_date() {
+    date -d "$1 + 1 day" +%Y-%m-%d
 }
 
 echo "========================================="
 echo "File Add/Delete Commit Loop"
 echo "========================================="
 echo "File: $FILE"
-echo "Commit date: $BASE_DATE"
+echo "Date range: $FROM_DATE to $TO_DATE"
 echo "Commit message: '$COMMIT_MSG'"
 echo "Press Ctrl+C to stop."
 echo "========================================="
@@ -32,13 +38,15 @@ echo ""
 touch "$FILE"
 
 loop_count=0
+CURRENT_DATE="$FROM_DATE"
+to_epoch=$(date -d "$TO_DATE" +%s)
 
 while true; do
     loop_count=$((loop_count + 1))
-    echo "--- Loop #$loop_count ---"
+    echo "--- Loop #$loop_count | Date: $CURRENT_DATE ---"
 
     # --- Step 1: Delete a.txt ---
-    COMMIT_DATE="$(generate_random_time)"
+    COMMIT_DATE="$(generate_random_time "$CURRENT_DATE")"
     rm -f "$FILE"
     git rm --cached "$FILE" > /dev/null 2>&1
     git add -A
@@ -50,7 +58,7 @@ while true; do
     fi
 
     # --- Step 2: Add a.txt ---
-    COMMIT_DATE="$(generate_random_time)"
+    COMMIT_DATE="$(generate_random_time "$CURRENT_DATE")"
     touch "$FILE"
     git add "$FILE"
     GIT_AUTHOR_DATE="$COMMIT_DATE" GIT_COMMITTER_DATE="$COMMIT_DATE" git commit -m "$COMMIT_MSG" > /dev/null 2>&1
@@ -58,6 +66,13 @@ while true; do
         echo "  [+] Added $FILE and committed ($COMMIT_DATE)"
     else
         echo "  [!] Failed to commit after adding $FILE"
+    fi
+
+    # Advance date; reset to FROM_DATE when TO_DATE is reached
+    CURRENT_DATE="$(advance_date "$CURRENT_DATE")"
+    if [ "$(date -d "$CURRENT_DATE" +%s)" -gt "$to_epoch" ]; then
+        echo "  [~] Reached end of range, resetting to $FROM_DATE"
+        CURRENT_DATE="$FROM_DATE"
     fi
 
 done
