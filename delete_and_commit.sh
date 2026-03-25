@@ -5,7 +5,7 @@
 #!/bin/bash
 
 # Usage: ./delete_and_commit.sh <from-date> <to-date> <commit-msg>
-# Example: ./delete_and_commit.sh 1987-01-14 1987-06-30 "commit"
+# Example: ./delete_and_commit.sh 1991-01-01 1991-12-30 "."
 
 FROM_DATE="${1:-1991-01-01}"
 TO_DATE="${2:-1991-12-31}"
