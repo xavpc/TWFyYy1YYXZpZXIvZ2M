@@ -5,12 +5,12 @@
 #!/bin/bash
 
 # Usage: ./delete_and_commit.sh <from-date> <to-date> <commit-msg>
-# Example: ./delete_and_commit.sh 1991-01-01 1991-12-30 "."
+# Example: ./delete_and_commit.sh 1991-01-01 1991-12-30 "a"
 
 FROM_DATE="${1:-1991-01-01}"
 TO_DATE="${2:-1991-12-31}"
 COMMIT_MSG="${3:-.}"
-FILE="b.txt"
+FILE="a.txt"
 
 generate_random_time() {
     local base_date="$1"
