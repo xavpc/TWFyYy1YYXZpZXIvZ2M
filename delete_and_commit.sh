@@ -7,8 +7,8 @@
 # Usage: ./delete_and_commit.sh <from-date> <to-date>
 # Example: ./delete_and_commit.sh 1991-01-01 1991-12-30
 
-FROM_DATE="${1:-1991-01-01}"
-TO_DATE="${2:-1991-12-31}"
+FROM_DATE="${1:-2023-01-01}"
+TO_DATE="${2:-2024-12-30}"
 FILE="a.txt"
 
 generate_random_msg() {
